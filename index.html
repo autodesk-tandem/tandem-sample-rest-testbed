@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <title>Tandem REST Test Bed</title>
+      <!--<script src="node_modules/@adsk/lmv-double-trouble/build/viewer3D.js"></script>-->
+      <script src="https://tandem.autodesk.com/viewer/viewer3D.js"></script>
+      <!--<script src="https://tandem-stg.autodesk.com/viewer/viewer3D.js"></script>-->
+      <script src="./3rdParty/jquery-3.6.0.min.js"></script>
+      <script src="./3rdParty/bootstrap-4.0.0/dist/js/bootstrap.bundle.js"></script>
+
+      <!-- CSS only -->
+      <!--<link href="node_modules/@adsk/lmv-double-trouble/build/style.min.css" rel="stylesheet" type="text/css">-->
+      <link href="https://tandem.autodesk.com/viewer/style.min.css" rel="stylesheet" type="text/css">
+      <!--<link href="https://tandem-stg.autodesk.com/viewer/style.min.css" rel="stylesheet" type="text/css">-->
+      <link href="./3rdParty/bootstrap-4.0.0/dist/css/bootstrap.css" rel="stylesheet" type="text/css">
+  </head>
+  <body>
+      <!-- this is the Nav Bar across the top -->
+    <nav class="navbar navbar-light bg-light justify-content-between">
+      <form class="form-inline">
+        <a class="btn my-2 my-sm-0" target="_blank" rel="noreferrer noopener" href="https://intandem.autodesk.com">
+          <img src="./images/autodesk-tandem-small-social-400.png" width="30" height="30" class="d-inline-block align-top" alt="Tandem">
+        </a>
+        <h5>Tandem Test Bed - REST</h5>
+      </form>
+      <form class="form-inline">
+          <label class="mr-sm-2" for="facilityPicker">Facility</label>
+          <select id="facilityPicker" class="form-control custom-select custom-select-sm" name="facilityToLoad">
+              <!-- Options filled in by function in index.js -->
+          </select>
+      </form>
+      <form class="form-inline">
+        <a class="btn btn-outline-success btn-sm" href="#" id="btn_login">Login</a>
+        <a class="btn btn-outline-dark btn-sm" href="#" id="btn_logout">Logout</a>
+        <a class="btn" target="_blank" rel="noreferrer noopener" href="https://accounts.autodesk.com/users/@me/view">
+          <img style="" src="./images/genericProfile.png" width="40" height="40" class="rounded-circle" alt="User" id="btn_userProfile"/>
+        </a>
+        <a class="btn" target="_blank" rel="noreferrer noopener" href="https://github.com/autodesk-tandem/tandem-sample-emb-viewer">
+          <img style="" src="https://github.githubassets.com/favicons/favicon.png"/>
+        </a>
+      </form>
+    </nav>
+    <!-- the rest is the Viewer window and the Stub Menus -->
+  <div class="container d-flex justify-content-start">
+    <div class="row">
+      <div style="left:0; position: absolute; display: flex; align-items: stretch; height: calc(100% - 75px); width: calc(100%);">
+          <div style="position:relative; flex-grow: 1;">
+              <div id="viewer" style="height: 100%; width: 100%;">
+                  <!--Viewer will mount here-->
+              </div>
+            <!--  <div id="hud" style="position: absolute; top: 20px; left: 20px; z-index: 10; visibility: hidden;">
+                  <select id="facilityPicker" style="width: 300px;"></select>
+              </div>-->
+          </div>
+          <div class="col-md-4" id="wo_pane">
+            <div class="row form-group mt-5">
+              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Facility stubs -->
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuFacility" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Facility Stubs
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuFacility">
+                  <button class="dropdown-item" type="button" id="btn_getFacilityInfo">GET Facility Info</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilityTemplate">GET Facility Template</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilityInlineTemplate">GET Facility Inline Template</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilitySubjects">GET Facility Subjects</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilityUserAccessLevels">GET User Access Levels</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilityUserAccessLevel">GET User Access Level (for UserID)</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilityThumbnail">GET Facility Thumbnail</button>
+                </div>
+              </div>
+            </div>
+            <div class="row form-group">
+              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Group stubs -->
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuGroups" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Group Stubs
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuGroups">
+                  <button class="dropdown-item" type="button" id="btn_getGroups">GET Groups</button>
+                  <button class="dropdown-item" type="button" id="btn_getGroup">GET Group (by GroupURN)</button>
+                  <button class="dropdown-item" type="button" id="btn_getGroupMetrics">GET Group Metrics (by GroupURN)</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilitiesForGroup">GET Facilities for Group (by GroupURN)</button>
+                </div>
+              </div>
+            </div>
+            <div class="row form-group">
+              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Model stubs -->
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuModels" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Model Stubs
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuModels">
+                  <button class="dropdown-item" type="button" id="btn_getModelProperties">GET Model Properties</button>
+                  <button class="dropdown-item" type="button" id="btn_getModel">GET Model</button>
+                  <button class="dropdown-item" type="button" id="btn_getAECModelData">GET AEC Model Data</button>
+                  <button class="dropdown-item" type="button" id="btn_getModelDataAttrs">GET Model Data Attributes</button>
+                  <button class="dropdown-item" type="button" id="btn_getModelDataSchema">GET Model Data Schema</button>
+                  <button class="dropdown-item" type="button" id="btn_getModelDataFragments">GET Model Data Fragments</button>
+                  <button class="dropdown-item" type="button" id="btn_getModelDataScan">GET Model Data Scan</button>
+                  <button class="dropdown-item" type="button" id="btn_getModelDataScanElements">POST Model Data Scan (Specific Elements)</button>
+                </div>
+              </div>
+            </div>
+            <div class="row form-group">
+              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Stream stubs -->
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuStreams" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Streams Stubs
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuStreams">
+                  <button class="dropdown-item" type="button" id="btn_getStreamSecrets">POST Get Stream Secrets</button>
+                </div>
+              </div>
+            </div>
+            <div class="row form-group">
+              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Stream stubs -->
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuMisc" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Miscellaneous Stubs
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuMisc">
+                  <button class="dropdown-item" type="button" id="btn_getHealth">GET Health</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilitiesForMe">GET Facilities for Me (@me)</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilitiesForUser">GET Facilities for User (UserID)</button>
+                </div>
+              </div>
+            </div>
+            <div class="row form-group">
+              <div class="col-md dropdown dropright"> <!--Dropdown menu for TandemApp stubs -->
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuTdApp" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Tandem App Stubs
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuTdApp">
+                  <button class="dropdown-item" type="button" id="btn_getSavedViews">Get Saved Views</button>
+                  <button class="dropdown-item" type="button" id="btn_getSavedViewByUUID">Get Saved View (by UUID)</button>
+                  <button class="dropdown-item" type="button" id="btn_getClassifications">Get Classifications (by GroupID)</button>
+                  <button class="dropdown-item" type="button" id="btn_getClassificationByUUID">Get Classification (by GroupID and UUID)</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilityTemplates">Get Facility Templates (by GroupID)</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilityTemplateByUUID">Get Facility Template (by GroupID and UUID)</button>
+                  <button class="dropdown-item" type="button" id="btn_getParameters">Get Parameters (by GroupID)</button>
+                  <button class="dropdown-item" type="button" id="btn_getParameterByUUID">Get Parameter (by GroupID and UUID)</button>
+                  <button class="dropdown-item" type="button" id="btn_getPreferences">Get Preferences</button>
+                </div>
+              </div>
+            </div>
+            <div class="row form-group mt-5">
+              <div class="col-md-8">
+                  <p class="text-muted bg-light font-italic">NOTE: output from stub functions goes to the Chrome debugger window.  Make sure to open the Chrome Developer Tools.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+        <!--  The following mechanism loads in partial HTML that defines a modal dialog to get input for
+              some of the stub funcitons. It will inject the HTML from the given path and then then the
+              bound JS functions in index.js will retrieve the values and call the appropriate functions
+              with the given input -->
+      <script>
+         $(function(){
+           //$("#stubInputInject_GetPropertyName").load("./stubInput/getPropertyName.html", "#stubInput_getPropertyName");
+           //$("#stubInputInject_GetPropertyFilter").load("./stubInput/getPropertyFilter.html", "#stubInput_getPropertyFilter");
+           //$("#stubInputInject_SetPropertyValue").load("./stubInput/setPropertyValue.html", "#stubInput_setPropertyValue");
+          // $("#stubInputInject_SetClassification").load("./stubInput/setClassification.html", "#stubInput_setClassification");
+          $("#stubInputInject_GetURN").load("./stubInput/getURN.html", "#stubInput_getURN");
+          $("#stubInputInject_GetUserID").load("./stubInput/getUserID.html", "#stubInput_getUserID");
+          $("#stubInputInject_GetUUID").load("./stubInput/getUUID.html", "#stubInput_getUUID");
+          $("#stubInputInject_GetURNandUUID").load("./stubInput/getURNandUUID.html", "#stubInput_getURNandUUID");
+          $("#stubInputInject_GetURNandKeys").load("./stubInput/getURNandKeys.html", "#stubInput_getURNandKeys");
+           //$("#stubInputInject_GetKey").load("./stubInput/getKey.html", "#stubInput_getKey");
+           //$("#stubInputInject_GetName").load("./stubInput/getName.html", "#stubInput_getName");
+           //$("#stubInputInject_GetInt").load("./stubInput/getInt.html", "#stubInput_getInt");
+         });
+      </script>
+    <!--  <div id="stubInputInject_GetPropertyName"></div>
+      <div id="stubInputInject_GetPropertyFilter"></div>
+      <div id="stubInputInject_SetPropertyValue"></div>
+      <div id="stubInputInject_SetClassification"></div>-->
+      <div id="stubInputInject_GetURN"></div>
+      <div id="stubInputInject_GetUserID"></div>
+      <div id="stubInputInject_GetUUID"></div>
+      <div id="stubInputInject_GetURNandUUID"></div>
+      <div id="stubInputInject_GetURNandKeys"></div>
+      <!--<div id="stubInputInject_GetKey"></div>
+      <div id="stubInputInject_GetName"></div>
+      <div id="stubInputInject_GetInt"></div>-->
+
+        <!-- this is the JS module that kicks off login and loading of the Tandem Viewer -->
+      <script type="module" src="./index.js"></script>
+
+    </body>
+</html>
