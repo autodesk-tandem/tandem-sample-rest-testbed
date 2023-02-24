@@ -148,7 +148,13 @@ export async function getThumbnail() {
   const requestPath = utils.td_baseURL + `/twins/${utils.facilityURN}/thumbnail`;
   console.log(requestPath);
 
-  console.log("Click in the link above ^^^ to fetch and display thumbnail image.")
+  console.log("Click in the link above ^^^ to fetch and display thumbnail image.");
+
+  await fetch(requestPath, utils.requestOptionsGET)
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
 
   console.groupEnd();
 }

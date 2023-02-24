@@ -45,9 +45,10 @@
     <div class="row">
       <div style="left:0; position: absolute; display: flex; align-items: stretch; height: calc(100% - 75px); width: calc(100%);">
           <div style="position:relative; flex-grow: 1;">
-              <div id="viewer" style="height: 100%; width: 100%;">
+              <!--<div id="viewer" style="height: 100%; width: 100%;">-->
                   <!--Viewer will mount here-->
-              </div>
+                  <img id="img_thumbnailPlaceholder" src="./images/thumbnailPlaceholder.png" style='height: 100%; width: 100%; object-fit: contain; vertical-align: top;'/>
+              <!--</div>-->
             <!--  <div id="hud" style="position: absolute; top: 20px; left: 20px; z-index: 10; visibility: hidden;">
                   <select id="facilityPicker" style="width: 300px;"></select>
               </div>-->
@@ -110,7 +111,7 @@
               </div>
             </div>
             <div class="row form-group">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Stream stubs -->
+              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Miscellaneous stubs -->
                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuMisc" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   Miscellaneous Stubs
                 </button>
@@ -118,6 +119,7 @@
                   <button class="dropdown-item" type="button" id="btn_getHealth">GET Health</button>
                   <button class="dropdown-item" type="button" id="btn_getFacilitiesForMe">GET Facilities for Me (@me)</button>
                   <button class="dropdown-item" type="button" id="btn_getFacilitiesForUser">GET Facilities for User (UserID)</button>
+                  <button class="dropdown-item" type="button" id="btn_testPromise">Test Promise</button>
                 </div>
               </div>
             </div>

@@ -15,23 +15,23 @@ import * as utils from './src/utils.js';
 ** DESC: get the list of all facilities we own directly or that are shared with us.
 **********************/
 
-async function getAllFacilities(app) {
-  const currentTeamFacilities = await app.getCurrentTeamsFacilities();  // Facilities we have access to based on the current team
+async function getAllFacilities() {
+  const currentTeamFacilities = await utils.getListOfFacilitiesActiveTeam();;  // Facilities we have access to based on the current team
 
     // we will construct a readable table to dump out the info for the user
   let printOutFacilities = [];
   let tmp = null;
   for (let i=0; i<currentTeamFacilities.length; i++) {
     tmp = currentTeamFacilities[i];
-    printOutFacilities.push({ name: tmp.settings.props["Identity Data"]["Building Name"], shared: "via current team", twinID: tmp.twinId });
+    printOutFacilities.push({ name: tmp.settings.props["Identity Data"]["Building Name"], shared: "via current team", twinID: tmp.urn });
   }
-  console.log("getCurrentTeamsFacilities()", currentTeamFacilities);  // dump out raw return result
+  console.log("getListOfFacilitiesActiveTeam()", currentTeamFacilities);  // dump out raw return result
 
-  const sharedWithMe = await app.getUsersFacilities();  // Facilities we have access to because they've been directly shared with us
+  const sharedWithMe = await utils.getListOfFacilities("@me");  // Facilities we have access to because they've been directly shared with us
 
   for (let i=0; i<sharedWithMe.length; i++) {
     tmp = sharedWithMe[i];
-    printOutFacilities.push({ name: tmp.settings.props["Identity Data"]["Building Name"], shared: "directly with me", twinID: tmp.twinId });
+    printOutFacilities.push({ name: tmp.settings.props["Identity Data"]["Building Name"], shared: "directly with me", twinID: tmp.urn });
   }
   console.log("getUsersFacilities()", sharedWithMe);  // dump out raw return result
 
@@ -52,54 +52,8 @@ async function bootstrap() {
   if (!userLoggedIn)
     return;   // when user does login, it will go through the bootstrap process again
 
-  await utils.getListOfFacilities("@me")
-    .then((response) => response.json())
-    .then((obj) => {
-        let facilities = [];
+  const facilities = await getAllFacilities();
 
-        for (const [key, value] of Object.entries(obj)) {
-          console.log(key, value);
-          facilities.push( { urn: key, settings: value});
-        }
-
-        if (facilities.length == 0) {
-          alert("NO FACILITIES AVAILABLE");
-          return;
-        }
-
-          // load preferred or random facility
-        const preferredFacilityUrn = window.localStorage.getItem('tandem-testbed-rest-last-facility');
-        const preferredFacility = facilities.find(f=>f.urn === preferredFacilityUrn) || facilities[0];
-
-          // setup facility picker UI
-        //await Promise.all(facilities.map(f=>f.load()));
-        const facilityPicker = document.getElementById('facilityPicker');
-
-        for (let facility of facilities) {
-            const option = document.createElement('option');
-            option.text = facility.settings.props["Identity Data"]["Building Name"];
-            option.selected = facility == preferredFacility;
-
-            facilityPicker.appendChild(option);
-        }
-
-        facilityPicker.onchange = ()=>{
-          const newFacility = facilities[facilityPicker.selectedIndex];
-          window.localStorage.setItem('tandem-testbed-rest-last-facility', newFacility.urn;
-        }
-        facilityPicker.style.visibility = 'initial';
-      })
-      .catch(error => console.log('error', error));
-}
-
-/*
-async function bootstrap() {
-    // login in the user and set UI elements appropriately (args are HTML elementIDs)
-  const userLoggedIn = await checkLogin("btn_login", "btn_logout", "btn_userProfile", "viewer");
-  if (!userLoggedIn)
-    return;   // when user does login, it will go through the bootstrap process again
-
-  const facilities = await utils.getListOfFacilities("@me");
   if (facilities.length == 0) {
     alert("NO FACILITIES AVAILABLE");
     return;
@@ -107,10 +61,10 @@ async function bootstrap() {
 
     // load preferred or random facility
   const preferredFacilityUrn = window.localStorage.getItem('tandem-testbed-rest-last-facility');
-  const preferredFacility = facilities.find(f=>f.urn() === preferredFacilityUrn) || facilities[0];
+  const preferredFacility = facilities.find(f=>f.urn === preferredFacilityUrn) || facilities[0];
+  utils.setCurrentFacility(preferredFacility.urn);  // store this as our "global" variable for all the stub functions
 
     // setup facility picker UI
-  await Promise.all(facilities.map(f=>f.load()));
   const facilityPicker = document.getElementById('facilityPicker');
 
   for (let facility of facilities) {
@@ -121,14 +75,30 @@ async function bootstrap() {
       facilityPicker.appendChild(option);
   }
 
-  facilityPicker.onchange = ()=>{
+    // if the user changes the current facility, update the thumbnail and our global variable in utils.js
+  facilityPicker.onchange = () => {
     const newFacility = facilities[facilityPicker.selectedIndex];
-    window.localStorage.setItem('tandem-testbed-rest-last-facility', newFacility.urn());
+    window.localStorage.setItem('tandem-testbed-rest-last-facility', newFacility.urn);
+    utils.setCurrentFacility(newFacility.urn);  // store this as our "global" variable for all the stub functions
+
+    //document.getElementById("img_thumbnailPlaceholder").src = "https://www.gstatic.com/webp/gallery/1.jpg";
+
+    utils.getThumbnail()
+      .then((obj) => {
+        console.log("tandem response", obj);
+        //let url = URL.createObjectURL(obj.body);
+        document.getElementById("img_thumbnailPlaceholder").src = obj.url;    // TBD: thumbnail won't load without Auth!!!
+      })
+      .catch(error => console.log('error', error));
   }
   facilityPicker.style.visibility = 'initial';
 }
-*/
 
+
+/***************************************************
+** FUNC: main()
+** DESC: setup all the call backs for the stub functions (bind to the HTML menu buttons)
+**********************/
 
 async function main() {
     // init the Viewer and login
@@ -231,6 +201,8 @@ async function main() {
       $('#stubInput_getUUID').modal('show');
       modalFuncCallbackNum = 0;
     });
+  $("#btn_testPromise").click(misc_stubs.testPromise);
+
 
   $("#btn_getClassifications").click(function() {
       $('#stubInput_getURN').modal('show');

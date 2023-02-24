@@ -50,3 +50,38 @@ export async function getFacilitiesForUser(userID) {
 
   console.groupEnd();
 }
+
+/***************************************************
+** FUNC: testPromise()
+** DESC: get the thumbnail image for the given Facility
+**********************/
+
+export async function testPromise() {
+  console.group("STUB: testPromise()");
+
+  const currentTeamFacilities = await utils.getListOfFacilitiesActiveTeam();;  // Facilities we have access to based on the current team
+
+    // we will construct a readable table to dump out the info for the user
+  let printOutFacilities = [];
+  let tmp = null;
+  for (let i=0; i<currentTeamFacilities.length; i++) {
+    tmp = currentTeamFacilities[i];
+    printOutFacilities.push({ name: tmp.settings.props["Identity Data"]["Building Name"], shared: "via current team", twinID: tmp.urn });
+  }
+  console.log("getListOfFacilitiesActiveTeam()", currentTeamFacilities);  // dump out raw return result
+
+  const sharedWithMe = await utils.getListOfFacilities2("@me");  // Facilities we have access to because they've been directly shared with us
+
+  for (let i=0; i<sharedWithMe.length; i++) {
+    tmp = sharedWithMe[i];
+    printOutFacilities.push({ name: tmp.settings.props["Identity Data"]["Building Name"], shared: "directly with me", twinID: tmp.urn });
+  }
+  console.log("getUsersFacilities()", sharedWithMe);  // dump out raw return result
+
+    // now try to print out a readable table
+  console.table(printOutFacilities);
+
+  //return [].concat(currentTeamFacilities, sharedWithMe);  // return the full list for the popup selector
+
+  console.groupEnd();
+}
