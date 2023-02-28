@@ -1,8 +1,7 @@
 
 import { getEnv } from '../env.js';
 
-
-export let facilityURN = null;
+export let facilityURN = null;  // our global var (set by the popup menu at the top of the app)
 
 export const td_baseURL = getEnv().tandemDbBaseURL;        // get PROD/STG from config file
 export const td_baseURL_v2 = getEnv().tandemDbBaseURL_v2;  // get PROD/STG from config file
@@ -10,16 +9,49 @@ export const td_baseURL_v2 = getEnv().tandemDbBaseURL_v2;  // get PROD/STG from 
 export const tdApp_baseURL = getEnv().tandemAppBaseURL;  // get PROD/STG from config file
 
 
-export var myHeaders = new Headers();
-myHeaders.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
+/***************************************************
+** FUNC: makeReqOptsGET()
+** DESC: pull this out to consistently generate the Request Options
+**********************/
 
-export var requestOptionsGET = {
-  method: 'GET',
-  headers: myHeaders,
-  redirect: 'follow'
-};
+export function makeReqOptsGET() {
+  const myHeadersGET = new Headers();
+  myHeadersGET.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
 
-  // dump the result of the function to the Console debug window for the browser
+  const requestOptionsGET = {
+    method: 'GET',
+    headers: myHeadersGET,
+    redirect: 'follow'
+  };
+
+  return requestOptionsGET;
+}
+
+/***************************************************
+** FUNC: makeReqOptsPOST()
+** DESC: pull this out to consistently generate the Request Options
+**********************/
+
+export function makeReqOptsPOST(bodyPayload) {
+  let myHeadersPOST = new Headers();
+  myHeadersPOST.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
+  myHeadersPOST.append("Content-Type", "application/json");
+
+  let requestOptionsPOST = {
+    method: 'POST',
+    headers: myHeadersPOST,
+    body: bodyPayload,
+    redirect: 'follow'
+  };
+
+  return requestOptionsPOST;
+}
+
+/***************************************************
+** FUNC: showResult()
+** DESC: dump the result of the function to the Console debug window for the browser
+**********************/
+
 export function showResult(obj) {
   console.log("Result from Tandem DB Server -->", obj);
 }
@@ -65,9 +97,10 @@ export async function getListOfFacilities(userID) {
 
   const facilities = [];
 
+  const requestOpts = makeReqOptsGET();
   const requestPath = td_baseURL + `/users/${userID}/twins`;
 
-  await fetch(requestPath, requestOptionsGET)
+  await fetch(requestPath, requestOpts)
     .then((response) => response.json())
     .then((obj) => {
       for (const [key, value] of Object.entries(obj)) {
@@ -90,9 +123,10 @@ export async function getListOfFacilitiesActiveTeam() {
   const facilities = [];
   let activeTeam = null;
 
+  const requestOpts = makeReqOptsGET();
   const requestPath = tdApp_baseURL + `/preferences`;   // first get the active team from the App.Preferences
 
-  await fetch(requestPath, requestOptionsGET)
+  await fetch(requestPath, requestOpts)
     .then((response) => response.json())
     .then((obj) => {
       activeTeam = obj.activeTeam;
@@ -105,7 +139,7 @@ export async function getListOfFacilitiesActiveTeam() {
   }
 
   const requestPath2 = td_baseURL + `/groups/${activeTeam}/twins`;    // now get the list of Facilities for this Group/Team
-  await fetch(requestPath2, requestOptionsGET)
+  await fetch(requestPath2, requestOpts)
     .then((response) => response.json())
     .then((obj) => {
       for (const [key, value] of Object.entries(obj)) {

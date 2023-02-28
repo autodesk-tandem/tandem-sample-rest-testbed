@@ -14,7 +14,7 @@ export async function getHealth() {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -37,7 +37,7 @@ export async function getFacilitiesForUser(userID) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);

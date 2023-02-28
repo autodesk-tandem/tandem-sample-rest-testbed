@@ -18,7 +18,7 @@ export async function getSavedViews() {
   const requestPath = utils.tdApp_baseURL + `/views/${utils.facilityURN}`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then(response => response.text())
     .then(result => showResultApp(result))
     .catch(error => console.log('error', error));
@@ -37,7 +37,7 @@ export async function getSavedViewByUUID(viewUUID) {
   const requestPath = utils.tdApp_baseURL + `/views/${utils.facilityURN}/${viewUUID}`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then(response => response.text())
     .then(result => showResultApp(result))
     .catch(error => console.log('error', error));
@@ -56,7 +56,7 @@ export async function getClassifications(groupId) {
   const requestPath = utils.tdApp_baseURL + `/groups/${groupId}/classifications`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then(response => response.text())
     .then(result => showResultApp(result))
     .catch(error => console.log('error', error));
@@ -75,7 +75,7 @@ export async function getClassificationByUUID(groupId, classifUUID) {
   const requestPath = utils.tdApp_baseURL + `/groups/${groupId}/classifications/${classifUUID}`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then(response => response.text())
     .then(result => showResultApp(result))
     .catch(error => console.log('error', error));
@@ -94,7 +94,7 @@ export async function getFacilityTemplates(groupId) {
   const requestPath = utils.tdApp_baseURL + `/groups/${groupId}/facility-templates`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then(response => response.text())
     .then(result => showResultApp(result))
     .catch(error => console.log('error', error));
@@ -113,7 +113,7 @@ export async function getFacilityTemplateByUUID(groupId, templateUUID) {
   const requestPath = utils.tdApp_baseURL + `/groups/${groupId}/facility-templates/${templateUUID}`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then(response => response.text())
     .then(result => showResultApp(result))
     .catch(error => console.log('error', error));
@@ -132,7 +132,7 @@ export async function getParameters(groupId) {
   const requestPath = utils.tdApp_baseURL + `/groups/${groupId}/params`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then(response => response.text())
     .then(result => showResultApp(result))
     .catch(error => console.log('error', error));
@@ -153,7 +153,7 @@ export async function getParameterByUUID(groupId, paramUUID) {
   const requestPath = utils.tdApp_baseURL + `/groups/${groupId}/params/${paramUUID}`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then(response => response.text())
     .then(result => showResultApp(result))
     .catch(error => console.log('error', error));
@@ -172,7 +172,7 @@ export async function getPreferences() {
   const requestPath = utils.tdApp_baseURL + `/preferences`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then(response => response.text())
     .then(result => showResultApp(result))
     .catch(error => console.log('error', error));

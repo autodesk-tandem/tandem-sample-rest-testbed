@@ -104,9 +104,9 @@ async function main() {
     // init the Viewer and login
   await bootstrap();
 
-  console.log('Begin stall for input stub loading...');
-  await new Promise(resolve => setTimeout(resolve, 2000)); // 2 sec
-  console.log('End stall.');
+  //console.log('Begin stall for input stub loading...');
+  //await new Promise(resolve => setTimeout(resolve, 2000)); // 2 sec
+  //console.log('End stall.');
 
     // bind all the callbacks from the UI to the stub functions
     // TBD: not super happy about how this callback mechanism works... I did trial and error
@@ -178,8 +178,22 @@ async function main() {
     $('#stubInput_getURNandKeys').modal('show');
     modalFuncCallbackNum = 1;
   });
+  $("#btn_getModelDataScanElementsUserOnlyWithHistory").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 2;
+  });
+  $("#btn_getModelDataScanElementsFullChangeHistory").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 3;
+  });
+
+  $("#btn_testScan").click(model_stubs.testScan);
+
 
     // Stream Stubs
+  $("#btn_getStreamsFromDefaultModel").click(stream_stubs.getStreamsFromDefaultModel);
+  $("#btn_getStreamsFromDefaultModelPOST").click(stream_stubs.getStreamsFromDefaultModelPOST);
+
   $("#btn_getStreamSecrets").click(function() {
     $('#stubInput_getURNandKeys').modal('show');
     modalFuncCallbackNum = 0;
@@ -319,11 +333,14 @@ async function main() {
       stream_stubs.getStreamSecrets(urn, keys);
     else if (modalFuncCallbackNum == 1)
       model_stubs.getModelDataScanElements(urn, keys);
+    else if (modalFuncCallbackNum == 2)
+      model_stubs.getModelDataScanElementsUserOnlyWithHistory(urn, keys);
+    else if (modalFuncCallbackNum == 3)
+      model_stubs.getModelDataScanElementsFullChangeHistory(urn, keys);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }
   });
-
 
 /*    $("#btn_restGetQualifiedProp").click(rest_stubs.restGetQualifiedProperty);
     $("#btn_restScanQualifiedProp").click(rest_stubs.restScanQualifiedProperty);

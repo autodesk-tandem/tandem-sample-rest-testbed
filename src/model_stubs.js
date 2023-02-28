@@ -1,5 +1,6 @@
 
 import * as utils from './utils.js';
+import { ColumnFamilies } from "../sdk/dt-schema.js";
 
 /***************************************************
 ** FUNC: getModelProperties()
@@ -14,7 +15,7 @@ export async function getModelProperties(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -37,7 +38,7 @@ export async function getModel(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -60,7 +61,7 @@ export async function getAECModelData(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -83,7 +84,7 @@ export async function getModelDataAttrs(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -106,7 +107,7 @@ export async function getModelDataSchema(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -130,7 +131,7 @@ export async function getModelDataFragments(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -153,7 +154,7 @@ export async function getModelDataScan(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -168,41 +169,139 @@ export async function getModelDataScan(modelURN) {
 ** DESC: get the properties for a specific set of Keys
 **********************/
 
-export async function getModelDataScanElements(modelURN, streamKeys) {
+export async function getModelDataScanElements(modelURN, elemKeys) {
 
   console.group("STUB: getModelDataScanElements()");
 
-  const streamKeysArray = streamKeys.split(',');
-  console.log("stream keys", streamKeysArray);
+  const elemKeysArray = elemKeys.split(',');
+  console.log("element keys", elemKeysArray);
 
-  var myHeaders = new Headers();
-  myHeaders.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
-  myHeaders.append("Content-Type", "application/json");
-
-  var raw = JSON.stringify({
+  var bodyPayload = JSON.stringify({
     "families": [
-        "n",
-        "l",
-        "x",
-        "r",
-        "z"
+        ColumnFamilies.Standard,
+        ColumnFamilies.Refs,
+        ColumnFamilies.Xrefs,
+        ColumnFamilies.Source,
+        ColumnFamilies.DtProperties
+    ],
+    "includeHistory": false,
+    "keys": elemKeysArray
+  });
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+
+  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
+
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: getModelDataScanElementsUserOnlyWithHistory()
+** DESC: get only the user-defined properties for a specific set of Keys, and include history
+**********************/
+
+export async function getModelDataScanElementsUserOnlyWithHistory(modelURN, elemKeys) {
+
+  console.group("STUB: getModelDataScanElementsUserOnlyWithHistory()");
+
+  const elemKeysArray = elemKeys.split(',');
+  console.log("element keys", elemKeysArray);
+
+  var bodyPayload = JSON.stringify({
+    "families": [
+      ColumnFamilies.DtProperties
     ],
     "includeHistory": true,
-    "keys": streamKeysArray
+    "keys": elemKeysArray
+  });
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+
+  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
+
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: getModelDataScanElementsFullChangeHistory()
+** DESC: get only the user-defined properties for a specific set of Keys, and include history
+**********************/
+
+export async function getModelDataScanElementsFullChangeHistory(modelURN, elemKeys) {
+
+  console.group("STUB: getModelDataScanElementsFullChangeHistory()");
+
+  const elemKeysArray = elemKeys.split(',');
+  console.log("element keys", elemKeysArray);
+
+  var bodyPayload = JSON.stringify({
+    "includeHistory": true,
+    "keys": elemKeysArray
+  });
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+
+  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
+
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: testScan()
+** DESC: scan the DB for elements with a given property
+**********************/
+
+export async function testScan() {
+
+  console.group("STUB: testScan()");
+
+  const modelURN = "urn:adsk.dtm:k5ZZZkIYQ9ixvxFDVBNoTg";
+  const qualProp = "z:5Ac";
+
+  let raw = JSON.stringify({
+    "qualifiedColumns": [
+      qualProp
+    ],
+    "includeHistory": false
   });
 
-  var reqOpts = {
+  let myHeaders = new Headers();
+  myHeaders.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
+  var requestOptions = {
     method: 'POST',
     headers: myHeaders,
     body: raw,
     redirect: 'follow'
   };
 
-  const requestPath = utils.td_baseURL_v2 + `/models/${modelURN}/scan`;
-
+  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
-  await fetch(requestPath, reqOpts)
+  await fetch(requestPath, requestOptions)
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);

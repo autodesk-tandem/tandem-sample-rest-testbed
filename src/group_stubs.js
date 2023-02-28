@@ -13,7 +13,7 @@ export async function getGroups() {
   const requestPath = utils.td_baseURL + `/groups`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -36,7 +36,7 @@ export async function getGroup(groupURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -59,7 +59,7 @@ export async function getGroupMetrics(groupURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -82,7 +82,7 @@ export async function getFacilitiesForGroup(groupURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);

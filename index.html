@@ -95,8 +95,11 @@
                   <button class="dropdown-item" type="button" id="btn_getModelDataAttrs">GET Model Data Attributes</button>
                   <button class="dropdown-item" type="button" id="btn_getModelDataSchema">GET Model Data Schema</button>
                   <button class="dropdown-item" type="button" id="btn_getModelDataFragments">GET Model Data Fragments</button>
-                  <button class="dropdown-item" type="button" id="btn_getModelDataScan">GET Model Data Scan</button>
-                  <button class="dropdown-item" type="button" id="btn_getModelDataScanElements">POST Model Data Scan (Specific Elements)</button>
+                  <button class="dropdown-item" type="button" id="btn_getModelDataScan">GET /scan</button>
+                  <button class="dropdown-item" type="button" id="btn_getModelDataScanElements">POST /scan (Specific Elements)</button>
+                  <button class="dropdown-item" type="button" id="btn_getModelDataScanElementsUserOnlyWithHistory">POST /scan (Specific Elements, User-defined props, history)</button>
+                  <button class="dropdown-item" type="button" id="btn_getModelDataScanElementsFullChangeHistory">POST /scan (Specific Elements, Full change history)</button>
+                  <button class="dropdown-item" type="button" id="btn_testScan">Test Scan</button>
                 </div>
               </div>
             </div>
@@ -106,6 +109,8 @@
                   Streams Stubs
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuStreams">
+                  <button class="dropdown-item" type="button" id="btn_getStreamsFromDefaultModel">GET /scan Get Streams (from default model)</button>
+                  <button class="dropdown-item" type="button" id="btn_getStreamsFromDefaultModelPOST">POST /scan Get Streams (from default model)</button>
                   <button class="dropdown-item" type="button" id="btn_getStreamSecrets">POST Get Stream Secrets</button>
                 </div>
               </div>

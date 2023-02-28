@@ -13,7 +13,7 @@ export async function getFacilityInfo() {
   const requestPath = utils.td_baseURL + `/twins/${utils.facilityURN}`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -35,7 +35,7 @@ export async function getTemplate() {
   const requestPath = utils.td_baseURL + `/twins/${utils.facilityURN}/template`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -57,7 +57,7 @@ export async function getInlineTemplate() {
   const requestPath = utils.td_baseURL + `/twins/${utils.facilityURN}/inlinetemplate`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -79,7 +79,7 @@ export async function getSubjects() {
   const requestPath = utils.td_baseURL + `/twins/${utils.facilityURN}/subjects`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -101,7 +101,7 @@ export async function getFacilityUserAccessLevels() {
   const requestPath = utils.td_baseURL + `/twins/${utils.facilityURN}/users`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -123,7 +123,7 @@ export async function getFacilityUserAccessLevel(userID) {
   const requestPath = utils.td_baseURL + `/twins/${utils.facilityURN}/users/${userID}`;
   console.log(requestPath);
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -150,7 +150,7 @@ export async function getThumbnail() {
 
   console.log("Click in the link above ^^^ to fetch and display thumbnail image.");
 
-  await fetch(requestPath, utils.requestOptionsGET)
+  await fetch(requestPath, utils.makeReqOptsGET())
     .then((obj) => {
       utils.showResult(obj);
     })
