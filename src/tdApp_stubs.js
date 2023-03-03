@@ -1,10 +1,13 @@
 import * as utils from './utils.js';
 
-  // dump the result of the function to the Console debug window for the browser
-  // NOTE: duplicate of what is in td_utils.js because in this case we are coming from AppServer, not DbServer
-function showResultApp(result) {
-  const obj = JSON.parse(result);
-  console.log("Result from TandemAppServer -->", obj);
+/***************************************************
+** FUNC: showResult()
+** DESC: dump the result of the function to the Console debug window for the browser
+**    NOTE: duplicate of what is in utils.js because in this case we are coming from AppServer, not DbServer
+**********************/
+
+function showResultApp(obj) {
+  console.log("Result from Tandem App Server -->", obj);
 }
 
 /***************************************************
@@ -19,8 +22,10 @@ export async function getSavedViews() {
   console.log(requestPath);
 
   await fetch(requestPath, utils.makeReqOptsGET())
-    .then(response => response.text())
-    .then(result => showResultApp(result))
+    .then(response => response.json())
+    .then((obj) => {
+      showResultApp(obj);
+    })
     .catch(error => console.log('error', error));
 
   console.groupEnd();
@@ -38,8 +43,10 @@ export async function getSavedViewByUUID(viewUUID) {
   console.log(requestPath);
 
   await fetch(requestPath, utils.makeReqOptsGET())
-    .then(response => response.text())
-    .then(result => showResultApp(result))
+    .then(response => response.json())
+    .then((obj) => {
+      showResultApp(obj);
+    })
     .catch(error => console.log('error', error));
 
   console.groupEnd();
@@ -57,8 +64,10 @@ export async function getClassifications(groupId) {
   console.log(requestPath);
 
   await fetch(requestPath, utils.makeReqOptsGET())
-    .then(response => response.text())
-    .then(result => showResultApp(result))
+    .then(response => response.json())
+    .then((obj) => {
+      showResultApp(obj);
+    })
     .catch(error => console.log('error', error));
 
   console.groupEnd();
@@ -76,8 +85,10 @@ export async function getClassificationByUUID(groupId, classifUUID) {
   console.log(requestPath);
 
   await fetch(requestPath, utils.makeReqOptsGET())
-    .then(response => response.text())
-    .then(result => showResultApp(result))
+    .then(response => response.json())
+    .then((obj) => {
+      showResultApp(obj);
+    })
     .catch(error => console.log('error', error));
 
   console.groupEnd();
@@ -95,8 +106,10 @@ export async function getFacilityTemplates(groupId) {
   console.log(requestPath);
 
   await fetch(requestPath, utils.makeReqOptsGET())
-    .then(response => response.text())
-    .then(result => showResultApp(result))
+    .then(response => response.json())
+    .then((obj) => {
+      showResultApp(obj);
+    })
     .catch(error => console.log('error', error));
 
   console.groupEnd();
@@ -114,8 +127,10 @@ export async function getFacilityTemplateByUUID(groupId, templateUUID) {
   console.log(requestPath);
 
   await fetch(requestPath, utils.makeReqOptsGET())
-    .then(response => response.text())
-    .then(result => showResultApp(result))
+    .then(response => response.json())
+    .then((obj) => {
+      showResultApp(obj);
+    })
     .catch(error => console.log('error', error));
 
   console.groupEnd();
@@ -133,8 +148,10 @@ export async function getParameters(groupId) {
   console.log(requestPath);
 
   await fetch(requestPath, utils.makeReqOptsGET())
-    .then(response => response.text())
-    .then(result => showResultApp(result))
+    .then(response => response.json())
+    .then((obj) => {
+      showResultApp(obj);
+    })
     .catch(error => console.log('error', error));
 
   console.groupEnd();
@@ -154,8 +171,10 @@ export async function getParameterByUUID(groupId, paramUUID) {
   console.log(requestPath);
 
   await fetch(requestPath, utils.makeReqOptsGET())
-    .then(response => response.text())
-    .then(result => showResultApp(result))
+    .then(response => response.json())
+    .then((obj) => {
+      showResultApp(obj);
+    })
     .catch(error => console.log('error', error));
 
   console.groupEnd();
@@ -173,8 +192,10 @@ export async function getPreferences() {
   console.log(requestPath);
 
   await fetch(requestPath, utils.makeReqOptsGET())
-    .then(response => response.text())
-    .then(result => showResultApp(result))
+    .then(response => response.json())
+    .then((obj) => {
+      showResultApp(obj);
+    })
     .catch(error => console.log('error', error));
 
   console.groupEnd();

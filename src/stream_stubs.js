@@ -16,7 +16,6 @@ export async function getStreamsFromDefaultModel() {
 
   const requestPath = utils.td_baseURL + `/modeldata/${defaultModelURN}/scan`;  // TBD: doesn't work for V2
   //const requestPath = utils.td_baseURL_v2 + `/modeldata/${defaultModelURN}/scan`;
-
   console.log(requestPath);
 
   await fetch(requestPath, utils.makeReqOptsGET())
@@ -42,14 +41,13 @@ export async function getStreamsFromDefaultModelPOST() {
   console.log("Default model", defaultModelURN);
 
   const requestPath = utils.td_baseURL_v2 + `/modeldata/${defaultModelURN}/scan`;
-
   console.log(requestPath);
 
   var bodyPayload = JSON.stringify({
-    "families": [
+    families: [
         ColumnFamilies.Standard,
     ],
-    "includeHistory": false
+    includeHistory: false
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
 
@@ -76,23 +74,247 @@ export async function getStreamSecrets(modelURN, streamKeys) {
 
   console.group("STUB: getStreamSecrets()");
 
-  //const streamKeysArray = streamKeys.split(',');
-  //console.log("stream keys", streamKeysArray);
+  const streamKeysArray = streamKeys.split(',');
+  console.log("Stream keys", streamKeysArray);
 
   var bodyPayload = JSON.stringify({
-  //  "keys": streamKeysArray
-    "keys": [
-       "AQAAAAVsjDQFgulHUWb4lbO9amwAAAAA"
-   ]
+    keys: streamKeysArray
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
-  //utils.requestOptionsPOST.body = bodyPayload;
 
-  const tmpModelURN = "urn:adsk.dtm:d5eZt_XtRzqUHT93-vNZxw";
-  const requestPath = utils.td_baseURL + `/models/${tmpModelURN}/getstreamssecrets`;
-
+  const requestPath = utils.td_baseURL + `/models/${modelURN}/getstreamssecrets`;
   console.log(requestPath);
-  console.log(reqOpts);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: resetStreamSecrets()
+** DESC: Reset the secrets for the given streams
+**********************/
+
+export async function resetStreamSecrets(modelURN, streamKeys) {
+
+  console.group("STUB: resetStreamSecrets()");
+
+  const streamKeysArray = streamKeys.split(',');
+  console.log("Stream keys", streamKeysArray);
+
+  let bodyPayload = JSON.stringify({
+    keys: streamKeysArray,
+    hardReset: true
+  });
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+
+  const requestPath = utils.td_baseURL + `/models/${modelURN}/resetstreamssecrets`;
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    //.then((response) => response.json())  // this doesn't return anything but a 204 with no response body
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: getStreamValues30Days()
+** DESC: get stream values for a given time range (hardwired here to 30 days)
+**********************/
+
+export async function getStreamValues30Days(defaultModelURN, streamKeys) {
+
+  console.group("STUB: getStreamValues30Days()");
+
+  const streamKeysArray = streamKeys.split(',');
+  console.log("Stream keys:", streamKeysArray);
+
+  const dateNow = new Date();
+  const timestampEnd = dateNow.getTime();
+  console.log("Time Now:", dateNow, timestampEnd);
+
+  const dateMinus30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const timestampStart = dateMinus30.getTime();
+  console.log("30 Days Ago:", dateMinus30, timestampStart);
+
+  console.log("NOTE: API allows any time range, plus options to limit returned values, sort, and isolate a specific substream parameter.")
+
+  for (let i=0; i<streamKeysArray.length; i++) {
+    // NOTE: we could also use other param args:
+    //    &limit=N (limit to N number of values)
+    //    &sort (asc or desc)
+    //    &substream=XYZ (only return a specific parameter)
+    const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams/${streamKeysArray[i]}?from=${timestampStart}&to=${timestampEnd}`;
+
+    console.log(`Stream ${streamKeysArray[i]}-->`)
+    console.log(requestPath);
+
+    await fetch(requestPath, utils.makeReqOptsGET())
+      .then((response) => response.json())
+      .then((obj) => {
+        utils.showResult(obj);
+      })
+      .catch(error => console.log('error', error));
+  }
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: postNewStreamValues()
+** DESC: post new stream values
+**********************/
+
+export async function postNewStreamValues(defaultModelURN, streamKeys) {
+
+  console.group("STUB: postNewStreamValues()");
+
+  const streamKeysArray = streamKeys.split(',');
+  console.log("Stream keys:", streamKeysArray);
+
+  const dateNow = new Date();
+  const timestamp = dateNow.getTime();
+  console.log("Timestamp:", dateNow, timestamp);
+
+  console.log("NOTE: This endpoint will send values in, but needs to have configured parameters in Tandem in order to store long term.")
+
+    // make up some arbitrary values here
+    // NOTE: these will likely not be mapped to parameters in your facility for this particular stream.
+    // See notes on how to setup the parameter mapping in Tandem so that these will flow into long-term storage
+  let bodyPayload = JSON.stringify({
+    test_val1: 22.88,
+    test_val2: 33.99,
+    ts: timestamp
+  });
+
+  const reqOptsPOST = utils.makeReqOptsPOST(bodyPayload);
+
+  for (let i=0; i<streamKeysArray.length; i++) {
+    const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams/${streamKeysArray[i]}`;
+
+    console.log(`Stream ${streamKeysArray[i]}-->`)
+    console.log(requestPath);
+
+    await fetch(requestPath, reqOptsPOST)
+      //.then((response) => response.json())  // this doesn't return anything but a 204 with no response body
+      .then((obj) => {
+        utils.showResult(obj);
+      })
+      .catch(error => console.log('error', error));
+  }
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: getLastSeenStreamValues()
+** DESC: get the last seen values for the given streams
+**********************/
+
+export async function getLastSeenStreamValues(defaultModelURN, streamKeys) {
+
+  console.group("STUB: getLastSeenStreamValues()");
+
+  const streamKeysArray = streamKeys.split(',');
+  console.log("Stream keys:", streamKeysArray);
+
+  let bodyPayload = JSON.stringify({
+    keys: streamKeysArray
+  });
+
+  const reqOptsPOST = utils.makeReqOptsPOST(bodyPayload);
+
+  const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams`;
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOptsPOST)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: getStreamRollupsLast30Days()
+** DESC: get summary statistics for the given streams
+**********************/
+
+export async function getStreamRollupsLast30Days(defaultModelURN, streamKeys) {
+
+  console.group("STUB: getStreamRollupsLast30Days()");
+
+  const streamKeysArray = streamKeys.split(',');
+  console.log("Stream keys:", streamKeysArray);
+
+  const dateNow = new Date();
+  const timestampEnd = dateNow.getTime();
+  console.log("Time Now:", dateNow, timestampEnd);
+
+  const dateMinus30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const timestampStart = dateMinus30.getTime();
+  console.log("30 Days Ago:", dateMinus30, timestampStart);
+
+  console.info("NOTE: API allows any time range.")
+
+  for (let i=0; i<streamKeysArray.length; i++) {
+
+    const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams/${streamKeysArray[i]}/rollups?from=${timestampStart}&to=${timestampEnd}`;
+
+    console.log(`Stream ${streamKeysArray[i]}-->`)
+    console.log(requestPath);
+
+    await fetch(requestPath, utils.makeReqOptsGET())
+      .then((response) => response.json())
+      .then((obj) => {
+        utils.showResult(obj);
+      })
+      .catch(error => console.log('error', error));
+  }
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: postGetStreamRollupsLast30Days()
+** DESC: get the rollups for the given streams
+**********************/
+
+export async function postGetStreamRollupsLast30Days(modelURN, streamKeys) {
+
+  console.group("STUB: postGetStreamRollupsLast30Days()");
+
+  const streamKeysArray = streamKeys.split(',');
+  console.log("Stream keys", streamKeysArray);
+
+  const dateNow = new Date();
+  const timestampEnd = dateNow.getTime();
+  console.log("Time Now:", dateNow, timestampEnd);
+
+  const dateMinus30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const timestampStart = dateMinus30.getTime();
+  console.log("30 Days Ago:", dateMinus30, timestampStart);
+
+  console.info("NOTE: API allows any time range.")
+
+  let bodyPayload = JSON.stringify({
+    keys: streamKeysArray
+  });
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+
+  const requestPath = utils.td_baseURL + `/timeseries/models/${modelURN}/rollups?from=${timestampStart}&to=${timestampEnd}`;
+  console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
     .then((response) => response.json())

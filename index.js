@@ -199,6 +199,33 @@ async function main() {
     modalFuncCallbackNum = 0;
   });
 
+  $("#btn_resetStreamSecrets").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 5;
+  });
+
+  $("#btn_getStreamValues30Days").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 4;
+  });
+  $("#btn_postNewStreamValues").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 6;
+  });
+  $("#btn_getLastSeenStreamValues").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 7;
+  });
+  $("#btn_getStreamRollup30Days").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 8;
+  });
+  $("#btn_postGetStreamRollup30Days").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 9;
+  });
+
+
     // MISC Stubs
   $("#btn_getHealth").click(misc_stubs.getHealth);
   $("#btn_getFacilitiesForMe").click(function() {
@@ -337,6 +364,18 @@ async function main() {
       model_stubs.getModelDataScanElementsUserOnlyWithHistory(urn, keys);
     else if (modalFuncCallbackNum == 3)
       model_stubs.getModelDataScanElementsFullChangeHistory(urn, keys);
+    else if (modalFuncCallbackNum == 4)
+      stream_stubs.getStreamValues30Days(urn, keys);
+    else if (modalFuncCallbackNum == 5)
+      stream_stubs.resetStreamSecrets(urn, keys);
+    else if (modalFuncCallbackNum == 6)
+      stream_stubs.postNewStreamValues(urn, keys);
+    else if (modalFuncCallbackNum == 7)
+      stream_stubs.getLastSeenStreamValues(urn, keys);
+    else if (modalFuncCallbackNum == 8)
+      stream_stubs.getStreamRollupsLast30Days(urn, keys);
+    else if (modalFuncCallbackNum == 9)
+      stream_stubs.postGetStreamRollupsLast30Days(urn, keys);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }

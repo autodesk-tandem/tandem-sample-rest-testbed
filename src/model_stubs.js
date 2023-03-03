@@ -174,23 +174,22 @@ export async function getModelDataScanElements(modelURN, elemKeys) {
   console.group("STUB: getModelDataScanElements()");
 
   const elemKeysArray = elemKeys.split(',');
-  console.log("element keys", elemKeysArray);
+  console.log("Element keys", elemKeysArray);
 
-  var bodyPayload = JSON.stringify({
-    "families": [
+  let bodyPayload = JSON.stringify({
+    families: [
         ColumnFamilies.Standard,
         ColumnFamilies.Refs,
         ColumnFamilies.Xrefs,
         ColumnFamilies.Source,
         ColumnFamilies.DtProperties
     ],
-    "includeHistory": false,
-    "keys": elemKeysArray
+    includeHistory: false,
+    keys: elemKeysArray
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
 
   const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
-
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
@@ -213,19 +212,18 @@ export async function getModelDataScanElementsUserOnlyWithHistory(modelURN, elem
   console.group("STUB: getModelDataScanElementsUserOnlyWithHistory()");
 
   const elemKeysArray = elemKeys.split(',');
-  console.log("element keys", elemKeysArray);
+  console.log("Element keys", elemKeysArray);
 
-  var bodyPayload = JSON.stringify({
-    "families": [
+  let bodyPayload = JSON.stringify({
+    families: [
       ColumnFamilies.DtProperties
     ],
-    "includeHistory": true,
-    "keys": elemKeysArray
+    includeHistory: true,
+    keys: elemKeysArray
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
 
   const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
-
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
@@ -248,11 +246,11 @@ export async function getModelDataScanElementsFullChangeHistory(modelURN, elemKe
   console.group("STUB: getModelDataScanElementsFullChangeHistory()");
 
   const elemKeysArray = elemKeys.split(',');
-  console.log("element keys", elemKeysArray);
+  console.log("Element keys", elemKeysArray);
 
-  var bodyPayload = JSON.stringify({
-    "includeHistory": true,
-    "keys": elemKeysArray
+  let bodyPayload = JSON.stringify({
+    includeHistory: true,
+    keys: elemKeysArray
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
 
@@ -283,15 +281,15 @@ export async function testScan() {
   const qualProp = "z:5Ac";
 
   let raw = JSON.stringify({
-    "qualifiedColumns": [
+    qualifiedColumns: [
       qualProp
     ],
-    "includeHistory": false
+    includeHistory: false
   });
 
   let myHeaders = new Headers();
   myHeaders.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
-  var requestOptions = {
+  let requestOptions = {
     method: 'POST',
     headers: myHeaders,
     body: raw,
