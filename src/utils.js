@@ -151,3 +151,75 @@ export async function getListOfFacilitiesActiveTeam() {
 
     return facilities;
 }
+
+/***************************************************
+** FUNC: getSchema()
+** DESC: given a modelURN, find the schema for this particular model.  This is a utilty function to retrieve it since
+**  we need it in multiple other fucitons.
+**********************/
+
+export async function getSchema(modelURN) {
+
+  const requestOpts = makeReqOptsGET();
+
+  const requestPath = td_baseURL + `/modeldata/${modelURN}/schema`;
+  console.log(requestPath);
+
+  let response = await fetch(requestPath, requestOpts);
+  return response;
+}
+
+/***************************************************
+** FUNC: getListOfModels()
+** DESC: get the the list of models for the given Facility
+**********************/
+
+export async function getListOfModels(facURN) {
+
+  if (facURN == null)
+    facURN = facilityURN; // default to the globally set one (current in app)
+
+  let models = null;
+
+  const requestOpts = makeReqOptsGET();
+  const requestPath = td_baseURL + `/twins/${facURN}`;
+
+  await fetch(requestPath, requestOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      models = obj.links; // this is the array of model info
+    })
+    .catch(error => console.log('error', error));
+
+  return models;
+}
+
+/***************************************************
+** FUNC: getQualifiedProperty()
+** DESC: lookup the qualified property info for a given [Category, Name] in a given model
+**********************/
+
+export async function getQualifiedProperty(modelURN, categoryName, propName) {
+
+  let qualProp = null;
+
+  await getSchema(modelURN)
+    .then((response) => response.json())
+    .then((obj) => {
+      //showResult(obj);  // dump intermediate result...
+      const attrs = obj.attributes;
+      for (let i=0; i<attrs.length; i++) {
+        if ((attrs[i].category === categoryName) && (attrs[i].name === propName)) {
+          qualProp = attrs[i];
+          break;
+        }
+      }
+      if (qualProp)
+        console.log(`Qualified Propname for [${categoryName} | ${propName}]:`, qualProp);
+      else
+        console.log(`Could not find [${categoryName} | ${propName}]`);
+    })
+    .catch(error => console.log('error', error));
+
+  return qualProp;
+}

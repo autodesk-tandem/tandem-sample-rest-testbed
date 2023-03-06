@@ -1,12 +1,12 @@
-# Tandem Viewer TestBed
+# Tandem REST API TestBed
 
 ## Overview
 
-This sample is a test bed application for exercising the Tandem SDK in an embedded viewer scenario.
+This sample is a test bed application for exercising the Tandem REST API in an interactive environment.
 
 It is designed to bring in as few dependencies as possible.  It is plain Javascript and HTML with the exception of jQuery and Bootstrap just to do minimal styling.  The app is designed as simple "Stubs" of functionality that for the most part just dump out results to the Chrome console window.  These interactive tests will surface useful information that you can then use in some of your other code (e.g., URNs for Facilities, Models, etc.). In cases where input is required from the user, the UI is as minimal as possible, or you are expected to change the code itself that supplies that input, or put a breakpoint in the debugger and change the value temporarily.
 
-*NOTE: The Javascript SDK that supports the Embedded Viewer is not yet official. It is an ALPHA version for early preview. This app is not a complete description of the API and is evolving over time as the API evolves.  Any use of this API should be for prototype purposes only.*
+*NOTE: There is also a Postman Collection available for testing the REST API endpoints.  See https://autodesk-tandem.github.io/API_postman.html for more information.*
 
 ![Tandem TestBed App 001](./docs/Readme_img_001.png)
 
@@ -14,11 +14,11 @@ It is designed to bring in as few dependencies as possible.  It is plain Javascr
 
 ## Live Demo
 
-If you just want to run the application without modifying source code, please visit: https://autodesk-tandem.github.io/tandem-sample-emb-viewer/
+If you just want to run the application without modifying source code, please visit: https://autodesk-tandem.github.io/tandem-sample-rest-testbed/
 
 Login with your Autodesk ID and then choose one of the Facilities you have access to.  If you have not yet used Tandem, you will first need to do the following:
 1. Sign up for a free Tandem account: [Tandem signup](https://intandem.autodesk.com/contact-us/?form_type=account#contact-forms)
-2. Set up a Facility by importing models and assigning Parameters via Classificaiton: https://tandem.autodesk.com
+2. Set up a Facility by importing models and assigning Parameters via Classification: https://tandem.autodesk.com
 3. See https://intandem.autodesk.com/resources/ for more information on how to do this.
 
 
@@ -64,4 +64,15 @@ Many of the functions will not be interesting until you have setup a Facility wi
 
 ![Tandem TestBed App 041](./docs/Readme_img_041.png)
 
+Some properties are built-in and should be more standard on most models, like in the following example.
+
+![Tandem TestBed App 042](./docs/Readme_img_042.png)
+
+
 *NOTE: if you are testing the REST API using the Postman collection, this Test Bed App is very useful for retrieving URNS, and other information that needs to be supplied to the REST API.*
+
+## Errors
+
+The token refresh mechanism occasionally fails (bug!).  Try reloading or doing a logout/login if you see strange errors.
+
+![Tandem TestBed App 050](./docs/Readme_img_050.png)

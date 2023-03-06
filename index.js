@@ -7,7 +7,8 @@ import * as group_stubs from './src/group_stubs.js';
 import * as model_stubs from './src/model_stubs.js';
 import * as misc_stubs from './src/misc_stubs.js';
 import * as stream_stubs from './src/stream_stubs.js';
-import * as tdApp_stubs from './src/tdApp_stubs.js';
+import * as prop_stubs from './src/prop_stubs.js';
+import * as tdApp_stubs from './src/app_stubs.js';
 import * as utils from './src/utils.js';
 
 /***************************************************
@@ -225,6 +226,15 @@ async function main() {
     modalFuncCallbackNum = 9;
   });
 
+    // Property Stubs
+  $("#btn_getQualifiedProp").click(function() {
+    $('#stubInput_getPropertyName').modal('show');
+    modalFuncCallbackNum = 0;
+  });
+  $("#btn_scanForQualifiedProp").click(function() {
+    $('#stubInput_getPropertyName').modal('show');
+    modalFuncCallbackNum = 1;
+  });
 
     // MISC Stubs
   $("#btn_getHealth").click(misc_stubs.getHealth);
@@ -242,8 +252,6 @@ async function main() {
       $('#stubInput_getUUID').modal('show');
       modalFuncCallbackNum = 0;
     });
-  $("#btn_testPromise").click(misc_stubs.testPromise);
-
 
   $("#btn_getClassifications").click(function() {
       $('#stubInput_getURN').modal('show');
@@ -382,7 +390,7 @@ async function main() {
   });
 
 /*    $("#btn_restGetQualifiedProp").click(rest_stubs.restGetQualifiedProperty);
-    $("#btn_restScanQualifiedProp").click(rest_stubs.restScanQualifiedProperty);
+    $("#btn_restScanQualifiedProp").click(rest_stubs.restScanQualifiedProperty);*/
 
 
     // this gets called from above via modal dialog (#btn_getQualifiedPropName, and others)
@@ -391,16 +399,16 @@ async function main() {
     const propName = $("#stubInput_propName").val();
 
     if (modalFuncCallbackNum == 0)
-      td_stubs.getQualifiedPropName(propCategory, propName);
+      prop_stubs.getQualifiedProperty(propCategory, propName);
     else if (modalFuncCallbackNum == 1)
-      td_stubs.getPropertySelSet(propCategory, propName);
+      prop_stubs.scanForQualifiedProperty(propCategory, propName);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }
   });
 
     // this gets called from above via modal dialog (#btn_setPropertySelSet, and others)
-  $('#stubInput_setPropertyValue_OK').click(function() {
+/*  $('#stubInput_setPropertyValue_OK').click(function() {
     const propCategory = $("#stubInput_propCategorySet").val();
     const propName = $("#stubInput_propNameSet").val();
     const propVal = $("#stubInput_propValSet").val();

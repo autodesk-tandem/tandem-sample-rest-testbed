@@ -122,6 +122,17 @@
               </div>
             </div>
             <div class="row form-group">
+              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Property stubs -->
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuProps" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Property Stubs
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuProps">
+                  <button class="dropdown-item" type="button" id="btn_getQualifiedProp">Get Qualified Property</button>
+                  <button class="dropdown-item" type="button" id="btn_scanForQualifiedProp">Scan For Qualified Property</button>
+                </div>
+              </div>
+            </div>
+            <div class="row form-group">
               <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Miscellaneous stubs -->
                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuMisc" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   Miscellaneous Stubs
@@ -130,7 +141,6 @@
                   <button class="dropdown-item" type="button" id="btn_getHealth">GET Health</button>
                   <button class="dropdown-item" type="button" id="btn_getFacilitiesForMe">GET Facilities for Me (@me)</button>
                   <button class="dropdown-item" type="button" id="btn_getFacilitiesForUser">GET Facilities for User (UserID)</button>
-                  <button class="dropdown-item" type="button" id="btn_testPromise">Test Promise</button>
                 </div>
               </div>
             </div>
@@ -167,7 +177,7 @@
               with the given input -->
       <script>
          $(function(){
-           //$("#stubInputInject_GetPropertyName").load("./stubInput/getPropertyName.html", "#stubInput_getPropertyName");
+           $("#stubInputInject_GetPropertyName").load("./stubInput/getPropertyName.html", "#stubInput_getPropertyName");
            //$("#stubInputInject_GetPropertyFilter").load("./stubInput/getPropertyFilter.html", "#stubInput_getPropertyFilter");
            //$("#stubInputInject_SetPropertyValue").load("./stubInput/setPropertyValue.html", "#stubInput_setPropertyValue");
           // $("#stubInputInject_SetClassification").load("./stubInput/setClassification.html", "#stubInput_setClassification");
@@ -181,8 +191,8 @@
            //$("#stubInputInject_GetInt").load("./stubInput/getInt.html", "#stubInput_getInt");
          });
       </script>
-    <!--  <div id="stubInputInject_GetPropertyName"></div>
-      <div id="stubInputInject_GetPropertyFilter"></div>
+      <div id="stubInputInject_GetPropertyName"></div>
+      <!--<div id="stubInputInject_GetPropertyFilter"></div>
       <div id="stubInputInject_SetPropertyValue"></div>
       <div id="stubInputInject_SetClassification"></div>-->
       <div id="stubInputInject_GetURN"></div>

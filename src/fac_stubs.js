@@ -8,7 +8,7 @@ import * as utils from './utils.js';
 
 export async function getFacilityInfo() {
 
-  console.group("STUB: restGetFacilityInfo()");
+  console.group("STUB: getFacilityInfo()");
 
   const requestPath = utils.td_baseURL + `/twins/${utils.facilityURN}`;
   console.log(requestPath);
