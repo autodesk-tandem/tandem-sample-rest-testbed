@@ -77,18 +77,6 @@ export function setCurrentFacility(urn)
 }
 
 /***************************************************
-** FUNC: getThumbnail()
-** DESC: get the thumbnail image for the given Facility
-**********************/
-
-export async function getThumbnail() {
-  const requestPath = td_baseURL + `/twins/${facilityURN}/thumbnail`;
-
-  let response = await fetch(requestPath, requestOptionsGET);
-  return response;
-}
-
-/***************************************************
 ** FUNC: getListOfFacilities()
 ** DESC: Get the facilities associated with this user
 **********************/
@@ -222,4 +210,69 @@ export async function getQualifiedProperty(modelURN, categoryName, propName) {
     .catch(error => console.log('error', error));
 
   return qualProp;
+}
+
+/***************************************************
+** FUNC: blobToBlobUrl()
+** DESC: convert a blob to a BlobUrl
+**********************/
+
+export async function blobToBlobUrl(blob) {
+	return new Promise((resolve, _) => {
+		const reader = new FileReader();
+		reader.onloadend = () => resolve(reader.result);
+		reader.readAsDataURL(blob);
+	});
+}
+
+/***************************************************
+** FUNC: getThumbnailBlobURL()
+** DESC: retrieve a thumbnail blob URL that we can use to display in the UI
+**********************/
+
+export async function getThumbnailBlobURL() {
+  const requestPath = td_baseURL + `/twins/${facilityURN}/thumbnail`;
+  console.log(requestPath);
+
+  const requestOpts = makeReqOptsGET();
+
+  let retBlobURL = null;
+
+  await fetch(requestPath, requestOpts)
+    .then((response) => response.blob())
+    .then((blob) => {
+      //console.log(blob);
+      let b64encoded = blobToBlobUrl(blob);
+      return b64encoded;
+    })
+    .then((blobURL) => {
+      retBlobURL = blobURL;
+    })
+    .catch(error => console.log('error', error));
+
+  return retBlobURL;
+}
+
+/***************************************************
+** FUNC: getThumbnailBlob()
+** DESC: retrieve a thumbnail blob URL that we can use to display in a new browser tab.
+**  TBD: I'm not sure why the above version of this func doesn't work to open the BlobURL in a new tab. ????
+**********************/
+
+export async function getThumbnailBlob() {
+  const requestPath = td_baseURL + `/twins/${facilityURN}/thumbnail`;
+  console.log(requestPath);
+
+  const requestOpts = makeReqOptsGET();
+
+  let retBlob = null;
+
+  await fetch(requestPath, requestOpts)
+    .then((response) => response.blob())
+    .then((blob) => {
+      retBlob = blob;
+    })
+    .catch(error => console.log('error', error));
+
+  return retBlob;
 }

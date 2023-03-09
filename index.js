@@ -43,6 +43,18 @@ async function getAllFacilities() {
 }
 
 /***************************************************
+** FUNC: updateThumbnailImage()
+** DESC: change the thumbnail image in the "viewer" portion of the screen
+**********************/
+
+async function updateThumbnailImage() {
+  const thumbnailBlobURL = await utils.getThumbnailBlobURL();
+  if (thumbnailBlobURL) {
+    document.getElementById("img_thumbnailPlaceholder").src = thumbnailBlobURL;
+  }
+}
+
+/***************************************************
 ** FUNC: bootstrap()
 ** DESC: init the Tandem viewer and get the user to login via their Autodesk ID.
 **********************/
@@ -64,6 +76,7 @@ async function bootstrap() {
   const preferredFacilityUrn = window.localStorage.getItem('tandem-testbed-rest-last-facility');
   const preferredFacility = facilities.find(f=>f.urn === preferredFacilityUrn) || facilities[0];
   utils.setCurrentFacility(preferredFacility.urn);  // store this as our "global" variable for all the stub functions
+  updateThumbnailImage();
 
     // setup facility picker UI
   const facilityPicker = document.getElementById('facilityPicker');
@@ -77,20 +90,11 @@ async function bootstrap() {
   }
 
     // if the user changes the current facility, update the thumbnail and our global variable in utils.js
-  facilityPicker.onchange = () => {
+  facilityPicker.onchange = async () => {
     const newFacility = facilities[facilityPicker.selectedIndex];
     window.localStorage.setItem('tandem-testbed-rest-last-facility', newFacility.urn);
     utils.setCurrentFacility(newFacility.urn);  // store this as our "global" variable for all the stub functions
-
-    //document.getElementById("img_thumbnailPlaceholder").src = "https://www.gstatic.com/webp/gallery/1.jpg";
-
-    utils.getThumbnail()
-      .then((obj) => {
-        console.log("tandem response", obj);
-        //let url = URL.createObjectURL(obj.body);
-        document.getElementById("img_thumbnailPlaceholder").src = obj.url;    // TBD: thumbnail won't load without Auth!!!
-      })
-      .catch(error => console.log('error', error));
+    updateThumbnailImage();
   }
   facilityPicker.style.visibility = 'initial';
 }
@@ -245,6 +249,7 @@ async function main() {
     $('#stubInput_getUserID').modal('show');
     modalFuncCallbackNum = 1;
   });
+
 
     // App Stubs
   $("#btn_getSavedViews").click(tdApp_stubs.getSavedViews);

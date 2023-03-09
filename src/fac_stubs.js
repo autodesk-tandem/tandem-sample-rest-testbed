@@ -135,26 +135,24 @@ export async function getFacilityUserAccessLevel(userID) {
 
 /***************************************************
 ** FUNC: getThumbnail()
-** DESC: get the thumbnail image for the given Facility
+** DESC: get the thumbnail image for the given Facility and display in a new browser tab
 **********************/
 
 export async function getThumbnail() {
 
   console.group("STUB: getThumbnail()");
 
-    // in this case, we won't actually call for the resource.  Clicking on the endpoint in the browser
-    // debugger console will fetch it and display it.
-
-  const requestPath = utils.td_baseURL + `/twins/${utils.facilityURN}/thumbnail`;
-  console.log(requestPath);
-
-  console.log("Click in the link above ^^^ to fetch and display thumbnail image.");
-
-  await fetch(requestPath, utils.makeReqOptsGET())
-    .then((obj) => {
-      utils.showResult(obj);
-    })
-    .catch(error => console.log('error', error));
+  const blob = await utils.getThumbnailBlob();
+  if (blob) {
+    console.log("Thumbnail image opening in new browser tab.");
+    //console.log(blob);
+    let blobURL = URL.createObjectURL(blob, {type: blob.type});
+    //console.log(blobURL);
+    window.open(blobURL);
+  }
+  else {
+    console.log("ERROR: Couldn't retrieve thumbnail image.");
+  }
 
   console.groupEnd();
 }
