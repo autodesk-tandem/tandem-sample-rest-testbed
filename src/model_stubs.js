@@ -150,7 +150,7 @@ export async function getModelDataScan(modelURN) {
 
   console.group("STUB: getModelDataScan()");
 
-  const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/scan`;
+  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
 
   console.log(requestPath);
 
@@ -169,7 +169,7 @@ export async function getModelDataScan(modelURN) {
 ** DESC: get the properties for a specific set of Keys
 **********************/
 
-export async function getModelDataScanElements(modelURN, elemKeys) {
+export async function getModelDataScanElements(modelURN, elemKeys, history, colFamilies) {
 
   console.group("STUB: getModelDataScanElements()");
 
@@ -177,14 +177,8 @@ export async function getModelDataScanElements(modelURN, elemKeys) {
   console.log("Element keys", elemKeysArray);
 
   let bodyPayload = JSON.stringify({
-    families: [
-        ColumnFamilies.Standard,
-        ColumnFamilies.Refs,
-        ColumnFamilies.Xrefs,
-        ColumnFamilies.Source,
-        ColumnFamilies.DtProperties
-    ],
-    includeHistory: false,
+    families: colFamilies,
+    includeHistory: history,
     keys: elemKeysArray
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);

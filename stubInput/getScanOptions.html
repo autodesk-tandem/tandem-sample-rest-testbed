@@ -1,0 +1,64 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body>
+    <!-- Modal -->
+    <div class="modal fade" id="stubInput_getScanOptions" tabindex="-1" role="dialog" aria-labelledby="stubInput_getScanOptionsLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="stubInput_getScanOptionsLabel">Enter /Scan Options</h5>
+
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="modal-body mx-3">
+             <div class="md-form mb-5">
+               <label data-error="wrong" data-success="right" for="stubInput_scanoptions_urn">URN</label>
+               <input type="text" id="stubInput_scanoptions_urn" class="form-control validate">
+             </div>
+             <div class="md-form mb-5">
+               <label data-error="wrong" data-success="right" for="stubInput_scanoptions_key">Key1,Key2 (comma seperated)</label>
+               <input type="text" id="stubInput_scanoptions_key" class="form-control validate">
+               <p class="font-italic text-secondary">E.g., "AQAAAwj062dFaLmCHxlFIrjjarUAAAAA"</p>
+             </div>
+             <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="stubInput_scanOptions_history" unchecked/>
+                <label class="custom-control-label" for="stubInput_scanOptions_history">Include history?</label>
+             </div>
+             <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="stubInput_scanOptions_cf_standard" unchecked/>
+                <label class="custom-control-label" for="stubInput_scanOptions_cf_standard">ColumnFamilies.Standard</label>
+             </div>
+             <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="stubInput_scanOptions_cf_refs" unchecked/>
+                <label class="custom-control-label" for="stubInput_scanOptions_cf_refs">ColumnFamilies.Refs</label>
+             </div>
+             <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="stubInput_scanOptions_cf_xrefs" unchecked/>
+                <label class="custom-control-label" for="stubInput_scanOptions_cf_xrefs">ColumnFamilies.Xrefs</label>
+             </div>
+             <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="stubInput_scanOptions_cf_source" unchecked/>
+                <label class="custom-control-label" for="stubInput_scanOptions_cf_source">ColumnFamilies.Source</label>
+             </div>
+             <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="stubInput_scanOptions_cf_user" checked/>
+                <label class="custom-control-label" for="stubInput_scanOptions_cf_user">ColumnFamilies.DtProperties (user)</label>
+             </div>
+           </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" data-dismiss="modal" id="stubInput_getScanOptions_OK">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>

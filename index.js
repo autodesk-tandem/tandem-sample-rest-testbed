@@ -11,6 +11,8 @@ import * as prop_stubs from './src/prop_stubs.js';
 import * as tdApp_stubs from './src/app_stubs.js';
 import * as utils from './src/utils.js';
 
+import { ColumnFamilies } from "../sdk/dt-schema.js";
+
 /***************************************************
 ** FUNC: getAllFacilities()
 ** DESC: get the list of all facilities we own directly or that are shared with us.
@@ -180,8 +182,8 @@ async function main() {
     modalFuncCallbackNum = 12;
   });
   $("#btn_getModelDataScanElements").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
-    modalFuncCallbackNum = 1;
+    $('#stubInput_getScanOptions').modal('show');
+    modalFuncCallbackNum = 0;
   });
   $("#btn_getModelDataScanElementsUserOnlyWithHistory").click(function() {
     $('#stubInput_getURNandKeys').modal('show');
@@ -193,6 +195,24 @@ async function main() {
   });
 
   $("#btn_testScan").click(model_stubs.testScan);
+
+    // Property Stubs
+  $("#btn_getQualifiedProp").click(function() {
+    $('#stubInput_getPropertyName').modal('show');
+    modalFuncCallbackNum = 0;
+  });
+  $("#btn_scanForQualifiedProp").click(function() {
+    $('#stubInput_getPropertyName').modal('show');
+    modalFuncCallbackNum = 1;
+  });
+  $("#btn_scanForQualifiedPropWithHistory").click(function() {
+    $('#stubInput_getPropertyName').modal('show');
+    modalFuncCallbackNum = 2;
+  });
+  $("#btn_assignClassificaiton").click(function() {
+    $('#stubInput_setClassification').modal('show');
+    modalFuncCallbackNum = 0;
+  });
 
 
     // Stream Stubs
@@ -228,16 +248,6 @@ async function main() {
   $("#btn_postGetStreamRollup30Days").click(function() {
     $('#stubInput_getURNandKeys').modal('show');
     modalFuncCallbackNum = 9;
-  });
-
-    // Property Stubs
-  $("#btn_getQualifiedProp").click(function() {
-    $('#stubInput_getPropertyName').modal('show');
-    modalFuncCallbackNum = 0;
-  });
-  $("#btn_scanForQualifiedProp").click(function() {
-    $('#stubInput_getPropertyName').modal('show');
-    modalFuncCallbackNum = 1;
   });
 
     // MISC Stubs
@@ -371,8 +381,8 @@ async function main() {
 
     if (modalFuncCallbackNum == 0)
       stream_stubs.getStreamSecrets(urn, keys);
-    else if (modalFuncCallbackNum == 1)
-      model_stubs.getModelDataScanElements(urn, keys);
+    //else if (modalFuncCallbackNum == 1)
+    //  model_stubs.getModelDataScanElements(urn, keys);
     else if (modalFuncCallbackNum == 2)
       model_stubs.getModelDataScanElementsUserOnlyWithHistory(urn, keys);
     else if (modalFuncCallbackNum == 3)
@@ -394,6 +404,37 @@ async function main() {
     }
   });
 
+  $('#stubInput_getScanOptions_OK').click(function() {
+    const urn = $("#stubInput_scanoptions_urn").val();
+    const keys = $("#stubInput_scanoptions_key").val();
+
+    const history = $("#stubInput_scanOptions_history").is(":checked");
+
+    const cf_std = $("#stubInput_scanOptions_cf_standard").is(":checked");
+    const cf_refs = $("#stubInput_scanOptions_cf_refs").is(":checked");
+    const cf_xrefs = $("#stubInput_scanOptions_cf_xrefs").is(":checked");
+    const cf_source = $("#stubInput_scanOptions_cf_source").is(":checked");
+    const cf_user = $("#stubInput_scanOptions_cf_user").is(":checked");
+
+    const colFamilies = [];
+    if (cf_std)
+      colFamilies.push(ColumnFamilies.Standard);
+    if (cf_refs)
+      colFamilies.push(ColumnFamilies.Refs);
+    if (cf_xrefs)
+      colFamilies.push(ColumnFamilies.Xrefs);
+    if (cf_source)
+      colFamilies.push(ColumnFamilies.Source);
+    if (cf_user)
+      colFamilies.push(ColumnFamilies.DtProperties);
+
+    if (modalFuncCallbackNum == 0)
+      model_stubs.getModelDataScanElements(urn, keys, history, colFamilies);
+    else {
+      alert("ASSERT: modalFuncCallbackNum not expected.");
+    }
+  });
+
 /*    $("#btn_restGetQualifiedProp").click(rest_stubs.restGetQualifiedProperty);
     $("#btn_restScanQualifiedProp").click(rest_stubs.restScanQualifiedProperty);*/
 
@@ -407,6 +448,8 @@ async function main() {
       prop_stubs.getQualifiedProperty(propCategory, propName);
     else if (modalFuncCallbackNum == 1)
       prop_stubs.scanForQualifiedProperty(propCategory, propName);
+    else if (modalFuncCallbackNum == 2)
+      prop_stubs.scanForQualifiedPropertyWithHistory(propCategory, propName);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }
@@ -435,17 +478,19 @@ async function main() {
     const searchVisibleOnly = $("#stubInput_searchVisibleOnly").is(":checked");
 
     td_stubs.findElementsWherePropValueEqualsX(propCategory, propName, matchStr, isRegEx, searchVisibleOnly, isCaseInsensitive);
-  });
+  });*/
 
-    // this gets called from above via modal dialog (#btn_findElementsWherePropValueEqualsX)
+    // this gets called from above via modal dialog (#btn_assignClassificaiton)
   $('#stubInput_setClassification_OK').click(function() {
     const classificationStr = $("#stubInput_classificationStr").val();
+    const modelURN = $("#stubInput_classificationURN").val();
+    const keys = $("#stubInput_classificationKeys").val();
 
-    td_stubs.assignClassification(classificationStr);
+    prop_stubs.assignClassification(classificationStr, modelURN, keys);
   });
 
 
-  $('#stubInput_getKey_OK').click(function() {
+  /*$('#stubInput_getKey_OK').click(function() {
     const key = $("#stubInput_key").val();
 
     if (modalFuncCallbackNum == 0)

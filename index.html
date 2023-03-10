@@ -68,19 +68,6 @@
               </div>
             </div>
             <div class="row form-group">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Group stubs -->
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuGroups" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Group Stubs
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuGroups">
-                  <button class="dropdown-item" type="button" id="btn_getGroups">GET Groups</button>
-                  <button class="dropdown-item" type="button" id="btn_getGroup">GET Group (by GroupURN)</button>
-                  <button class="dropdown-item" type="button" id="btn_getGroupMetrics">GET Group Metrics (by GroupURN)</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilitiesForGroup">GET Facilities for Group (by GroupURN)</button>
-                </div>
-              </div>
-            </div>
-            <div class="row form-group">
               <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Model stubs -->
                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuModels" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   Model Stubs
@@ -101,6 +88,32 @@
               </div>
             </div>
             <div class="row form-group">
+              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Property stubs -->
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuProps" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Property Stubs
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuProps">
+                  <button class="dropdown-item" type="button" id="btn_getQualifiedProp">Get Qualified Property</button>
+                  <button class="dropdown-item" type="button" id="btn_scanForQualifiedProp">Scan For Qualified Property (hisotry=false)</button>
+                  <button class="dropdown-item" type="button" id="btn_scanForQualifiedPropWithHistory">Scan For Qualified Property (history=true)</button>
+                  <button class="dropdown-item" type="button" id="btn_assignClassificaiton">Assign Classification</button>
+                </div>
+              </div>
+            </div>
+            <div class="row form-group">
+              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Group stubs -->
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuGroups" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Group Stubs
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuGroups">
+                  <button class="dropdown-item" type="button" id="btn_getGroups">GET Groups</button>
+                  <button class="dropdown-item" type="button" id="btn_getGroup">GET Group (by GroupURN)</button>
+                  <button class="dropdown-item" type="button" id="btn_getGroupMetrics">GET Group Metrics (by GroupURN)</button>
+                  <button class="dropdown-item" type="button" id="btn_getFacilitiesForGroup">GET Facilities for Group (by GroupURN)</button>
+                </div>
+              </div>
+            </div>
+            <div class="row form-group">
               <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Stream stubs -->
                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuStreams" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   Streams Stubs
@@ -115,17 +128,6 @@
                   <button class="dropdown-item" type="button" id="btn_getLastSeenStreamValues">POST Get Last Seen Stream Values</button>
                   <button class="dropdown-item" type="button" id="btn_getStreamRollup30Days">GET Stream Rollup (last 30 days)</button>
                   <button class="dropdown-item" type="button" id="btn_postGetStreamRollup30Days">POST Get Stream Rollup (last 30 days)</button>
-                </div>
-              </div>
-            </div>
-            <div class="row form-group">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Property stubs -->
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuProps" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Property Stubs
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuProps">
-                  <button class="dropdown-item" type="button" id="btn_getQualifiedProp">Get Qualified Property</button>
-                  <button class="dropdown-item" type="button" id="btn_scanForQualifiedProp">Scan For Qualified Property</button>
                 </div>
               </div>
             </div>
@@ -177,12 +179,13 @@
            $("#stubInputInject_GetPropertyName").load("./stubInput/getPropertyName.html", "#stubInput_getPropertyName");
            //$("#stubInputInject_GetPropertyFilter").load("./stubInput/getPropertyFilter.html", "#stubInput_getPropertyFilter");
            //$("#stubInputInject_SetPropertyValue").load("./stubInput/setPropertyValue.html", "#stubInput_setPropertyValue");
-          // $("#stubInputInject_SetClassification").load("./stubInput/setClassification.html", "#stubInput_setClassification");
+          $("#stubInputInject_SetClassification").load("./stubInput/setClassification.html", "#stubInput_setClassification");
           $("#stubInputInject_GetURN").load("./stubInput/getURN.html", "#stubInput_getURN");
           $("#stubInputInject_GetUserID").load("./stubInput/getUserID.html", "#stubInput_getUserID");
           $("#stubInputInject_GetUUID").load("./stubInput/getUUID.html", "#stubInput_getUUID");
           $("#stubInputInject_GetURNandUUID").load("./stubInput/getURNandUUID.html", "#stubInput_getURNandUUID");
           $("#stubInputInject_GetURNandKeys").load("./stubInput/getURNandKeys.html", "#stubInput_getURNandKeys");
+          $("#stubInputInject_GetScanOptions").load("./stubInput/getScanOptions.html", "#stubInput_getScanOptions");
            //$("#stubInputInject_GetKey").load("./stubInput/getKey.html", "#stubInput_getKey");
            //$("#stubInputInject_GetName").load("./stubInput/getName.html", "#stubInput_getName");
            //$("#stubInputInject_GetInt").load("./stubInput/getInt.html", "#stubInput_getInt");
@@ -190,13 +193,14 @@
       </script>
       <div id="stubInputInject_GetPropertyName"></div>
       <!--<div id="stubInputInject_GetPropertyFilter"></div>
-      <div id="stubInputInject_SetPropertyValue"></div>
-      <div id="stubInputInject_SetClassification"></div>-->
+      <div id="stubInputInject_SetPropertyValue"></div>-->
+      <div id="stubInputInject_SetClassification"></div>
       <div id="stubInputInject_GetURN"></div>
       <div id="stubInputInject_GetUserID"></div>
       <div id="stubInputInject_GetUUID"></div>
       <div id="stubInputInject_GetURNandUUID"></div>
       <div id="stubInputInject_GetURNandKeys"></div>
+      <div id="stubInputInject_GetScanOptions"></div>
       <!--<div id="stubInputInject_GetKey"></div>
       <div id="stubInputInject_GetName"></div>
       <div id="stubInputInject_GetInt"></div>-->

@@ -9,7 +9,7 @@
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="stubInput_setClassificationLabel">Enter Property Value</h5>
+            <h5 class="modal-title" id="stubInput_setClassificationLabel">Enter Classification Info</h5>
 
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
@@ -20,6 +20,15 @@
              <div class="md-form mb-5">
                <label data-error="wrong" data-success="right" for="stubInput_classificationStr">Classification (e.g., "03 00 00")</label>
                <input type="text" id="stubInput_classificationStr" class="form-control validate">
+             </div>
+             <div class="md-form mb-5">
+               <label data-error="wrong" data-success="right" for="stubInput_classificationURN">Model URN</label>
+               <input type="text" id="stubInput_classificationURN" class="form-control validate">
+             </div>
+             <div class="md-form mb-5">
+               <label data-error="wrong" data-success="right" for="stubInput_classificationKeys">Key1,Key2 (comma seperated)</label>
+               <input type="text" id="stubInput_classificationKeys" class="form-control validate">
+               <p class="font-italic text-secondary">E.g., "AQAAAwj062dFaLmCHxlFIrjjarUAAAAA"</p>
              </div>
            </div>
           </div>

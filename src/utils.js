@@ -276,3 +276,32 @@ export async function getThumbnailBlob() {
 
   return retBlob;
 }
+
+/***************************************************
+** FUNC: findClassificationNode()
+** DESC: look up a specifc node in the Facility Template
+**********************/
+
+export async function findClassificationNode(classificationStr) {
+
+  const requestPath = td_baseURL + `/twins/${facilityURN}/inlinetemplate`;
+  //console.log(requestPath);
+
+  let foundClassifNode = null;
+
+  await fetch(requestPath, makeReqOptsGET())
+    .then((response) => response.json())
+    .then((templ) => {
+      //showResult(templ);
+      for (let i=0; i<templ.classification.rows.length; i++) {
+        const rowObj = templ.classification.rows[i];   // rowObj is an Array[3], that looks like: ['01 30 00', 'Administrative Requirements', 2]
+        if (rowObj[0] === classificationStr) {
+          foundClassifNode = rowObj;
+          break;
+        }
+      }
+    })
+    .catch(error => console.log('error', error));
+
+  return foundClassifNode;
+}
