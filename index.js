@@ -11,7 +11,7 @@ import * as prop_stubs from './src/prop_stubs.js';
 import * as app_stubs from './src/app_stubs.js';
 import * as utils from './src/utils.js';
 
-import { ColumnFamilies } from "../sdk/dt-schema.js";
+import { ColumnFamilies } from "./sdk/dt-schema.js";
 
 /***************************************************
 ** FUNC: getAllFacilities()
