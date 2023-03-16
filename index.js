@@ -8,7 +8,7 @@ import * as model_stubs from './src/model_stubs.js';
 import * as misc_stubs from './src/misc_stubs.js';
 import * as stream_stubs from './src/stream_stubs.js';
 import * as prop_stubs from './src/prop_stubs.js';
-import * as tdApp_stubs from './src/app_stubs.js';
+import * as app_stubs from './src/app_stubs.js';
 import * as utils from './src/utils.js';
 
 import { ColumnFamilies } from "../sdk/dt-schema.js";
@@ -177,24 +177,6 @@ async function main() {
     $('#stubInput_getURN').modal('show');
     modalFuncCallbackNum = 11;
   });
-  $("#btn_getModelDataScan").click(function() {
-    $('#stubInput_getURN').modal('show');
-    modalFuncCallbackNum = 12;
-  });
-  $("#btn_getModelDataScanElements").click(function() {
-    $('#stubInput_getScanOptions').modal('show');
-    modalFuncCallbackNum = 0;
-  });
-  $("#btn_getModelDataScanElementsUserOnlyWithHistory").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
-    modalFuncCallbackNum = 2;
-  });
-  $("#btn_getModelDataScanElementsFullChangeHistory").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
-    modalFuncCallbackNum = 3;
-  });
-
-  $("#btn_testScan").click(model_stubs.testScan);
 
     // Property Stubs
   $("#btn_getQualifiedProp").click(function() {
@@ -212,6 +194,22 @@ async function main() {
   $("#btn_assignClassificaiton").click(function() {
     $('#stubInput_setClassification').modal('show');
     modalFuncCallbackNum = 0;
+  });
+  $("#btn_getScanBruteForce").click(function() {
+    $('#stubInput_getURN').modal('show');
+    modalFuncCallbackNum = 12;
+  });
+  $("#btn_getScanElementsOptions").click(function() {
+    $('#stubInput_getScanOptions').modal('show');
+    modalFuncCallbackNum = 0;
+  });
+  $("#btn_getScanElementsUserOnlyWithHistory").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 2;
+  });
+  $("#btn_getScanElementsFullChangeHistory").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 3;
   });
 
 
@@ -262,7 +260,7 @@ async function main() {
 
 
     // App Stubs
-  $("#btn_getSavedViews").click(tdApp_stubs.getSavedViews);
+  $("#btn_getSavedViews").click(app_stubs.getSavedViews);
   $("#btn_getSavedViewByUUID").click(function() {
       $('#stubInput_getUUID').modal('show');
       modalFuncCallbackNum = 0;
@@ -298,7 +296,7 @@ async function main() {
       modalFuncCallbackNum = 2;
     });
 
-  $("#btn_getPreferences").click(tdApp_stubs.getPreferences);
+  $("#btn_getPreferences").click(app_stubs.getPreferences);
 
 
 
@@ -323,15 +321,15 @@ async function main() {
     else if (modalFuncCallbackNum == 7)
       model_stubs.getModel(urn);
     else if (modalFuncCallbackNum == 8)
-      tdApp_stubs.getClassifications(urn);
+      app_stubs.getClassifications(urn);
     else if (modalFuncCallbackNum == 9)
-      tdApp_stubs.getFacilityTemplates(urn);
+      app_stubs.getFacilityTemplates(urn);
     else if (modalFuncCallbackNum == 10)
-      tdApp_stubs.getParameters(urn);
+      app_stubs.getParameters(urn);
     else if (modalFuncCallbackNum == 11)
       model_stubs.getModelDataSchema(urn);
     else if (modalFuncCallbackNum == 12)
-      model_stubs.getModelDataScan(urn);
+      prop_stubs.getScanBruteForce(urn);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }
@@ -354,7 +352,7 @@ async function main() {
     const uuid = $("#stubInput_uuid").val();
 
     if (modalFuncCallbackNum == 0)
-      tdApp_stubs.getSavedViewByUUID(uuid);
+      app_stubs.getSavedViewByUUID(uuid);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }
@@ -365,11 +363,11 @@ async function main() {
     const uuid = $("#stubInput_urnuuid_uuid").val();
 
     if (modalFuncCallbackNum == 0)
-      tdApp_stubs.getClassificationByUUID(urn, uuid);
+      app_stubs.getClassificationByUUID(urn, uuid);
     else if (modalFuncCallbackNum == 1)
-      tdApp_stubs.getFacilityTemplateByUUID(urn, uuid);
+      app_stubs.getFacilityTemplateByUUID(urn, uuid);
     else if (modalFuncCallbackNum == 2)
-      tdApp_stubs.getParameterByUUID(urn, uuid);
+      app_stubs.getParameterByUUID(urn, uuid);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }
@@ -381,12 +379,10 @@ async function main() {
 
     if (modalFuncCallbackNum == 0)
       stream_stubs.getStreamSecrets(urn, keys);
-    //else if (modalFuncCallbackNum == 1)
-    //  model_stubs.getModelDataScanElements(urn, keys);
     else if (modalFuncCallbackNum == 2)
-      model_stubs.getModelDataScanElementsUserOnlyWithHistory(urn, keys);
+      prop_stubs.getScanElementsUserOnlyWithHistory(urn, keys);
     else if (modalFuncCallbackNum == 3)
-      model_stubs.getModelDataScanElementsFullChangeHistory(urn, keys);
+      prop_stubs.getScanElementsFullChangeHistory(urn, keys);
     else if (modalFuncCallbackNum == 4)
       stream_stubs.getStreamValues30Days(urn, keys);
     else if (modalFuncCallbackNum == 5)
@@ -429,7 +425,7 @@ async function main() {
       colFamilies.push(ColumnFamilies.DtProperties);
 
     if (modalFuncCallbackNum == 0)
-      model_stubs.getModelDataScanElements(urn, keys, history, colFamilies);
+      prop_stubs.getScanElementsOptions(urn, keys, history, colFamilies);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }

@@ -1,6 +1,6 @@
 
 import * as utils from './utils.js';
-
+import { ColumnFamilies } from "../sdk/dt-schema.js";
 
 /***************************************************
 ** FUNC: getQualifiedProperty()
@@ -12,10 +12,10 @@ export async function getQualifiedProperty(categoryName, propName) {
   console.group("STUB: getQualifiedProperty()");
 
   const models = await utils.getListOfModels();
-  console.log("Models", models);
 
   for (let i=0; i<models.length; i++) {
     console.group(`Model[${i}]--> ${models[i].label}`);
+    console.log(`Model URN: ${models[i].modelId}`);
 
     const qualProp = await utils.getQualifiedProperty(models[i].modelId, categoryName, propName);
     // We could do something with the property here, buty the utils function already printed it out for us
@@ -142,6 +142,128 @@ export async function assignClassification(classificationStr, modelURN, elementK
 
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
   const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/mutate`;
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: getScanBruteForce()
+** DESC: Get all the main properties for elements in the database
+**********************/
+
+export async function getScanBruteForce(modelURN) {
+
+  console.group("STUB: getScanBruteForce()");
+
+  //const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;    // TBD: this has been flaky!
+  const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/scan`;
+
+  console.log(requestPath);
+
+  await fetch(requestPath, utils.makeReqOptsGET())
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: getScanElementsOptions()
+** DESC: get the properties for a specific set of Keys
+**********************/
+
+export async function getScanElementsOptions(modelURN, elemKeys, history, colFamilies) {
+
+  console.group("STUB: getScanElementsOptions()");
+
+  const elemKeysArray = elemKeys.split(',');
+  console.log("Element keys", elemKeysArray);
+
+  let bodyPayload = JSON.stringify({
+    families: colFamilies,
+    includeHistory: history,
+    keys: elemKeysArray
+  });
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+
+  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: getScanElementsUserOnlyWithHistory()
+** DESC: get only the user-defined properties for a specific set of Keys, and include history
+**********************/
+
+export async function getScanElementsUserOnlyWithHistory(modelURN, elemKeys) {
+
+  console.group("STUB: getScanElementsUserOnlyWithHistory()");
+
+  const elemKeysArray = elemKeys.split(',');
+  console.log("Element keys", elemKeysArray);
+
+  let bodyPayload = JSON.stringify({
+    families: [
+      ColumnFamilies.DtProperties
+    ],
+    includeHistory: true,
+    keys: elemKeysArray
+  });
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+
+  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: getScanElementsFullChangeHistory()
+** DESC: get the full change history of all properties for the given elements
+**********************/
+
+export async function getScanElementsFullChangeHistory(modelURN, elemKeys) {
+
+  console.group("STUB: getScanElementsFullChangeHistory()");
+
+  const elemKeysArray = elemKeys.split(',');
+  console.log("Element keys", elemKeysArray);
+
+  let bodyPayload = JSON.stringify({
+    includeHistory: true,
+    keys: elemKeysArray
+  });
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+
+  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
+
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
