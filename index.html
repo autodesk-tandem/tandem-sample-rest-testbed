@@ -89,13 +89,15 @@
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuProps">
                   <button class="dropdown-item" type="button" id="btn_getQualifiedProp">Get Qualified Property</button>
+                  <button class="dropdown-item" type="button" id="btn_scanForUserProps">Scan For All User-defined Properties</button>
                   <button class="dropdown-item" type="button" id="btn_scanForQualifiedProp">Scan For Qualified Property (hisotry=false)</button>
                   <button class="dropdown-item" type="button" id="btn_scanForQualifiedPropWithHistory">Scan For Qualified Property (history=true)</button>
+                  <button class="dropdown-item" type="button" id="btn_findElementsWherePropValueEqualsX">Find Elements Where PropValue = X</button>
                   <button class="dropdown-item" type="button" id="btn_assignClassificaiton">Assign Classification</button>
                   <button class="dropdown-item" type="button" id="btn_getScanBruteForce">GET /scan (brute force)</button>
                   <button class="dropdown-item" type="button" id="btn_getScanElementsOptions">POST /scan (Specific Elements, with Options)</button>
-                  <button class="dropdown-item" type="button" id="btn_getScanElementsUserOnlyWithHistory">POST /scan (Specific Elements, User-defined props, history)</button>
                   <button class="dropdown-item" type="button" id="btn_getScanElementsFullChangeHistory">POST /scan (Specific Elements, Full change history)</button>
+                  <button class="dropdown-item" type="button" id="btn_setPropertyOnElements">POST /mutate Set Property Value</button>
                 </div>
               </div>
             </div>
@@ -175,9 +177,9 @@
               with the given input -->
       <script>
          $(function(){
-           $("#stubInputInject_GetPropertyName").load("./stubInput/getPropertyName.html", "#stubInput_getPropertyName");
-           //$("#stubInputInject_GetPropertyFilter").load("./stubInput/getPropertyFilter.html", "#stubInput_getPropertyFilter");
-           //$("#stubInputInject_SetPropertyValue").load("./stubInput/setPropertyValue.html", "#stubInput_setPropertyValue");
+          $("#stubInputInject_GetPropertyName").load("./stubInput/getPropertyName.html", "#stubInput_getPropertyName");
+          $("#stubInputInject_GetPropertyFilter").load("./stubInput/getPropertyFilter.html", "#stubInput_getPropertyFilter");
+          $("#stubInputInject_SetPropertyValue").load("./stubInput/setPropertyValue.html", "#stubInput_setPropertyValue");
           $("#stubInputInject_SetClassification").load("./stubInput/setClassification.html", "#stubInput_setClassification");
           $("#stubInputInject_GetURN").load("./stubInput/getURN.html", "#stubInput_getURN");
           $("#stubInputInject_GetUserID").load("./stubInput/getUserID.html", "#stubInput_getUserID");
@@ -191,8 +193,8 @@
          });
       </script>
       <div id="stubInputInject_GetPropertyName"></div>
-      <!--<div id="stubInputInject_GetPropertyFilter"></div>
-      <div id="stubInputInject_SetPropertyValue"></div>-->
+      <div id="stubInputInject_GetPropertyFilter"></div>
+      <div id="stubInputInject_SetPropertyValue"></div>
       <div id="stubInputInject_SetClassification"></div>
       <div id="stubInputInject_GetURN"></div>
       <div id="stubInputInject_GetUserID"></div>

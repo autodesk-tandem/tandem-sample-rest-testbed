@@ -1,6 +1,7 @@
 
 import * as utils from './utils.js';
 import { ColumnFamilies } from "../sdk/dt-schema.js";
+import * as sdk from '../sdk/Attribute.js';
 
 /***************************************************
 ** FUNC: getQualifiedProperty()
@@ -27,6 +28,49 @@ export async function getQualifiedProperty(categoryName, propName) {
 }
 
 /***************************************************
+** FUNC: scanForUserProps()
+** DESC: scan the DB for elements with a given property
+**********************/
+
+export async function scanForUserProps() {
+
+  console.group("STUB: scanForUserProps()");
+
+  const models = await utils.getListOfModels();
+  //console.log("Models", models);
+
+  const showHistory = false;  // change this if you want history
+
+  for (let i=0; i<models.length; i++) {
+    console.group(`Model[${i}]--> ${models[i].label}`);
+    console.log(`Model URN: ${models[i].modelId}`);
+
+    const bodyPayload = JSON.stringify({
+        families: [
+          "z"
+        ],
+        includeHistory: showHistory
+      });
+
+    const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+    //const requestPath = utils.td_baseURL + `/modeldata/${models[i].modelId}/scan`;
+    const requestPath = utils.td_baseURL_v2 + `/modeldata/${models[i].modelId}/scan`; // NOTE: use v2 of /scan because it returns full Keys
+    console.log(requestPath);
+
+    await fetch(requestPath, reqOpts)
+      .then((response) => response.json())
+      .then((obj) => {
+        utils.showResult(obj);
+      })
+      .catch(error => console.log('error', error));
+
+    console.groupEnd();
+  }
+
+  console.groupEnd();
+}
+
+/***************************************************
 ** FUNC: scanForQualifiedPropertyImp()
 ** DESC: scan the DB for elements with a given property
 **********************/
@@ -42,7 +86,10 @@ export async function scanForQualifiedPropertyImp(categoryName, propertyName, sh
 
     const qualProp = await utils.getQualifiedProperty(models[i].modelId, categoryName, propertyName);
     if (qualProp) {
-      const bodyPayload = JSON.stringify({
+      const propValues = await utils.scanForProperty(qualProp, models[i].modelId, showHistory);
+      utils.showResult(propValues);
+
+    /*  const bodyPayload = JSON.stringify({
         qualifiedColumns: [
           qualProp.id      // NOTE: you could list more if you know the qualifiedPropNames
         ],
@@ -58,7 +105,7 @@ export async function scanForQualifiedPropertyImp(categoryName, propertyName, sh
         .then((obj) => {
           utils.showResult(obj);
         })
-        .catch(error => console.log('error', error));
+        .catch(error => console.log('error', error));*/
     }
 
     console.groupEnd();
@@ -89,6 +136,74 @@ export async function scanForQualifiedPropertyWithHistory(categoryName, property
   console.group("STUB: scanForQualifiedPropertyWithHistory()");
 
   await scanForQualifiedPropertyImp(categoryName, propertyName, true);
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: findElementsWherePropValueEqualsX()
+** DESC: get a specific property across multiple items selected where the property value is what
+** we are looking for.   EXAMPLE: find all elements where "Common | Name" = "Basic Wall".  You can
+** also specify whether to treat the matchStr as a Javascript regular expression, and you can specify
+** whether to only search the elements that are visible in the viewer, or search all elements in the db
+**********************/
+
+export async function findElementsWherePropValueEqualsX(propCategory, propName, matchStr, isRegEx, isCaseInsensitive) {
+
+  console.group("STUB: findElementsWherePropValueEqualsX()");
+
+  const models = await utils.getListOfModels();
+
+  for (let i=0; i<models.length; i++) {
+    console.group(`Model[${i}]--> ${models[i].label}`);
+    console.log(`Model URN: ${models[i].modelId}`);
+
+    const qualProp = await utils.getQualifiedProperty(models[i].modelId, propCategory, propName);
+    if (qualProp) {
+      const rawProps = await utils.scanForProperty(qualProp, models[i].modelId, false);
+      const propValues = await utils.digOutPropertyValues(models[i].modelId, qualProp, rawProps, false);
+      if (propValues && propValues.length) {
+        console.log("Raw properties returned-->", rawProps);
+        console.log("Extracted properties-->", propValues);
+
+          // now see if they match our expression
+        let matchingProps = null;
+        if (isRegEx) {
+          let regEx = null;
+          if (isCaseInsensitive)
+            regEx = new RegExp(matchStr, "i");
+          else
+            regEx = new RegExp(matchStr);
+
+          console.log("Doing RegularExpression match for:", regEx);
+          matchingProps = propValues.filter(prop => regEx.test(prop.value)); // filter out the ones that match our query using a RegEx
+        }
+        else {
+          if (isCaseInsensitive) {
+            console.log(`Doing case insensitive match for: "${matchStr}..."`);
+            matchingProps = propValues.filter(prop => prop.value.toLowerCase() === matchStr.toLowerCase());   // filter out the ones that match our query exactly
+          }
+          else {
+            console.log(`Doing literal match for: "${matchStr}..."`);
+            matchingProps = propValues.filter(prop => prop.value === matchStr);   // filter out the ones that match our query exactly
+          }
+        }
+
+        if (matchingProps.length) {
+          console.log("Matching property values-->");
+          console.table(matchingProps);
+        }
+        else {
+          console.log("No elements found with that value");
+        }
+      }
+      else {
+        console.log("Could not find any elements with that property: ", propName);
+      }
+    }
+
+    console.groupEnd();
+  }
 
   console.groupEnd();
 }
@@ -211,40 +326,6 @@ export async function getScanElementsOptions(modelURN, elemKeys, history, colFam
 }
 
 /***************************************************
-** FUNC: getScanElementsUserOnlyWithHistory()
-** DESC: get only the user-defined properties for a specific set of Keys, and include history
-**********************/
-
-export async function getScanElementsUserOnlyWithHistory(modelURN, elemKeys) {
-
-  console.group("STUB: getScanElementsUserOnlyWithHistory()");
-
-  const elemKeysArray = elemKeys.split(',');
-  console.log("Element keys", elemKeysArray);
-
-  let bodyPayload = JSON.stringify({
-    families: [
-      ColumnFamilies.DtProperties
-    ],
-    includeHistory: true,
-    keys: elemKeysArray
-  });
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
-
-  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
-  console.log(requestPath);
-
-  await fetch(requestPath, reqOpts)
-    .then((response) => response.json())
-    .then((obj) => {
-      utils.showResult(obj);
-    })
-    .catch(error => console.log('error', error));
-
-  console.groupEnd();
-}
-
-/***************************************************
 ** FUNC: getScanElementsFullChangeHistory()
 ** DESC: get the full change history of all properties for the given elements
 **********************/
@@ -264,6 +345,60 @@ export async function getScanElementsFullChangeHistory(modelURN, elemKeys) {
 
   const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
 
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: setPropertySelSet()
+** DESC: set prop values on the selected entities
+**********************/
+
+export async function setPropertySelSet(propCategory, propName, propVal, modelURN, elementKeys) {
+
+  const qualProp = await utils.getQualifiedProperty(modelURN, propCategory, propName);
+  if (qualProp == null) {
+    alert("Could not find that property in the current Facility Template.");
+    return;
+  }
+
+  const elementKeysArray = elementKeys.split(',');
+  if (elementKeysArray.length == 0) {
+    alert("ERROR: no element keys specified.");
+    return;
+  }
+
+  console.group("STUB: setPropertySelSet()");
+
+  const typedValue =  sdk.parseInputAttrValue(propVal, qualProp.dataType);  // convert from the String in dialog input to proper data type
+
+  console.log("Element keys:", elementKeysArray);
+  console.log(`Setting value for "${propCategory} | ${propName}" = `, typedValue);
+
+    // create the mutations array. Number of mutations must match number of elements, even if they all
+    // the same mutation.
+  const mutsArray = [];
+  for (let i=0; i<elementKeysArray.length; i++) {
+    const mutObj = ["i", qualProp.fam, qualProp.col, typedValue];  // "i"=insert
+    mutsArray.push(mutObj);
+  }
+    //  create the payload for the call to /mutate
+  const bodyPayload = JSON.stringify({
+    keys: elementKeysArray,
+    muts: mutsArray,
+    desc: "Updated from REST TestBedApp"
+  });
+
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/mutate`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)

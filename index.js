@@ -54,6 +54,9 @@ async function updateThumbnailImage() {
   if (thumbnailBlobURL) {
     document.getElementById("img_thumbnailPlaceholder").src = thumbnailBlobURL;
   }
+  else {
+    document.getElementById("img_thumbnailPlaceholder").src = "./images/no_thumbnail.png";
+  }
 }
 
 /***************************************************
@@ -183,6 +186,9 @@ async function main() {
     $('#stubInput_getPropertyName').modal('show');
     modalFuncCallbackNum = 0;
   });
+
+  $("#btn_scanForUserProps").click(prop_stubs.scanForUserProps);
+
   $("#btn_scanForQualifiedProp").click(function() {
     $('#stubInput_getPropertyName').modal('show');
     modalFuncCallbackNum = 1;
@@ -190,6 +196,10 @@ async function main() {
   $("#btn_scanForQualifiedPropWithHistory").click(function() {
     $('#stubInput_getPropertyName').modal('show');
     modalFuncCallbackNum = 2;
+  });
+  $("#btn_findElementsWherePropValueEqualsX").click(function() {
+    $('#stubInput_getPropertyFilter').modal('show');
+    modalFuncCallbackNum = 0;
   });
   $("#btn_assignClassificaiton").click(function() {
     $('#stubInput_setClassification').modal('show');
@@ -203,13 +213,13 @@ async function main() {
     $('#stubInput_getScanOptions').modal('show');
     modalFuncCallbackNum = 0;
   });
-  $("#btn_getScanElementsUserOnlyWithHistory").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
-    modalFuncCallbackNum = 2;
-  });
   $("#btn_getScanElementsFullChangeHistory").click(function() {
     $('#stubInput_getURNandKeys').modal('show');
     modalFuncCallbackNum = 3;
+  });
+  $("#btn_setPropertyOnElements").click(function() {
+    $('#stubInput_setPropertyValue').modal('show');
+    modalFuncCallbackNum = 0;
   });
 
 
@@ -379,8 +389,6 @@ async function main() {
 
     if (modalFuncCallbackNum == 0)
       stream_stubs.getStreamSecrets(urn, keys);
-    else if (modalFuncCallbackNum == 2)
-      prop_stubs.getScanElementsUserOnlyWithHistory(urn, keys);
     else if (modalFuncCallbackNum == 3)
       prop_stubs.getScanElementsFullChangeHistory(urn, keys);
     else if (modalFuncCallbackNum == 4)
@@ -452,13 +460,15 @@ async function main() {
   });
 
     // this gets called from above via modal dialog (#btn_setPropertySelSet, and others)
-/*  $('#stubInput_setPropertyValue_OK').click(function() {
+  $('#stubInput_setPropertyValue_OK').click(function() {
     const propCategory = $("#stubInput_propCategorySet").val();
     const propName = $("#stubInput_propNameSet").val();
     const propVal = $("#stubInput_propValSet").val();
+    const modelURN = $("#stubInput_propURNSet").val();
+    const keys = $("#stubInput_propKeysSet").val();
 
     if (modalFuncCallbackNum == 0)
-      td_stubs.setPropertySelSet(propCategory, propName, propVal);
+      prop_stubs.setPropertySelSet(propCategory, propName, propVal, modelURN, keys);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }
@@ -469,12 +479,11 @@ async function main() {
     const propCategory = $("#stubInput_propCategoryFilter").val();
     const propName = $("#stubInput_propNameFilter").val();
     const matchStr = $("#stubInput_propValFilter").val();
-    const isCaseInsensitive = $("#stubInput_propValIsCaseInsensitive").is(":checked");
     const isRegEx = $("#stubInput_propValIsRegEx").is(":checked");
-    const searchVisibleOnly = $("#stubInput_searchVisibleOnly").is(":checked");
+    const isCaseInsensitive = $("#stubInput_propValIsCaseInsensitive").is(":checked");
 
-    td_stubs.findElementsWherePropValueEqualsX(propCategory, propName, matchStr, isRegEx, searchVisibleOnly, isCaseInsensitive);
-  });*/
+    prop_stubs.findElementsWherePropValueEqualsX(propCategory, propName, matchStr, isRegEx, isCaseInsensitive);
+  });
 
     // this gets called from above via modal dialog (#btn_assignClassificaiton)
   $('#stubInput_setClassification_OK').click(function() {

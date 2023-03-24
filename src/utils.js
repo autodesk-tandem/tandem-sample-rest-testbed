@@ -213,6 +213,75 @@ export async function getQualifiedProperty(modelURN, categoryName, propName) {
 }
 
 /***************************************************
+** FUNC: digOutPropertyValues()
+** DESC: build a simple to deal with table of propValues for easy processing later.  We include enough info,
+**  so that some processing function later can do whatever is necessary (use the Key, the Model ID, ... whatever)
+**  If returnHistory=true, then it will return arrays for the property value, otherwise it will just return a single "last value".
+**********************/
+
+export async function digOutPropertyValues(modelURN, qualProp, rawProps, returnHistory) {
+
+  const propValues = [];
+
+  for (let i=1; i<rawProps.length; i++) {   // NOTE: we start at index 1 because "version" is the first element in the array
+    const rowObj = rawProps[i];
+    if (rowObj && (rowObj[qualProp.id] != null)) {
+      if (returnHistory) {
+          // return an array of values for the property
+        propValues.push({ modelURN: modelURN, key: rowObj.k, prop: qualProp.id, value: rowObj[qualProp.id] });  // push a new object that keeps track of the triple
+      }
+      else {
+          // just return the latest value
+        propValues.push({ modelURN: modelURN, key: rowObj.k, prop: qualProp.id, value: rowObj[qualProp.id][0] });  // push a new object that keeps track of the triple
+      }
+    }
+  }
+
+  return propValues;
+}
+
+/***************************************************
+** FUNC: scanForProperty()
+** DESC: scan for all elements with this property
+**********************/
+
+export async function scanForProperty(qualProp, modelURN, showHistory) {
+
+  let foundProps = null;
+
+    // add the qualified ColumnFamily and if it is an override, add the original one too
+  const qualColumns = [qualProp.id];  // use the one we were passed in
+  if (qualProp.fam === 'n') {
+      // if this is an overrride, put in the origCol too
+    if (qualProp.col[0] === '!') {
+      const origCol = `${qualProp.fam}:${qualProp.col.slice(1)}`;
+      qualColumns.push(origCol);
+    }
+    else {
+      const overrideCol = `${qualProp.fam}:!${qualProp.col}`;
+      qualColumns.push(overrideCol);
+    }
+  }
+
+  const bodyPayload = JSON.stringify({
+    qualifiedColumns: qualColumns,
+    includeHistory: showHistory
+  });
+  const reqOpts = makeReqOptsPOST(bodyPayload);
+  const requestPath = td_baseURL_v2 + `/modeldata/${modelURN}/scan`; // NOTE: use v2 of /scan because it returns full Keys
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      foundProps = obj;
+    })
+    .catch(error => console.log('error', error));
+
+  return foundProps;
+}
+
+/***************************************************
 ** FUNC: blobToBlobUrl()
 ** DESC: convert a blob to a BlobUrl
 **********************/
@@ -238,17 +307,14 @@ export async function getThumbnailBlobURL() {
 
   let retBlobURL = null;
 
-  await fetch(requestPath, requestOpts)
-    .then((response) => response.blob())
-    .then((blob) => {
-      //console.log(blob);
-      let b64encoded = blobToBlobUrl(blob);
-      return b64encoded;
-    })
-    .then((blobURL) => {
-      retBlobURL = blobURL;
-    })
-    .catch(error => console.log('error', error));
+  const response = await fetch(requestPath, requestOpts);
+  if (response.ok) {
+    const blob = await response.blob();
+    retBlobURL = await blobToBlobUrl(blob);
+  }
+  else {
+    console.log("ERROR: Could not retrieve a Thumbnail image for this facility.");
+  }
 
   return retBlobURL;
 }
