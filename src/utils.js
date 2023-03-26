@@ -28,6 +28,24 @@ export function makeReqOptsGET() {
 }
 
 /***************************************************
+** FUNC: makeReqOptsGET_noAuth()
+** DESC: pull this out to consistently generate the Request Options
+**********************/
+
+export function makeReqOptsGET_noAuth() {
+  const myHeadersGET = new Headers();
+  //myHeadersGET.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
+
+  const requestOptionsGET = {
+    method: 'GET',
+    headers: myHeadersGET,
+    redirect: 'follow'
+  };
+
+  return requestOptionsGET;
+}
+
+/***************************************************
 ** FUNC: makeReqOptsPOST()
 ** DESC: pull this out to consistently generate the Request Options
 **********************/

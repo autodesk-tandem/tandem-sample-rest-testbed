@@ -14,7 +14,8 @@ export async function getHealth() {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.makeReqOptsGET())
+  //await fetch(requestPath, utils.makeReqOptsGET_noAuth())
+  await fetch(requestPath, utils.makeReqOptsGET())  // TBD: Still trying to figure out why this doesn't work!!!
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);

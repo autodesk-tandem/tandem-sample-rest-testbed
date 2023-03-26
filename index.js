@@ -224,7 +224,6 @@ async function main() {
 
 
     // Stream Stubs
-  $("#btn_getStreamsFromDefaultModel").click(stream_stubs.getStreamsFromDefaultModel);
   $("#btn_getStreamsFromDefaultModelPOST").click(stream_stubs.getStreamsFromDefaultModelPOST);
 
   $("#btn_getStreamSecrets").click(function() {
@@ -240,6 +239,10 @@ async function main() {
   $("#btn_getStreamValues30Days").click(function() {
     $('#stubInput_getURNandKeys').modal('show');
     modalFuncCallbackNum = 4;
+  });
+  $("#btn_getStreamValues365Days").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 10;
   });
   $("#btn_postNewStreamValues").click(function() {
     $('#stubInput_getURNandKeys').modal('show');
@@ -403,6 +406,8 @@ async function main() {
       stream_stubs.getStreamRollupsLast30Days(urn, keys);
     else if (modalFuncCallbackNum == 9)
       stream_stubs.postGetStreamRollupsLast30Days(urn, keys);
+    else if (modalFuncCallbackNum == 10)
+      stream_stubs.getStreamValues365Days(urn, keys);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }

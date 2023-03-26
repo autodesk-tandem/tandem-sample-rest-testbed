@@ -2,31 +2,6 @@
 import * as utils from './utils.js';
 import { ColumnFamilies, QC, ElementFlags } from "../sdk/dt-schema.js";
 
-/***************************************************
-** FUNC: getStreamsFromDefaultModel()
-** DESC: scan the DB for elements that are of type Stream
-**********************/
-
-export async function getStreamsFromDefaultModel() {
-
-  console.group("STUB: getStreamsFromDefaultModel()");
-
-  const defaultModelURN = utils.facilityURN.replace("urn:adsk.dtt:", "urn:adsk.dtm:");
-  console.log("Default model", defaultModelURN);
-
-  const requestPath = utils.td_baseURL + `/modeldata/${defaultModelURN}/scan`;  // TBD: doesn't work for V2
-  //const requestPath = utils.td_baseURL_v2 + `/modeldata/${defaultModelURN}/scan`;
-  console.log(requestPath);
-
-  await fetch(requestPath, utils.makeReqOptsGET())
-    .then((response) => response.json())
-    .then((obj) => {
-      utils.showResult(obj);
-    })
-    .catch(error => console.log('error', error));
-
-  console.groupEnd();
-}
 
 /***************************************************
 ** FUNC: getStreamsFromDefaultModelPOST()
@@ -127,6 +102,27 @@ export async function resetStreamSecrets(modelURN, streamKeys) {
 }
 
 /***************************************************
+** FUNC: prettyPrintStreamValues()
+** DESC: print out timeseries data in human readable form
+**********************/
+
+export function prettyPrintStreamValues(streamDataObj) {
+
+    // iterate over the map structure and make a nice, readable table
+  for (const [propKey, value] of Object.entries(streamDataObj)) { // one entry for each parameter used to store timeseries data
+    let timeseriesData = [];
+    for (const [timestampKey, value2] of Object.entries(value)) { // another map with all the timestamps and values
+      const timestamp = parseInt(timestampKey); // convert timestamp to human readable date
+      const date = new Date(timestamp);
+      timeseriesData.push( { propId: propKey, value: value2, timestamp: timestamp, date: date.toString()} );
+    }
+    if (timeseriesData.length) {
+      console.table(timeseriesData);
+    }
+  }
+}
+
+/***************************************************
 ** FUNC: getStreamValues30Days()
 ** DESC: get stream values for a given time range (hardwired here to 30 days)
 **********************/
@@ -162,6 +158,51 @@ export async function getStreamValues30Days(defaultModelURN, streamKeys) {
       .then((response) => response.json())
       .then((obj) => {
         utils.showResult(obj);
+        prettyPrintStreamValues(obj);
+      })
+      .catch(error => console.log('error', error));
+  }
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: getStreamValues365Days()
+** DESC: get stream values for a given time range (hardwired here to 365 days)
+**********************/
+
+export async function getStreamValues365Days(defaultModelURN, streamKeys) {
+
+  console.group("STUB: getStreamValues365Days()");
+
+  const streamKeysArray = streamKeys.split(',');
+  console.log("Stream keys:", streamKeysArray);
+
+  const dateNow = new Date();
+  const timestampEnd = dateNow.getTime();
+  console.log("Time Now:", dateNow, timestampEnd);
+
+  const dateMinus365 = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+  const timestampStart = dateMinus365.getTime();
+  console.log("1 Year Ago:", dateMinus365, timestampStart);
+
+  console.log("NOTE: API allows any time range, plus options to limit returned values, sort, and isolate a specific substream parameter.")
+
+  for (let i=0; i<streamKeysArray.length; i++) {
+    // NOTE: we could also use other param args:
+    //    &limit=N (limit to N number of values)
+    //    &sort (asc or desc)
+    //    &substream=XYZ (only return a specific parameter)
+    const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams/${streamKeysArray[i]}?from=${timestampStart}&to=${timestampEnd}`;
+
+    console.log(`Stream ${streamKeysArray[i]}-->`)
+    console.log(requestPath);
+
+    await fetch(requestPath, utils.makeReqOptsGET())
+      .then((response) => response.json())
+      .then((obj) => {
+        utils.showResult(obj);
+        prettyPrintStreamValues(obj);
       })
       .catch(error => console.log('error', error));
   }
@@ -190,7 +231,7 @@ export async function postNewStreamValues(defaultModelURN, streamKeys) {
     // make up some arbitrary values here
     // NOTE: these will likely not be mapped to parameters in your facility for this particular stream.
     // See notes on how to setup the parameter mapping in Tandem so that these will flow into long-term storage
-  let bodyPayload = JSON.stringify({
+  let bodyPayload = JSON.stringify({  // NOTE: This could also be an Array of objects
     test_val1: 22.88,
     test_val2: 33.99,
     ts: timestamp
