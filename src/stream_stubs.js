@@ -123,6 +123,29 @@ export function prettyPrintStreamValues(streamDataObj) {
 }
 
 /***************************************************
+** FUNC: prettyPrintLastSeenStreamValues()
+** DESC: print out timeseries data in human readable form
+**********************/
+
+export function prettyPrintLastSeenStreamValues(streamDataObj) {
+
+    // iterate over the map structure and make a nice, readable table
+  let timeseriesData = [];
+  for (const [streamKey, streamValue] of Object.entries(streamDataObj)) { // one entry for each stream requested
+    for (const [propKey, propValues] of Object.entries(streamValue)) { // one entry for each parameter used to store timeseries data
+      for (const [timestampKey, propVal] of Object.entries(propValues)) { // another map with all the timestamps and values
+        const timestamp = parseInt(timestampKey); // convert timestamp to human readable date
+        const date = new Date(timestamp);
+        timeseriesData.push( { streamKey: streamKey, propId: propKey, value: propVal, timestamp: timestamp, date: date.toString()} );
+      }
+    }
+  }
+  if (timeseriesData.length) {
+    console.table(timeseriesData);
+  }
+}
+
+/***************************************************
 ** FUNC: getStreamValues30Days()
 ** DESC: get stream values for a given time range (hardwired here to 30 days)
 **********************/
@@ -281,6 +304,7 @@ export async function getLastSeenStreamValues(defaultModelURN, streamKeys) {
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
+      prettyPrintLastSeenStreamValues(obj);
     })
     .catch(error => console.log('error', error));
 
