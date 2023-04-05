@@ -84,28 +84,13 @@ export async function scanForQualifiedPropertyImp(categoryName, propertyName, sh
     console.group(`Model[${i}]--> ${models[i].label}`);
     console.log(`Model URN: ${models[i].modelId}`);
 
-    const qualProp = await utils.getQualifiedProperty(models[i].modelId, categoryName, propertyName);
-    if (qualProp) {
-      const propValues = await utils.scanForProperty(qualProp, models[i].modelId, showHistory);
-      utils.showResult(propValues);
-
-    /*  const bodyPayload = JSON.stringify({
-        qualifiedColumns: [
-          qualProp.id      // NOTE: you could list more if you know the qualifiedPropNames
-        ],
-        includeHistory: showHistory
-      });
-      const reqOpts = utils.makeReqOptsPOST(bodyPayload);
-      //const requestPath = utils.td_baseURL + `/modeldata/${models[i].modelId}/scan`;
-      const requestPath = utils.td_baseURL_v2 + `/modeldata/${models[i].modelId}/scan`; // NOTE: use v2 of /scan because it returns full Keys
-      console.log(requestPath);
-
-      await fetch(requestPath, reqOpts)
-        .then((response) => response.json())
-        .then((obj) => {
-          utils.showResult(obj);
-        })
-        .catch(error => console.log('error', error));*/
+    const qualProps = await utils.getQualifiedProperty(models[i].modelId, categoryName, propertyName);
+    if (qualProps && qualProps.length) {
+      const rawProps = await utils.scanForProperty(qualProps, models[i].modelId, showHistory);
+      utils.showResult(rawProps);
+      const extractedProps = await utils.digOutPropertyValues(models[i].modelId, qualProps, rawProps, showHistory);
+      if (extractedProps)
+        console.table(extractedProps);
     }
 
     console.groupEnd();
@@ -158,10 +143,10 @@ export async function findElementsWherePropValueEqualsX(propCategory, propName, 
     console.group(`Model[${i}]--> ${models[i].label}`);
     console.log(`Model URN: ${models[i].modelId}`);
 
-    const qualProp = await utils.getQualifiedProperty(models[i].modelId, propCategory, propName);
-    if (qualProp) {
-      const rawProps = await utils.scanForProperty(qualProp, models[i].modelId, false);
-      const propValues = await utils.digOutPropertyValues(models[i].modelId, qualProp, rawProps, false);
+    const qualProps = await utils.getQualifiedProperty(models[i].modelId, propCategory, propName);
+    if (qualProps && qualProps.length) {
+      const rawProps = await utils.scanForProperty(qualProps, models[i].modelId, false);
+      const propValues = await utils.digOutPropertyValues(models[i].modelId, qualProps, rawProps, false);
       if (propValues && propValues.length) {
         console.log("Raw properties returned-->", rawProps);
         console.log("Extracted properties-->", propValues);
@@ -382,6 +367,60 @@ export async function setPropertySelSet(propCategory, propName, propVal, modelUR
 
   console.log("Element keys:", elementKeysArray);
   console.log(`Setting value for "${propCategory} | ${propName}" = `, typedValue);
+
+    // create the mutations array. Number of mutations must match number of elements, even if they all
+    // the same mutation.
+  const mutsArray = [];
+  for (let i=0; i<elementKeysArray.length; i++) {
+    const mutObj = ["i", qualProp.fam, qualProp.col, typedValue];  // "i"=insert
+    mutsArray.push(mutObj);
+  }
+    //  create the payload for the call to /mutate
+  const bodyPayload = JSON.stringify({
+    keys: elementKeysArray,
+    muts: mutsArray,
+    desc: "Updated from REST TestBedApp"
+  });
+
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/mutate`;
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: setPropertySelSetQP()
+** DESC: set prop values on the selected entities
+**********************/
+
+export async function setPropertySelSetQP(qualPropStr, propVal, modelURN, elementKeys) {
+
+  const qualProp = await utils.lookupQualifiedProperty(modelURN, qualPropStr);
+  if (qualProp == null) {
+    alert("Could not find that property in the current Facility Template.");
+    return;
+  }
+
+  const elementKeysArray = elementKeys.split(',');
+  if (elementKeysArray.length == 0) {
+    alert("ERROR: no element keys specified.");
+    return;
+  }
+
+  console.group("STUB: setPropertySelSetQP()");
+
+  const typedValue =  sdk.parseInputAttrValue(propVal, qualProp.dataType);  // convert from the String in dialog input to proper data type
+
+  console.log("Element keys:", elementKeysArray);
+  console.log(`Setting value for "${qualProp.category} | ${qualProp.name}" = `, typedValue);
 
     // create the mutations array. Number of mutations must match number of elements, even if they all
     // the same mutation.

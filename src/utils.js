@@ -203,11 +203,13 @@ export async function getListOfModels(facURN) {
 /***************************************************
 ** FUNC: getQualifiedProperty()
 ** DESC: lookup the qualified property info for a given [Category, Name] in a given model
+**  NOTE: this returns an array of property objects because there could be duplicates for a
+**  given displayName.
 **********************/
 
 export async function getQualifiedProperty(modelURN, categoryName, propName) {
 
-  let qualProp = null;
+  let qualProp = [];    // there can be multiple!
 
   await getSchema(modelURN)
     .then((response) => response.json())
@@ -216,14 +218,49 @@ export async function getQualifiedProperty(modelURN, categoryName, propName) {
       const attrs = obj.attributes;
       for (let i=0; i<attrs.length; i++) {
         if ((attrs[i].category === categoryName) && (attrs[i].name === propName)) {
+          qualProp.push(attrs[i]);
+        }
+      }
+      if (qualProp.length) {
+        if (qualProp.length == 1) {   // this is the expected case
+          console.log(`Qualified Propname for [${categoryName} | ${propName}]:`, qualProp[0]);
+        }
+        else {    // built-ins can have overrides and it seems user props can have duplicates
+          console.warn("WARNING: There are multiple qualified properties for this name...");
+          for (let j=0; j<qualProp.length; j++) {
+            console.log(`Qualified Propname for [${categoryName} | ${propName}]:`, qualProp[j]);
+          }
+        }
+      }
+      else
+        console.log(`Could not find [${categoryName} | ${propName}]`);
+    })
+    .catch(error => console.log('error', error));
+
+  return qualProp;
+}
+
+/***************************************************
+** FUNC: lookupQualifiedProperty()
+** DESC: lookup the qualified property info for a fully qualified Name.  This is
+**  to ensure it exists and to return the full information about that paroperty (dataType, etc)
+**********************/
+
+export async function lookupQualifiedProperty(modelURN, qualPropStr) {
+
+  let qualProp = null;    // should only be One!
+
+  await getSchema(modelURN)
+    .then((response) => response.json())
+    .then((obj) => {
+      //showResult(obj);  // dump intermediate result...
+      const attrs = obj.attributes;
+      for (let i=0; i<attrs.length; i++) {
+        if (attrs[i].id === qualPropStr) {
           qualProp = attrs[i];
           break;
         }
       }
-      if (qualProp)
-        console.log(`Qualified Propname for [${categoryName} | ${propName}]:`, qualProp);
-      else
-        console.log(`Could not find [${categoryName} | ${propName}]`);
     })
     .catch(error => console.log('error', error));
 
@@ -237,20 +274,27 @@ export async function getQualifiedProperty(modelURN, categoryName, propName) {
 **  If returnHistory=true, then it will return arrays for the property value, otherwise it will just return a single "last value".
 **********************/
 
-export async function digOutPropertyValues(modelURN, qualProp, rawProps, returnHistory) {
+export async function digOutPropertyValues(modelURN, qualProps, rawProps, returnHistory) {
 
   const propValues = [];
 
   for (let i=1; i<rawProps.length; i++) {   // NOTE: we start at index 1 because "version" is the first element in the array
     const rowObj = rawProps[i];
-    if (rowObj && (rowObj[qualProp.id] != null)) {
-      if (returnHistory) {
-          // return an array of values for the property
-        propValues.push({ modelURN: modelURN, key: rowObj.k, prop: qualProp.id, value: rowObj[qualProp.id] });  // push a new object that keeps track of the triple
-      }
-      else {
-          // just return the latest value
-        propValues.push({ modelURN: modelURN, key: rowObj.k, prop: qualProp.id, value: rowObj[qualProp.id][0] });  // push a new object that keeps track of the triple
+    if (rowObj) {
+      const key = rowObj.k;   // the "key" is consistently returned
+
+        // the rest is a map of qualProp.id and then the values in an array (in case there is history)
+      for (let j=0; j<qualProps.length; j++) {
+        const prop = rowObj[qualProps[j].id];
+        if (prop) {
+          if (returnHistory) {
+              // return an array of values for the property
+            propValues.push({ modelURN: modelURN, key: key, prop: qualProps[j].id, value: prop });  // push a new object that keeps track of the triple
+          }
+          else {
+            propValues.push({ modelURN: modelURN, key: key, prop: qualProps[j].id, value: prop[0] });  // push a new object that keeps track of the triple
+          }
+        }
       }
     }
   }
@@ -263,22 +307,14 @@ export async function digOutPropertyValues(modelURN, qualProp, rawProps, returnH
 ** DESC: scan for all elements with this property
 **********************/
 
-export async function scanForProperty(qualProp, modelURN, showHistory) {
+export async function scanForProperty(qualProps, modelURN, showHistory) {
 
   let foundProps = null;
 
     // add the qualified ColumnFamily and if it is an override, add the original one too
-  const qualColumns = [qualProp.id];  // use the one we were passed in
-  if (qualProp.fam === 'n') {
-      // if this is an overrride, put in the origCol too
-    if (qualProp.col[0] === '!') {
-      const origCol = `${qualProp.fam}:${qualProp.col.slice(1)}`;
-      qualColumns.push(origCol);
-    }
-    else {
-      const overrideCol = `${qualProp.fam}:!${qualProp.col}`;
-      qualColumns.push(overrideCol);
-    }
+  const qualColumns = [];
+  for (let i=0; i<qualProps.length; i++) {
+    qualColumns.push(qualProps[i].id);
   }
 
   const bodyPayload = JSON.stringify({

@@ -98,6 +98,7 @@
                   <button class="dropdown-item" type="button" id="btn_getScanElementsOptions">POST /scan (Specific Elements, with Options)</button>
                   <button class="dropdown-item" type="button" id="btn_getScanElementsFullChangeHistory">POST /scan (Specific Elements, Full change history)</button>
                   <button class="dropdown-item" type="button" id="btn_setPropertyOnElements">POST /mutate Set Property Value</button>
+                  <button class="dropdown-item" type="button" id="btn_setPropertyOnElementsQP">POST /mutate Set Property Value (using Qualified Property)</button>
                 </div>
               </div>
             </div>
@@ -162,6 +163,16 @@
                 </div>
               </div>
             </div>
+            <div class="row form-group">
+              <div class="col-md dropdown dropright"> <!--Dropdown menu for Diagnostic stubs -->
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuDiagnostics" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  Diagnostic Stubs
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuDiagnostics">
+                  <button class="dropdown-item" type="button" id="btn_checkForDuplicateProperties">Check for Duplicate Properties</button>
+                </div>
+              </div>
+            </div>
             <div class="row form-group mt-5">
               <div class="col-md-8">
                   <p class="text-muted bg-light font-italic">NOTE: output from stub functions goes to the Chrome debugger window.  Make sure to open the Chrome Developer Tools.</p>
@@ -180,6 +191,7 @@
           $("#stubInputInject_GetPropertyName").load("./stubInput/getPropertyName.html", "#stubInput_getPropertyName");
           $("#stubInputInject_GetPropertyFilter").load("./stubInput/getPropertyFilter.html", "#stubInput_getPropertyFilter");
           $("#stubInputInject_SetPropertyValue").load("./stubInput/setPropertyValue.html", "#stubInput_setPropertyValue");
+          $("#stubInputInject_SetPropertyValueQP").load("./stubInput/setPropertyValueQP.html", "#stubInput_setPropertyValueQP");
           $("#stubInputInject_SetClassification").load("./stubInput/setClassification.html", "#stubInput_setClassification");
           $("#stubInputInject_GetURN").load("./stubInput/getURN.html", "#stubInput_getURN");
           $("#stubInputInject_GetUserID").load("./stubInput/getUserID.html", "#stubInput_getUserID");
@@ -195,6 +207,7 @@
       <div id="stubInputInject_GetPropertyName"></div>
       <div id="stubInputInject_GetPropertyFilter"></div>
       <div id="stubInputInject_SetPropertyValue"></div>
+      <div id="stubInputInject_SetPropertyValueQP"></div>
       <div id="stubInputInject_SetClassification"></div>
       <div id="stubInputInject_GetURN"></div>
       <div id="stubInputInject_GetUserID"></div>

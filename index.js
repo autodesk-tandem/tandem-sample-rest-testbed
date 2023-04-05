@@ -9,6 +9,7 @@ import * as misc_stubs from './src/misc_stubs.js';
 import * as stream_stubs from './src/stream_stubs.js';
 import * as prop_stubs from './src/prop_stubs.js';
 import * as app_stubs from './src/app_stubs.js';
+import * as diagnostic_stubs from './src/diagnostic_stubs.js';
 import * as utils from './src/utils.js';
 
 import { ColumnFamilies } from "./sdk/dt-schema.js";
@@ -221,6 +222,10 @@ async function main() {
     $('#stubInput_setPropertyValue').modal('show');
     modalFuncCallbackNum = 0;
   });
+  $("#btn_setPropertyOnElementsQP").click(function() {
+    $('#stubInput_setPropertyValueQP').modal('show');
+    modalFuncCallbackNum = 0;
+  });
 
 
     // Stream Stubs
@@ -310,6 +315,10 @@ async function main() {
     });
 
   $("#btn_getPreferences").click(app_stubs.getPreferences);
+
+
+    // Diagnostic Stubs
+  $("#btn_checkForDuplicateProperties").click(diagnostic_stubs.checkForDuplicateProperties);
 
 
 
@@ -474,6 +483,20 @@ async function main() {
 
     if (modalFuncCallbackNum == 0)
       prop_stubs.setPropertySelSet(propCategory, propName, propVal, modelURN, keys);
+    else {
+      alert("ASSERT: modalFuncCallbackNum not expected.");
+    }
+  });
+
+    // this gets called from above via modal dialog (#btn_setPropertySelSetQP, and others)
+  $('#stubInput_setPropertyValueQP_OK').click(function() {
+    const qualPropStr = $("#stubInput_propSetQP").val();
+    const propVal = $("#stubInput_propValSetQP").val();
+    const modelURN = $("#stubInput_propURNSetQP").val();
+    const keys = $("#stubInput_propKeysSetQP").val();
+
+    if (modalFuncCallbackNum == 0)
+      prop_stubs.setPropertySelSetQP(qualPropStr, propVal, modelURN, keys);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }
