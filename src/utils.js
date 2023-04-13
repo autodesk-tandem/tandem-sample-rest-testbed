@@ -1,5 +1,7 @@
 
 import { getEnv } from '../env.js';
+import { makeWebsafe } from "../sdk/encode.js";
+
 
 export let facilityURN = null;  // our global var (set by the popup menu at the top of the app)
 
@@ -156,6 +158,18 @@ export async function getListOfFacilitiesActiveTeam() {
     .catch(error => console.log('error', error));
 
     return facilities;
+}
+
+/***************************************************
+** FUNC: getDefaultModel()
+** DESC: the "default" model is the one where stream exist.  We could get all the models
+**  and iterate through them looking for the one marked as default, but there is also a shortcut
+**  to just swap the "dtt" to "dtm" in the Facility URN.
+**********************/
+
+export function getDefaultModel() {
+  const defaultModelURN = getCurrentFacility().replace("urn:adsk.dtt:", "urn:adsk.dtm:");
+  return defaultModelURN;
 }
 
 /***************************************************
@@ -424,4 +438,25 @@ export async function findClassificationNode(classificationStr) {
     .catch(error => console.log('error', error));
 
   return foundClassifNode;
+}
+
+/***************************************************
+** FUNC: makeXrefKey()
+** DESC: make an Xref key for the database that is the modelURN + the element Key
+**********************/
+
+export function makeXrefKey(modelURN, elemKey) {
+
+  const modelId = modelURN.slice(13);   // strip off the "urn:adsk.dtm:" prefix
+
+    // convert from websafe to regular so it works with atob()
+  const modelId_enc = modelId.replace(/-/g, '+').replace(/_/g, '/');
+  const modelId_dec = atob(modelId_enc);
+
+  const elemKey_enc = elemKey.replace(/-/g, '+').replace(/_/g, '/');
+  const elemKey_dec = atob(elemKey_enc);
+
+  const concatStr = modelId_dec + elemKey_dec;  // concat them together
+
+  return makeWebsafe(btoa(concatStr));    // re-encode and make web-safe to get our xrefKey
 }

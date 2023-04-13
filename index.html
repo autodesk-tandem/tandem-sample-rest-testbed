@@ -130,6 +130,9 @@
                   <button class="dropdown-item" type="button" id="btn_getLastSeenStreamValues">POST Get Last Seen Stream Values</button>
                   <button class="dropdown-item" type="button" id="btn_getStreamRollup30Days">GET Stream Rollup (last 30 days)</button>
                   <button class="dropdown-item" type="button" id="btn_postGetStreamRollup30Days">POST Get Stream Rollup (last 30 days)</button>
+                  <button class="dropdown-item" type="button" id="btn_createStream">Create Stream</button>
+                  <button class="dropdown-item" type="button" id="btn_assignHostToStream">Assign Host to Stream</button>
+                  <button class="dropdown-item" type="button" id="btn_removeHostFromStream">Remove Host from Stream</button>
                 </div>
               </div>
             </div>
@@ -199,9 +202,9 @@
           $("#stubInputInject_GetURNandUUID").load("./stubInput/getURNandUUID.html", "#stubInput_getURNandUUID");
           $("#stubInputInject_GetURNandKeys").load("./stubInput/getURNandKeys.html", "#stubInput_getURNandKeys");
           $("#stubInputInject_GetScanOptions").load("./stubInput/getScanOptions.html", "#stubInput_getScanOptions");
-           //$("#stubInputInject_GetKey").load("./stubInput/getKey.html", "#stubInput_getKey");
-           //$("#stubInputInject_GetName").load("./stubInput/getName.html", "#stubInput_getName");
-           //$("#stubInputInject_GetInt").load("./stubInput/getInt.html", "#stubInput_getInt");
+          $("#stubInputInject_GetKeys").load("./stubInput/getKeys.html", "#stubInput_getKeys");
+          $("#stubInputInject_CreateStream").load("./stubInput/createStream.html", "#stubInput_createStream");
+          $("#stubInputInject_AddStreamHost").load("./stubInput/addStreamHost.html", "#stubInput_addStreamHost");
          });
       </script>
       <div id="stubInputInject_GetPropertyName"></div>
@@ -215,9 +218,9 @@
       <div id="stubInputInject_GetURNandUUID"></div>
       <div id="stubInputInject_GetURNandKeys"></div>
       <div id="stubInputInject_GetScanOptions"></div>
-      <!--<div id="stubInputInject_GetKey"></div>
-      <div id="stubInputInject_GetName"></div>
-      <div id="stubInputInject_GetInt"></div>-->
+      <div id="stubInputInject_GetKeys"></div>
+      <div id="stubInputInject_CreateStream"></div>
+      <div id="stubInputInject_AddStreamHost"></div>
 
         <!-- this is the JS module that kicks off login and loading of the Tandem Viewer -->
       <script type="module" src="./index.js"></script>

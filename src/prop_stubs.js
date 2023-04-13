@@ -237,7 +237,7 @@ export async function assignClassification(classificationStr, modelURN, elementK
   const bodyPayload = JSON.stringify({
     keys: elementKeysArray,
     muts: mutsArray,
-    desc: "Updated from REST TestBedApp"
+    desc: "REST TestBedApp: updated classification"
   });
 
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
@@ -379,7 +379,7 @@ export async function setPropertySelSet(propCategory, propName, propVal, modelUR
   const bodyPayload = JSON.stringify({
     keys: elementKeysArray,
     muts: mutsArray,
-    desc: "Updated from REST TestBedApp"
+    desc: "REST TestBedApp: updated property"
   });
 
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
@@ -433,7 +433,7 @@ export async function setPropertySelSetQP(qualPropStr, propVal, modelURN, elemen
   const bodyPayload = JSON.stringify({
     keys: elementKeysArray,
     muts: mutsArray,
-    desc: "Updated from REST TestBedApp"
+    desc: "REST TestBedApp: updated property"
   });
 
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);

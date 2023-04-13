@@ -1,7 +1,6 @@
 
 import * as utils from './utils.js';
-import { ColumnFamilies, QC, ElementFlags } from "../sdk/dt-schema.js";
-
+import { ColumnFamilies, ColumnNames, QC, ElementFlags } from "../sdk/dt-schema.js";
 
 /***************************************************
 ** FUNC: getStreamsFromDefaultModelPOST()
@@ -12,7 +11,7 @@ export async function getStreamsFromDefaultModelPOST() {
 
   console.group("STUB: getStreamsFromDefaultModelPOST()");
 
-  const defaultModelURN = utils.facilityURN.replace("urn:adsk.dtt:", "urn:adsk.dtm:");
+  const defaultModelURN = utils.getDefaultModel();
   console.log("Default model", defaultModelURN);
 
   const requestPath = utils.td_baseURL_v2 + `/modeldata/${defaultModelURN}/scan`;
@@ -45,9 +44,12 @@ export async function getStreamsFromDefaultModelPOST() {
 ** DESC: Get the secrets for the given streams
 **********************/
 
-export async function getStreamSecrets(modelURN, streamKeys) {
+export async function getStreamSecrets(streamKeys) {
 
   console.group("STUB: getStreamSecrets()");
+
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
 
   const streamKeysArray = streamKeys.split(',');
   console.log("Stream keys", streamKeysArray);
@@ -57,7 +59,7 @@ export async function getStreamSecrets(modelURN, streamKeys) {
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
 
-  const requestPath = utils.td_baseURL + `/models/${modelURN}/getstreamssecrets`;
+  const requestPath = utils.td_baseURL + `/models/${defaultModelURN}/getstreamssecrets`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
@@ -75,9 +77,12 @@ export async function getStreamSecrets(modelURN, streamKeys) {
 ** DESC: Reset the secrets for the given streams
 **********************/
 
-export async function resetStreamSecrets(modelURN, streamKeys) {
+export async function resetStreamSecrets(streamKeys) {
 
   console.group("STUB: resetStreamSecrets()");
+
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
 
   const streamKeysArray = streamKeys.split(',');
   console.log("Stream keys", streamKeysArray);
@@ -88,7 +93,7 @@ export async function resetStreamSecrets(modelURN, streamKeys) {
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
 
-  const requestPath = utils.td_baseURL + `/models/${modelURN}/resetstreamssecrets`;
+  const requestPath = utils.td_baseURL + `/models/${defaultModelURN}/resetstreamssecrets`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
@@ -150,9 +155,12 @@ export function prettyPrintLastSeenStreamValues(streamDataObj) {
 ** DESC: get stream values for a given time range (hardwired here to 30 days)
 **********************/
 
-export async function getStreamValues30Days(defaultModelURN, streamKeys) {
+export async function getStreamValues30Days(streamKeys) {
 
   console.group("STUB: getStreamValues30Days()");
+
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
 
   const streamKeysArray = streamKeys.split(',');
   console.log("Stream keys:", streamKeysArray);
@@ -194,9 +202,12 @@ export async function getStreamValues30Days(defaultModelURN, streamKeys) {
 ** DESC: get stream values for a given time range (hardwired here to 365 days)
 **********************/
 
-export async function getStreamValues365Days(defaultModelURN, streamKeys) {
+export async function getStreamValues365Days(streamKeys) {
 
   console.group("STUB: getStreamValues365Days()");
+
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
 
   const streamKeysArray = streamKeys.split(',');
   console.log("Stream keys:", streamKeysArray);
@@ -238,9 +249,12 @@ export async function getStreamValues365Days(defaultModelURN, streamKeys) {
 ** DESC: post new stream values
 **********************/
 
-export async function postNewStreamValues(defaultModelURN, streamKeys) {
+export async function postNewStreamValues(streamKeys) {
 
   console.group("STUB: postNewStreamValues()");
+
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
 
   const streamKeysArray = streamKeys.split(',');
   console.log("Stream keys:", streamKeysArray);
@@ -284,9 +298,12 @@ export async function postNewStreamValues(defaultModelURN, streamKeys) {
 ** DESC: get the last seen values for the given streams
 **********************/
 
-export async function getLastSeenStreamValues(defaultModelURN, streamKeys) {
+export async function getLastSeenStreamValues(streamKeys) {
 
   console.group("STUB: getLastSeenStreamValues()");
+
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
 
   const streamKeysArray = streamKeys.split(',');
   console.log("Stream keys:", streamKeysArray);
@@ -316,9 +333,12 @@ export async function getLastSeenStreamValues(defaultModelURN, streamKeys) {
 ** DESC: get summary statistics for the given streams
 **********************/
 
-export async function getStreamRollupsLast30Days(defaultModelURN, streamKeys) {
+export async function getStreamRollupsLast30Days(streamKeys) {
 
   console.group("STUB: getStreamRollupsLast30Days()");
+
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
 
   const streamKeysArray = streamKeys.split(',');
   console.log("Stream keys:", streamKeysArray);
@@ -356,9 +376,12 @@ export async function getStreamRollupsLast30Days(defaultModelURN, streamKeys) {
 ** DESC: get the rollups for the given streams
 **********************/
 
-export async function postGetStreamRollupsLast30Days(modelURN, streamKeys) {
+export async function postGetStreamRollupsLast30Days(streamKeys) {
 
   console.group("STUB: postGetStreamRollupsLast30Days()");
+
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
 
   const streamKeysArray = streamKeys.split(',');
   console.log("Stream keys", streamKeysArray);
@@ -378,7 +401,194 @@ export async function postGetStreamRollupsLast30Days(modelURN, streamKeys) {
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
 
-  const requestPath = utils.td_baseURL + `/timeseries/models/${modelURN}/rollups?from=${timestampStart}&to=${timestampEnd}`;
+  const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/rollups?from=${timestampStart}&to=${timestampEnd}`;
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: createStream()
+** DESC: create a new stream with or without a host, classification, room, and floor
+**********************/
+
+export async function createStream(streamName, hostModelURN, hostKey, classifStr) {
+
+    // first do a little error checking to make sure the user isn't asking us to do something silly
+  if (streamName == "") {
+    alert("ERROR: no stream name specified.");
+    return;
+  }
+
+  console.group("STUB: createStream()");
+
+    // see of they gave us enough info to assign a host
+  let useHost = true;
+  if ((hostModelURN == "") || (hostKey == "")) {
+    console.log("HostModel or HostElem was not specified, will create a Stream with no host...");
+    useHost = false;
+  }
+    // see if they gave us enough info to assign a classification
+  let useClassif = false;
+  if (classifStr == "") {
+    console.log("No Classification specified. Will create a Stream with no classification...");
+  }
+  else {
+    const classificationNode = await utils.findClassificationNode(classifStr);
+    if (classificationNode == null) {
+      console.log("Could not find that classification in the current Facility Template...");
+      console.log("Will create a Stream with no classificaiton...");
+    }
+    else {
+      useClassif = true;  // they specified it and we found it in the template
+    }
+  }
+
+    // streams need to be created in the "default" model
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
+
+    // assign the non-option mutations
+  let mutsArray = [
+    ["i", ColumnFamilies.Standard, ColumnNames.Name, streamName],
+    ["i", ColumnFamilies.Standard, ColumnNames.ElementFlags, ElementFlags.Stream],
+    ["i", ColumnFamilies.Standard, ColumnNames.UniformatClass, "D7070"],
+    ["i", ColumnFamilies.Standard, ColumnNames.CategoryId, 5031],     // Category for Streams
+  ];
+    // now do the optional ones
+  if (useClassif)
+    mutsArray.push(["i", ColumnFamilies.Standard, ColumnNames.Classification, classifStr]);
+  if (useHost) {
+      // we need to generate an xrefKey which is the modelURN and elementKey smashed together
+    const hostXref = utils.makeXrefKey(hostModelURN, hostKey);
+    mutsArray.push(["i", ColumnFamilies.Xrefs, ColumnNames.Parent, hostXref])
+  }
+
+  const bodyPayload = JSON.stringify({
+    muts: mutsArray,
+    desc: "REST TestBedApp: created stream"
+  });
+
+  console.log(bodyPayload);
+
+    // now use the /create endpoint to make the new stream
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const requestPath = utils.td_baseURL + `/modeldata/${defaultModelURN}/create`;
+  console.log(requestPath);
+
+  let newStreamKey = null;
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+      newStreamKey = obj.key;
+    })
+    .catch(error => console.log('error', error));
+
+    // now we have to call resetStreamSecrets to make it fully functional
+  if (newStreamKey) {
+    const bodyPayload2 = JSON.stringify({
+      keys: [newStreamKey],
+      hardReset: true
+    });
+    const reqOpts2 = utils.makeReqOptsPOST(bodyPayload2);
+
+    const requestPath2 = utils.td_baseURL + `/models/${defaultModelURN}/resetstreamssecrets`;
+    console.log(requestPath2);
+
+    await fetch(requestPath2, reqOpts2)
+      //.then((response) => response.json())  // this doesn't return anything but a 204 with no response body
+      .then((obj) => {
+        if (obj.ok)
+          console.log(`Stream secret for ${newStreamKey} has been generated.`);
+      })
+      .catch(error => console.log('error', error));
+  }
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: assignHostToStream()
+** DESC: assign a new Host to the stream
+**********************/
+
+export async function assignHostToStream(streamKey, hostModelURN, hostKey) {
+
+  console.group("STUB: assignHostToStream()");
+
+    // streams are always in the default model
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
+
+    // need to make an xrefKey by combining the hostModelURN and the hostElementKey
+  const hostXref = utils.makeXrefKey(hostModelURN, hostKey);
+  let mutsArray = [
+    ["i", ColumnFamilies.Xrefs, ColumnNames.Parent, hostXref]
+  ];
+
+    // do a mutaiton on the Stream element to set the "parent" to the new Host
+  const bodyPayload = JSON.stringify({
+    keys: [streamKey],
+    muts: mutsArray,
+    desc: "REST TestBedApp: modified stream host"
+  });
+
+  console.log(bodyPayload);
+
+    // now use the /mutate endpoint to modify the stream
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const requestPath = utils.td_baseURL + `/modeldata/${defaultModelURN}/mutate`;
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
+** FUNC: removeHostFromStream()
+** DESC: remove any host reference from the given stream
+**********************/
+
+export async function removeHostFromStream(streamKeys) {
+
+  console.group("STUB: removeHostFromStream()");
+
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
+
+  const streamKeysArray = streamKeys.split(',');
+  console.log("Stream keys", streamKeysArray);
+
+    // create the mutations array. Number if mutations must match number of elements, even if they all
+    // the same mutation.
+  const mutsArray = [];
+  for (let i=0; i<streamKeysArray.length; i++) {
+    const mutObj = ["i", ColumnFamilies.Xrefs, ColumnNames.Parent, ""]; // setting the host association to NULL
+    mutsArray.push(mutObj);
+  }
+    //  create the payload for the call to /mutate
+  const bodyPayload = JSON.stringify({
+    keys: streamKeysArray,
+    muts: mutsArray,
+    desc: "REST TestBedApp: removed stream host"
+  });
+
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const requestPath = utils.td_baseURL + `/modeldata/${defaultModelURN}/mutate`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)

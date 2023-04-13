@@ -216,7 +216,7 @@ async function main() {
   });
   $("#btn_getScanElementsFullChangeHistory").click(function() {
     $('#stubInput_getURNandKeys').modal('show');
-    modalFuncCallbackNum = 3;
+    modalFuncCallbackNum = 0;
   });
   $("#btn_setPropertyOnElements").click(function() {
     $('#stubInput_setPropertyValue').modal('show');
@@ -227,42 +227,49 @@ async function main() {
     modalFuncCallbackNum = 0;
   });
 
-
     // Stream Stubs
   $("#btn_getStreamsFromDefaultModelPOST").click(stream_stubs.getStreamsFromDefaultModelPOST);
 
   $("#btn_getStreamSecrets").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
+    $('#stubInput_getKeys').modal('show');
     modalFuncCallbackNum = 0;
   });
-
   $("#btn_resetStreamSecrets").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
-    modalFuncCallbackNum = 5;
+    $('#stubInput_getKeys').modal('show');
+    modalFuncCallbackNum = 1;
   });
-
   $("#btn_getStreamValues30Days").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
-    modalFuncCallbackNum = 4;
+    $('#stubInput_getKeys').modal('show');
+    modalFuncCallbackNum = 2;
   });
   $("#btn_getStreamValues365Days").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
-    modalFuncCallbackNum = 10;
+    $('#stubInput_getKeys').modal('show');
+    modalFuncCallbackNum = 3;
   });
   $("#btn_postNewStreamValues").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
-    modalFuncCallbackNum = 6;
+    $('#stubInput_getKeys').modal('show');
+    modalFuncCallbackNum = 4;
   });
   $("#btn_getLastSeenStreamValues").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
-    modalFuncCallbackNum = 7;
+    $('#stubInput_getKeys').modal('show');
+    modalFuncCallbackNum = 5;
   });
   $("#btn_getStreamRollup30Days").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
-    modalFuncCallbackNum = 8;
+    $('#stubInput_getKeys').modal('show');
+    modalFuncCallbackNum = 6;
   });
   $("#btn_postGetStreamRollup30Days").click(function() {
-    $('#stubInput_getURNandKeys').modal('show');
+    $('#stubInput_getKeys').modal('show');
+    modalFuncCallbackNum = 7;
+  });
+  $("#btn_createStream").click(function() {
+    $('#stubInput_createStream').modal('show');
+  });
+  $("#btn_assignHostToStream").click(function() {
+    $('#stubInput_addStreamHost').modal('show');
+  });
+  $("#btn_removeHostFromStream").click(function() {
+    $('#stubInput_getKeys').modal('show');
     modalFuncCallbackNum = 9;
   });
 
@@ -400,23 +407,7 @@ async function main() {
     const keys = $("#stubInput_urnkeys_key").val();
 
     if (modalFuncCallbackNum == 0)
-      stream_stubs.getStreamSecrets(urn, keys);
-    else if (modalFuncCallbackNum == 3)
       prop_stubs.getScanElementsFullChangeHistory(urn, keys);
-    else if (modalFuncCallbackNum == 4)
-      stream_stubs.getStreamValues30Days(urn, keys);
-    else if (modalFuncCallbackNum == 5)
-      stream_stubs.resetStreamSecrets(urn, keys);
-    else if (modalFuncCallbackNum == 6)
-      stream_stubs.postNewStreamValues(urn, keys);
-    else if (modalFuncCallbackNum == 7)
-      stream_stubs.getLastSeenStreamValues(urn, keys);
-    else if (modalFuncCallbackNum == 8)
-      stream_stubs.getStreamRollupsLast30Days(urn, keys);
-    else if (modalFuncCallbackNum == 9)
-      stream_stubs.postGetStreamRollupsLast30Days(urn, keys);
-    else if (modalFuncCallbackNum == 10)
-      stream_stubs.getStreamValues365Days(urn, keys);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }
@@ -513,7 +504,7 @@ async function main() {
     prop_stubs.findElementsWherePropValueEqualsX(propCategory, propName, matchStr, isRegEx, isCaseInsensitive);
   });
 
-    // this gets called from above via modal dialog (#btn_assignClassificaiton)
+    // this gets called from above via modal dialog (#btn_assignClassification)
   $('#stubInput_setClassification_OK').click(function() {
     const classificationStr = $("#stubInput_classificationStr").val();
     const modelURN = $("#stubInput_classificationURN").val();
@@ -522,36 +513,55 @@ async function main() {
     prop_stubs.assignClassification(classificationStr, modelURN, keys);
   });
 
+    // this gets called from above via modal dialog (#btn_createStream)
+  $('#stubInput_createStream_OK').click(function() {
+    const name = $("#stubInput_createStreamName").val();
+    const modelURN = $("#stubInput_createStreamModelURN").val();
+    const elemKey = $("#stubInput_createStreamElemKey").val();
+    const classificationStr = $("#stubInput_createStreamClassifStr").val();
 
-  /*$('#stubInput_getKey_OK').click(function() {
-    const key = $("#stubInput_key").val();
+    stream_stubs.createStream(name, modelURN, elemKey, classificationStr);
+  });
+
+    // this gets called from above via modal dialog (#btn_addStreamHost)
+  $('#stubInput_addStreamHost_OK').click(function() {
+    const streamKey = $("#stubInput_addStreamHostStreamKey").val();
+    const modelURN = $("#stubInput_addStreamHostModelURN").val();
+    const elemKey = $("#stubInput_addStreamHostElemKey").val();
+
+    stream_stubs.assignHostToStream(streamKey, modelURN, elemKey);
+  });
+
+    // this gets called from above via modal dialog (#btn_getStreamSecrets) and others
+  $('#stubInput_getKeys_OK').click(function() {
+    const keys = $("#stubInput_keys").val();
 
     if (modalFuncCallbackNum == 0)
-      st_stubs.resetStreamSecrets(key);
+      stream_stubs.getStreamSecrets(keys);
+    else if (modalFuncCallbackNum == 1)
+      stream_stubs.resetStreamSecrets(keys);
+    else if (modalFuncCallbackNum == 2)
+      stream_stubs.getStreamValues30Days(keys);
+    else if (modalFuncCallbackNum == 3)
+      stream_stubs.getStreamValues365Days(keys);
+    else if (modalFuncCallbackNum == 4)
+      stream_stubs.postNewStreamValues(keys);
+    else if (modalFuncCallbackNum == 5)
+      stream_stubs.getLastSeenStreamValues(keys);
+    else if (modalFuncCallbackNum == 6)
+      stream_stubs.getStreamRollupsLast30Days(keys);
+    else if (modalFuncCallbackNum == 7)
+      stream_stubs.postGetStreamRollupsLast30Days(keys);
+    else if (modalFuncCallbackNum == 8)
+      stream_stubs.addHostToStream(keys);
+    else if (modalFuncCallbackNum == 9)
+      stream_stubs.removeHostFromStream(keys);
+
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }
   });
 
-  $('#stubInput_getName_OK').click(function() {
-    const nameStr = $("#stubInput_name").val();
-
-    if (modalFuncCallbackNum == 0)
-      st_stubs.createStream(nameStr);
-    else {
-      alert("ASSERT: modalFuncCallbackNum not expected.");
-    }
-  });
-
-  $('#stubInput_getInt_OK').click(function() {
-    const rawStr = $("#stubInput_int").val();
-
-    if (modalFuncCallbackNum == 0)
-      st_stubs.deleteStream(parseInt(rawStr));
-    else {
-      alert("ASSERT: modalFuncCallbackNum not expected.");
-    }
-  });*/
 };
 
 main();
