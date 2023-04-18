@@ -287,8 +287,14 @@ export async function getScanElementsOptions(modelURN, elemKeys, history, colFam
 
   console.group("STUB: getScanElementsOptions()");
 
-  const elemKeysArray = elemKeys.split(',');
-  console.log("Element keys", elemKeysArray);
+  let elemKeysArray = [];
+  if (elemKeys == "") {
+    console.log("No element keys specified, scanning entire model...");
+  }
+  else {
+    elemKeysArray = elemKeys.split(',');
+    console.log("Scanning for specific element keys", elemKeysArray);
+  }
 
   let bodyPayload = JSON.stringify({
     families: colFamilies,
