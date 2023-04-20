@@ -317,6 +317,54 @@ export async function getScanElementsOptions(modelURN, elemKeys, history, colFam
 }
 
 /***************************************************
+** FUNC: getScanElementsQualProps()
+** DESC: get the properties for a specific set of Keys
+**********************/
+
+export async function getScanElementsQualProps(modelURN, elemKeys, history, qualProps) {
+
+  console.group("STUB: getScanElementsQualProps()");
+
+    // if they specified nothing, it will search all elements in the model
+  let elemKeysArray = [];
+  if (elemKeys == "") {
+    console.log("No element keys specified, scanning entire model...");
+  }
+  else {
+    elemKeysArray = elemKeys.split(',');
+    console.log("Scanning for specific element keys", elemKeysArray);
+  }
+    // if they specified nothing, it will return all properties
+  let qualPropsArray = [];
+  if (qualProps == "") {
+    console.log("No qualified properties specified, returning all...");
+  }
+  else {
+    qualPropsArray = qualProps.split(',');
+    console.log("Scanning for specific qualified properties", qualPropsArray);
+  }
+
+  let bodyPayload = JSON.stringify({
+    qualifiedColumns: qualPropsArray,
+    includeHistory: history,
+    keys: elemKeysArray
+  });
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+
+  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/***************************************************
 ** FUNC: getScanElementsFullChangeHistory()
 ** DESC: get the full change history of all properties for the given elements
 **********************/

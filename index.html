@@ -95,7 +95,8 @@
                   <button class="dropdown-item" type="button" id="btn_findElementsWherePropValueEqualsX">Find Elements Where PropValue = X</button>
                   <button class="dropdown-item" type="button" id="btn_assignClassificaiton">Assign Classification</button>
                   <button class="dropdown-item" type="button" id="btn_getScanBruteForce">GET /scan (brute force)</button>
-                  <button class="dropdown-item" type="button" id="btn_getScanElementsOptions">POST /scan (Specific Elements, with Options)</button>
+                  <button class="dropdown-item" type="button" id="btn_getScanElementsOptions">POST /scan (with Options)</button>
+                  <button class="dropdown-item" type="button" id="btn_getScanElementsQualProps">POST /scan (Qualified Properties)</button>
                   <button class="dropdown-item" type="button" id="btn_getScanElementsFullChangeHistory">POST /scan (Specific Elements, Full change history)</button>
                   <button class="dropdown-item" type="button" id="btn_setPropertyOnElements">POST /mutate Set Property Value</button>
                   <button class="dropdown-item" type="button" id="btn_setPropertyOnElementsQP">POST /mutate Set Property Value (using Qualified Property)</button>
@@ -202,6 +203,7 @@
           $("#stubInputInject_GetURNandUUID").load("./stubInput/getURNandUUID.html", "#stubInput_getURNandUUID");
           $("#stubInputInject_GetURNandKeys").load("./stubInput/getURNandKeys.html", "#stubInput_getURNandKeys");
           $("#stubInputInject_GetScanOptions").load("./stubInput/getScanOptions.html", "#stubInput_getScanOptions");
+          $("#stubInputInject_GetScanQualProps").load("./stubInput/getScanQualProps.html", "#stubInput_getScanQualProps");
           $("#stubInputInject_GetKeys").load("./stubInput/getKeys.html", "#stubInput_getKeys");
           $("#stubInputInject_CreateStream").load("./stubInput/createStream.html", "#stubInput_createStream");
           $("#stubInputInject_AddStreamHost").load("./stubInput/addStreamHost.html", "#stubInput_addStreamHost");
@@ -218,6 +220,7 @@
       <div id="stubInputInject_GetURNandUUID"></div>
       <div id="stubInputInject_GetURNandKeys"></div>
       <div id="stubInputInject_GetScanOptions"></div>
+      <div id="stubInputInject_GetScanQualProps"></div>
       <div id="stubInputInject_GetKeys"></div>
       <div id="stubInputInject_CreateStream"></div>
       <div id="stubInputInject_AddStreamHost"></div>

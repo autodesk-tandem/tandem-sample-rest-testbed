@@ -214,6 +214,10 @@ async function main() {
     $('#stubInput_getScanOptions').modal('show');
     modalFuncCallbackNum = 0;
   });
+  $("#btn_getScanElementsQualProps").click(function() {
+    $('#stubInput_getScanQualProps').modal('show');
+    modalFuncCallbackNum = 0;
+  });
   $("#btn_getScanElementsFullChangeHistory").click(function() {
     $('#stubInput_getURNandKeys').modal('show');
     modalFuncCallbackNum = 0;
@@ -439,6 +443,20 @@ async function main() {
 
     if (modalFuncCallbackNum == 0)
       prop_stubs.getScanElementsOptions(urn, keys, history, colFamilies);
+    else {
+      alert("ASSERT: modalFuncCallbackNum not expected.");
+    }
+  });
+
+  $('#stubInput_getScanQualProps_OK').click(function() {
+    const urn = $("#stubInput_scanQualProps_urn").val();
+    const qualProps = $("#stubInput_scanQualProps_qps").val();
+    const keys = $("#stubInput_scanQualProps_key").val();
+
+    const history = $("#stubInput_scanQualProps_history").is(":checked");
+
+    if (modalFuncCallbackNum == 0)
+      prop_stubs.getScanElementsQualProps(urn, keys, history, qualProps);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }
