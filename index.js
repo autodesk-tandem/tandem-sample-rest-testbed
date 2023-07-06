@@ -136,6 +136,15 @@ async function main() {
     modalFuncCallbackNum = 0;
   });
   $("#btn_getFacilityThumbnail").click(fac_stubs.getThumbnail);
+  $("#btn_getSavedViews").click(fac_stubs.getSavedViews);
+  $("#btn_getSavedViewByUUID").click(function() {
+      $('#stubInput_getUUID').modal('show');
+      modalFuncCallbackNum = 0;
+    });
+  $("#btn_getSavedViewThumbnail").click(function() {
+      $('#stubInput_getUUID').modal('show');
+      modalFuncCallbackNum = 1;
+    });
 
     // Group Stubs
   $("#btn_getGroups").click(group_stubs.getGroups);
@@ -289,12 +298,6 @@ async function main() {
 
 
     // App Stubs
-  $("#btn_getSavedViews").click(app_stubs.getSavedViews);
-  $("#btn_getSavedViewByUUID").click(function() {
-      $('#stubInput_getUUID').modal('show');
-      modalFuncCallbackNum = 0;
-    });
-
   $("#btn_getClassifications").click(function() {
       $('#stubInput_getURN').modal('show');
       modalFuncCallbackNum = 8; // URN , not UUID
@@ -385,7 +388,9 @@ async function main() {
     const uuid = $("#stubInput_uuid").val();
 
     if (modalFuncCallbackNum == 0)
-      app_stubs.getSavedViewByUUID(uuid);
+      fac_stubs.getSavedViewByUUID(uuid);
+    else if (modalFuncCallbackNum == 1)
+      fac_stubs.getSavedViewThumbnail(uuid);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }

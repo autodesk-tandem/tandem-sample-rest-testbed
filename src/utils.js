@@ -412,6 +412,30 @@ export async function getThumbnailBlob() {
 }
 
 /***************************************************
+** FUNC: getViewThumbnailBlob()
+** DESC: retrieve a thumbnail blob URL that we can use to display in a new browser tab.
+**  TBD: I'm not sure why the above version of this func doesn't work to open the BlobURL in a new tab. ????
+**********************/
+
+export async function getViewThumbnailBlob(viewID) {
+  const requestPath = td_baseURL + `/twins/${facilityURN}/views/${viewID}/thumbnail`;
+  console.log(requestPath);
+
+  const requestOpts = makeReqOptsGET();
+
+  let retBlob = null;
+
+  await fetch(requestPath, requestOpts)
+    .then((response) => response.blob())
+    .then((blob) => {
+      retBlob = blob;
+    })
+    .catch(error => console.log('error', error));
+
+  return retBlob;
+}
+
+/***************************************************
 ** FUNC: findClassificationNode()
 ** DESC: look up a specifc node in the Facility Template
 **********************/

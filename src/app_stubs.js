@@ -11,48 +11,6 @@ function showResultApp(obj) {
 }
 
 /***************************************************
-** FUNC: getSavedViews()
-** DESC: Call the TandemAppServer and get the Saved Views associated with the current facility
-**********************/
-
-export async function getSavedViews() {
-  console.group("STUB: getSavedViews()");
-
-  const requestPath = utils.tdApp_baseURL + `/views/${utils.facilityURN}`;
-  console.log(requestPath);
-
-  await fetch(requestPath, utils.makeReqOptsGET())
-    .then(response => response.json())
-    .then((obj) => {
-      showResultApp(obj);
-    })
-    .catch(error => console.log('error', error));
-
-  console.groupEnd();
-};
-
-/***************************************************
-** FUNC: getSavedViewByUUID()
-** DESC: Call the TandemAppServer and get the Saved View with the given ID
-**********************/
-
-export async function getSavedViewByUUID(viewUUID) {
-  console.group("STUB: getSavedViews()");
-
-  const requestPath = utils.tdApp_baseURL + `/views/${utils.facilityURN}/${viewUUID}`;
-  console.log(requestPath);
-
-  await fetch(requestPath, utils.makeReqOptsGET())
-    .then(response => response.json())
-    .then((obj) => {
-      showResultApp(obj);
-    })
-    .catch(error => console.log('error', error));
-
-  console.groupEnd();
-};
-
-/***************************************************
 ** FUNC: getClassifications()
 ** DESC: Call the TandemAppServer and get the Classifications associated with the current group
 **********************/
