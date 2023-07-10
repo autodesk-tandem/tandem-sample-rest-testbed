@@ -350,6 +350,33 @@ export async function scanForProperty(qualProps, modelURN, showHistory) {
 }
 
 /***************************************************
+** FUNC: scanForPropertyQPLiteral()
+** DESC: scan for all elements with this property (specified by a known hardwired string in the form ["n:c", "n:v". ...])
+**********************/
+
+export async function scanForPropertyQPLiteral(qualProps, modelURN, showHistory) {
+
+  let foundProps = null;
+
+  const bodyPayload = JSON.stringify({
+    qualifiedColumns: qualProps,
+    includeHistory: showHistory
+  });
+  const reqOpts = makeReqOptsPOST(bodyPayload);
+  const requestPath = td_baseURL_v2 + `/modeldata/${modelURN}/scan`; // NOTE: use v2 of /scan because it returns full Keys
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      foundProps = obj;
+    })
+    .catch(error => console.log('error', error));
+
+  return foundProps;
+}
+
+/***************************************************
 ** FUNC: blobToBlobUrl()
 ** DESC: convert a blob to a BlobUrl
 **********************/

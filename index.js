@@ -9,6 +9,7 @@ import * as misc_stubs from './src/misc_stubs.js';
 import * as stream_stubs from './src/stream_stubs.js';
 import * as prop_stubs from './src/prop_stubs.js';
 import * as app_stubs from './src/app_stubs.js';
+import * as sdk_stubs from './src/sdk_stubs.js';
 import * as diagnostic_stubs from './src/diagnostic_stubs.js';
 import * as utils from './src/utils.js';
 
@@ -330,6 +331,9 @@ async function main() {
 
   $("#btn_getPreferences").click(app_stubs.getPreferences);
 
+    // SDK Stubs
+  $("#btn_getRoomsAndSpaces").click(sdk_stubs.getRoomsAndSpaces);
+  $("#btn_getLevels").click(sdk_stubs.getLevels);
 
     // Diagnostic Stubs
   $("#btn_checkForDuplicateProperties").click(diagnostic_stubs.checkForDuplicateProperties);
