@@ -286,6 +286,10 @@ async function main() {
     $('#stubInput_getKeys').modal('show');
     modalFuncCallbackNum = 9;
   });
+  $("#btn_deleteStream").click(function() {
+    $('#stubInput_getKeys').modal('show');
+    modalFuncCallbackNum = 10;
+  });
 
     // MISC Stubs
   $("#btn_getHealth").click(misc_stubs.getHealth);
@@ -583,7 +587,8 @@ async function main() {
       stream_stubs.addHostToStream(keys);
     else if (modalFuncCallbackNum == 9)
       stream_stubs.removeHostFromStream(keys);
-
+    else if (modalFuncCallbackNum == 10)
+      stream_stubs.deleteStreams(keys);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }

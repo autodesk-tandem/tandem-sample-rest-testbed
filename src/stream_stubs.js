@@ -600,3 +600,48 @@ export async function removeHostFromStream(streamKeys) {
 
   console.groupEnd();
 }
+
+/***************************************************
+** FUNC: deleteStreams()
+** DESC: completely delete the stream.
+**  There is also a way to just delete the timeseries data from the Stream, but not the Stream itself.
+**  See Postman collection for /timeseries/models/:modelID/deletestreamsdata
+**********************/
+
+export async function deleteStreams(streamKeys) {
+
+  console.group("STUB: deleteStreams()");
+
+  const defaultModelURN = utils.getDefaultModel();
+  console.log("Default model", defaultModelURN);
+
+  const streamKeysArray = streamKeys.split(',');
+  console.log("Stream keys:", streamKeysArray);
+
+    // create the mutations array. Number of mutations must match number of elements, even if they all
+    // the same mutation.
+  const mutsArray = [];
+  for (let i=0; i<streamKeysArray.length; i++) {
+    const mutObj = ["a", "", "", ""];  // "a"=soft delete
+    mutsArray.push(mutObj);
+  }
+    //  create the payload for the call to /mutate
+  const bodyPayload = JSON.stringify({
+    keys: streamKeysArray,
+    muts: mutsArray,
+    desc: "REST TestBedApp: deleted Stream(s)"
+  });
+
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const requestPath = utils.td_baseURL + `/modeldata/${defaultModelURN}/mutate`;
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      utils.showResult(obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
