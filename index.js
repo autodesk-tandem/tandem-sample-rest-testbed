@@ -338,6 +338,10 @@ async function main() {
     // SDK Stubs
   $("#btn_getRoomsAndSpaces").click(sdk_stubs.getRoomsAndSpaces);
   $("#btn_getLevels").click(sdk_stubs.getLevels);
+  $("#btn_getElementAndTypeProperties").click(function() {
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 1;
+  });
 
     // Diagnostic Stubs
   $("#btn_checkForDuplicateProperties").click(diagnostic_stubs.checkForDuplicateProperties);
@@ -425,6 +429,8 @@ async function main() {
 
     if (modalFuncCallbackNum == 0)
       prop_stubs.getScanElementsFullChangeHistory(urn, keys);
+    else if (modalFuncCallbackNum == 1)
+      sdk_stubs.getElementAndTypeProperties(urn, keys);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }

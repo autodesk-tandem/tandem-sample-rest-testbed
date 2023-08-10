@@ -1,7 +1,7 @@
 
 import { getEnv } from '../env.js';
 import { makeWebsafe } from "../sdk/encode.js";
-
+import { ElementFlags, ColumnFamilies } from "../sdk/dt-schema.js";
 
 export let facilityURN = null;  // our global var (set by the popup menu at the top of the app)
 
@@ -317,6 +317,68 @@ export async function digOutPropertyValues(modelURN, qualProps, rawProps, return
 }
 
 /***************************************************
+** FUNC: digOutPropertyValuesQPLiteral()
+** DESC: Same as above, but we know the hardcoded literal for the Qualified Property (e.g. a built-in like "l:t" for the type)
+**********************/
+
+export async function digOutPropertyValuesQPLiteral(modelURN, qpLiteral, rawProps, returnHistory) {
+
+  const propValues = [];
+
+  for (let i=1; i<rawProps.length; i++) {   // NOTE: we start at index 1 because "version" is the first element in the array
+    const rowObj = rawProps[i];
+    if (rowObj) {
+      const key = rowObj.k;   // the "key" is consistently returned
+
+
+      const prop = rowObj[qpLiteral];
+      if (prop) {
+        if (returnHistory) {
+            // return an array of values for the property
+          propValues.push({ modelURN: modelURN, key: key, prop: qpLiteral, value: prop });  // push a new object that keeps track of the triple
+        }
+        else {
+          propValues.push({ modelURN: modelURN, key: key, prop: qpLiteral, value: prop[0] });  // push a new object that keeps track of the triple
+        }
+      }
+    }
+  }
+
+  return propValues;
+}
+
+/***************************************************
+** FUNC: scanAllPropsForElements()
+** DESC: scan for all props for the given elementKeys
+**********************/
+
+export async function scanAllPropsForElements(modelURN, elementKeys, showHistory) {
+
+  let foundProps = null;
+
+    // look for all Column Familes
+  const colFamilies = [ColumnFamilies.Standard, ColumnFamilies.Refs, ColumnFamilies.Xrefs, ColumnFamilies.Source, ColumnFamilies.DtProperties];
+
+  const bodyPayload = JSON.stringify({
+    families: colFamilies,
+    includeHistory: showHistory,
+    keys: elementKeys
+  });
+  const reqOpts = makeReqOptsPOST(bodyPayload);
+  const requestPath = td_baseURL_v2 + `/modeldata/${modelURN}/scan`; // NOTE: use v2 of /scan because it returns full Keys
+  console.log(requestPath);
+
+  await fetch(requestPath, reqOpts)
+    .then((response) => response.json())
+    .then((obj) => {
+      foundProps = obj;
+    })
+    .catch(error => console.log('error', error));
+
+  return foundProps;
+}
+
+/***************************************************
 ** FUNC: scanForProperty()
 ** DESC: scan for all elements with this property
 **********************/
@@ -511,3 +573,35 @@ export function makeXrefKey(modelURN, elemKey) {
 
   return makeWebsafe(btoa(concatStr));    // re-encode and make web-safe to get our xrefKey
 }
+
+/***************************************************
+** FUNC: toQualifiedKey()
+** DESC: The API still doesn't consistently return "long keys" for everything.  This logic is part of the "sdk" directory
+**  that is supplied with this app, but that code is for node.js and doesn't include the Buffer object.  So, we have to have
+**  a different version here that uses browser-based code.
+**  TBD: we need to either fix API to only use long keys, or provide a more comprehensive SDK to deal with the conversion.
+**********************/
+
+export function toQualifiedKey(shortKey, isLogicalElement) {
+  let binData = new Uint8Array(atob(shortKey).split('').map(function (c) {
+      return c.charCodeAt(0);
+  }));
+
+  let fullKey = new Uint8Array(24);
+  if (isLogicalElement) {
+      fullKey[0] = (ElementFlags.FamilyType >> 24) & 0xff;
+      fullKey[1] = (ElementFlags.FamilyType >> 16) & 0xff;
+      fullKey[2] = (ElementFlags.FamilyType >> 8) & 0xff;
+      fullKey[3] = ElementFlags.FamilyType & 0xff;
+  } else {
+      fullKey[0] = (ElementFlags.SimpleElement >> 24) & 0xff;;
+      fullKey[1] = (ElementFlags.SimpleElement >> 16) & 0xff;
+      fullKey[2] = (ElementFlags.SimpleElement >> 8) & 0xff;
+      fullKey[3] = ElementFlags.SimpleElement & 0xff;
+  }
+  
+  fullKey.set(binData, 4);
+
+  return makeWebsafe(btoa(String.fromCharCode.apply(null, fullKey)));
+}
+
