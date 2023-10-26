@@ -180,8 +180,8 @@ async function main() {
     modalFuncCallbackNum = 5;
   });
   $("#btn_getModelDataFragments").click(function() {
-    $('#stubInput_getURN').modal('show');
-    modalFuncCallbackNum = 6;
+    $('#stubInput_getURNandKeys').modal('show');
+    modalFuncCallbackNum = 2;
   });
   $("#btn_getModel").click(function() {
     $('#stubInput_getURN').modal('show');
@@ -364,8 +364,6 @@ async function main() {
       model_stubs.getAECModelData(urn);
     else if (modalFuncCallbackNum == 5)
       model_stubs.getModelDataAttrs(urn);
-    else if (modalFuncCallbackNum == 6)
-      model_stubs.getModelDataFragments(urn);
     else if (modalFuncCallbackNum == 7)
       model_stubs.getModel(urn);
     else if (modalFuncCallbackNum == 8)
@@ -431,6 +429,8 @@ async function main() {
       prop_stubs.getScanElementsFullChangeHistory(urn, keys);
     else if (modalFuncCallbackNum == 1)
       sdk_stubs.getElementAndTypeProperties(urn, keys);
+    else if (modalFuncCallbackNum == 2)
+      model_stubs.getModelDataFragments(urn, keys);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }

@@ -119,21 +119,39 @@ export async function getModelDataSchema(modelURN) {
 
 /***************************************************
 ** FUNC: getModelDataFragments()
-** DESC: Get the fragments of a given model (used in the viewer)
+** DESC: Get the fragments of a given model (used in the viewer), or for only
+**   a set of elementKeys within that  model
 **********************/
 
-export async function getModelDataFragments(modelURN) {
+export async function getModelDataFragments(modelURN, elemKeys) {
 
   console.group("STUB: getModelDataFragments()");
 
+  let elementKeysArray = [];
+  if (elemKeys == '') {
+    console.log("No elementKeys specified, getting entire model...");
+  }
+  else {
+    elementKeysArray = elemKeys.split(',');
+    console.log("Element keys", elementKeysArray);
+  }
+
   const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/fragments`;
+
+    //  create the payload for the call to /fragments
+  const bodyPayload = JSON.stringify({
+    includeDeleted: false,
+    keys: elementKeysArray
+  });
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.makeReqOptsGET())
-    .then((response) => response.json())
-    .then((obj) => {
-      utils.showResult(obj);
+  await fetch(requestPath, utils.makeReqOptsPOST(bodyPayload))
+    .then((response) => response.text())
+    .then((text) => {
+      utils.showResult(text);
+
+      
     })
     .catch(error => console.log('error', error));
 

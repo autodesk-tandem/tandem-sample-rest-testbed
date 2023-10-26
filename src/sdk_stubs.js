@@ -131,3 +131,4 @@ export async function getElementAndTypeProperties(modelURN, elemKeys) {
 
   console.groupEnd();
 }
+
