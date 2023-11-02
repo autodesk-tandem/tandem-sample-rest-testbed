@@ -568,21 +568,22 @@ async function main() {
     // this gets called from above via modal dialog (#btn_getStreamSecrets) and others
   $('#stubInput_getKeys_OK').click(function() {
     const keys = $("#stubInput_keys").val();
+    const useFullKeys = $("#stubInput_fullKeyToggle").prop('checked');
 
     if (modalFuncCallbackNum == 0)
-      stream_stubs.getStreamSecrets(keys);
+      stream_stubs.getStreamSecrets(keys, useFullKeys);
     else if (modalFuncCallbackNum == 1)
-      stream_stubs.resetStreamSecrets(keys);
+      stream_stubs.resetStreamSecrets(keys, useFullKeys);
     else if (modalFuncCallbackNum == 2)
-      stream_stubs.getStreamValues30Days(keys);
+      stream_stubs.getStreamValues30Days(keys, useFullKeys);
     else if (modalFuncCallbackNum == 3)
-      stream_stubs.getStreamValues365Days(keys);
+      stream_stubs.getStreamValues365Days(keys, useFullKeys);
     else if (modalFuncCallbackNum == 4)
-      stream_stubs.postNewStreamValues(keys);
+      stream_stubs.postNewStreamValues(keys, useFullKeys);
     else if (modalFuncCallbackNum == 5)
-      stream_stubs.getLastSeenStreamValues(keys);
+      stream_stubs.getLastSeenStreamValues(keys, useFullKeys);
     else if (modalFuncCallbackNum == 6)
-      stream_stubs.getStreamRollupsLast30Days(keys);
+      stream_stubs.getStreamRollupsLast30Days(keys, useFullKeys);
     else if (modalFuncCallbackNum == 8)
       stream_stubs.addHostToStream(keys);
     else if (modalFuncCallbackNum == 9)
