@@ -272,10 +272,6 @@ async function main() {
     $('#stubInput_getKeys').modal('show');
     modalFuncCallbackNum = 6;
   });
-  $("#btn_postGetStreamRollup30Days").click(function() {
-    $('#stubInput_getKeys').modal('show');
-    modalFuncCallbackNum = 7;
-  });
   $("#btn_createStream").click(function() {
     $('#stubInput_createStream').modal('show');
   });
@@ -587,8 +583,6 @@ async function main() {
       stream_stubs.getLastSeenStreamValues(keys);
     else if (modalFuncCallbackNum == 6)
       stream_stubs.getStreamRollupsLast30Days(keys);
-    else if (modalFuncCallbackNum == 7)
-      stream_stubs.postGetStreamRollupsLast30Days(keys);
     else if (modalFuncCallbackNum == 8)
       stream_stubs.addHostToStream(keys);
     else if (modalFuncCallbackNum == 9)

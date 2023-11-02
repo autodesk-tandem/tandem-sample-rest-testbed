@@ -384,53 +384,6 @@ export async function getStreamRollupsLast30Days(streamKeys) {
 }
 
 /***************************************************
-** FUNC: postGetStreamRollupsLast30Days()
-** DESC: get the rollups for the given streams
-**********************/
-
-export async function postGetStreamRollupsLast30Days(streamKeys) {
-
-  console.group("STUB: postGetStreamRollupsLast30Days()");
-
-  const defaultModelURN = utils.getDefaultModel();
-  console.log("Default model", defaultModelURN);
-
-  const streamKeysArray = streamKeys.split(',');
-  console.log("Stream keys", streamKeysArray);
-
-  const dateNow = new Date();
-  const timestampEnd = dateNow.getTime();
-  console.log("Time Now:", dateNow, timestampEnd);
-
-  const dateMinus30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const timestampStart = dateMinus30.getTime();
-  console.log("30 Days Ago:", dateMinus30, timestampStart);
-
-  console.info("NOTE: API allows any time range.")
-
-  const bodyPayload = {
-    keys: []
-  };
-
-  for (const streamKey of streamKeysArray) {
-    bodyPayload.keys.push(utils.toQualifiedKey(streamKey, true));
-  }
-  const reqOpts = utils.makeReqOptsPOST(JSON.stringify(bodyPayload));
-
-  const requestPath = `${utils.td_baseURL}/timeseries/models/${defaultModelURN}/rollups?from=${timestampStart}&to=${timestampEnd}`;
-  console.log(requestPath);
-
-  await fetch(requestPath, reqOpts)
-    .then((response) => response.json())
-    .then((obj) => {
-      utils.showResult(obj);
-    })
-    .catch(error => console.log('error', error));
-
-  console.groupEnd();
-}
-
-/***************************************************
 ** FUNC: createStream()
 ** DESC: create a new stream with or without a host, classification, room, and floor
 **********************/
