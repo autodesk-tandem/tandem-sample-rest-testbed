@@ -1,6 +1,6 @@
 
 import * as utils from './utils.js';
-import { ColumnFamilies, ColumnNames, QC, ElementFlags } from "../sdk/dt-schema.js";
+import { ColumnFamilies, ColumnNames, QC, ElementFlags } from '../sdk/dt-schema.js';
 
 /***************************************************
 ** FUNC: getStreamsFromDefaultModelPOST()
@@ -14,7 +14,7 @@ export async function getStreamsFromDefaultModelPOST() {
   const defaultModelURN = utils.getDefaultModel();
   console.log("Default model", defaultModelURN);
 
-  const requestPath = utils.td_baseURL_v2 + `/modeldata/${defaultModelURN}/scan`;
+  const requestPath = `${utils.td_baseURL}/modeldata/${defaultModelURN}/scan`;
   console.log(requestPath);
 
   var bodyPayload = JSON.stringify({
@@ -53,13 +53,18 @@ export async function getStreamSecrets(streamKeys) {
 
   const streamKeysArray = streamKeys.split(',');
   console.log("Stream keys", streamKeysArray);
+  // convert to qualified keys
+  const fullKeysArray = [];
 
-  var bodyPayload = JSON.stringify({
-    keys: streamKeysArray
+  for (const streamKey of streamKeysArray) {
+    fullKeysArray.push(utils.toQualifiedKey(streamKey, true));
+  }
+  const bodyPayload = JSON.stringify({
+    keys: fullKeysArray
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
 
-  const requestPath = utils.td_baseURL + `/models/${defaultModelURN}/getstreamssecrets`;
+  const requestPath = `${utils.td_baseURL}/models/${defaultModelURN}/getstreamssecrets`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
@@ -180,7 +185,8 @@ export async function getStreamValues30Days(streamKeys) {
     //    &limit=N (limit to N number of values)
     //    &sort (asc or desc)
     //    &substream=XYZ (only return a specific parameter)
-    const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams/${streamKeysArray[i]}?from=${timestampStart}&to=${timestampEnd}`;
+    const streamKey = utils.toQualifiedKey(streamKeysArray[i], true);
+    const requestPath = `${utils.td_baseURL}/timeseries/models/${defaultModelURN}/streams/${streamKey}?from=${timestampStart}&to=${timestampEnd}`;
 
     console.log(`Stream ${streamKeysArray[i]}-->`)
     console.log(requestPath);
@@ -227,7 +233,8 @@ export async function getStreamValues365Days(streamKeys) {
     //    &limit=N (limit to N number of values)
     //    &sort (asc or desc)
     //    &substream=XYZ (only return a specific parameter)
-    const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams/${streamKeysArray[i]}?from=${timestampStart}&to=${timestampEnd}`;
+    const streamKey = utils.toQualifiedKey(streamKeysArray[i], true);
+    const requestPath = `${utils.td_baseURL}/timeseries/models/${defaultModelURN}/streams/${streamKey}?from=${timestampStart}&to=${timestampEnd}`;
 
     console.log(`Stream ${streamKeysArray[i]}-->`)
     console.log(requestPath);
@@ -277,7 +284,8 @@ export async function postNewStreamValues(streamKeys) {
   const reqOptsPOST = utils.makeReqOptsPOST(bodyPayload);
 
   for (let i=0; i<streamKeysArray.length; i++) {
-    const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams/${streamKeysArray[i]}`;
+    const streamKey = utils.toQualifiedKey(streamKeysArray[i], true);
+    const requestPath = `${utils.td_baseURL}/timeseries/models/${defaultModelURN}/streams/${streamKey}`;
 
     console.log(`Stream ${streamKeysArray[i]}-->`)
     console.log(requestPath);
@@ -308,13 +316,17 @@ export async function getLastSeenStreamValues(streamKeys) {
   const streamKeysArray = streamKeys.split(',');
   console.log("Stream keys:", streamKeysArray);
 
-  let bodyPayload = JSON.stringify({
-    keys: streamKeysArray
-  });
+  const bodyPayload = {
+    keys: []
+  };
 
-  const reqOptsPOST = utils.makeReqOptsPOST(bodyPayload);
+  for (const streamKey of streamKeysArray) {
+    bodyPayload.keys.push(utils.toQualifiedKey(streamKey, true));
+  }
 
-  const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams`;
+  const reqOptsPOST = utils.makeReqOptsPOST(JSON.stringify(bodyPayload));
+
+  const requestPath = `${utils.td_baseURL}/timeseries/models/${defaultModelURN}/streams`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOptsPOST)
@@ -354,8 +366,8 @@ export async function getStreamRollupsLast30Days(streamKeys) {
   console.info("NOTE: API allows any time range.")
 
   for (let i=0; i<streamKeysArray.length; i++) {
-
-    const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams/${streamKeysArray[i]}/rollups?from=${timestampStart}&to=${timestampEnd}`;
+    const streamKey = utils.toQualifiedKey(streamKeysArray[i], true);
+    const requestPath = `${utils.td_baseURL}/timeseries/models/${defaultModelURN}/streams/${streamKey}/rollups?from=${timestampStart}&to=${timestampEnd}`;
 
     console.log(`Stream ${streamKeysArray[i]}-->`)
     console.log(requestPath);
@@ -396,12 +408,16 @@ export async function postGetStreamRollupsLast30Days(streamKeys) {
 
   console.info("NOTE: API allows any time range.")
 
-  let bodyPayload = JSON.stringify({
-    keys: streamKeysArray
-  });
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const bodyPayload = {
+    keys: []
+  };
 
-  const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/rollups?from=${timestampStart}&to=${timestampEnd}`;
+  for (const streamKey of streamKeysArray) {
+    bodyPayload.keys.push(utils.toQualifiedKey(streamKey, true));
+  }
+  const reqOpts = utils.makeReqOptsPOST(JSON.stringify(bodyPayload));
+
+  const requestPath = `${utils.td_baseURL}/timeseries/models/${defaultModelURN}/rollups?from=${timestampStart}&to=${timestampEnd}`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
