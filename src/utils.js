@@ -583,7 +583,11 @@ export function makeXrefKey(modelURN, elemKey) {
 **********************/
 
 export function toQualifiedKey(shortKey, isLogicalElement) {
-  let binData = new Uint8Array(atob(shortKey).split('').map(function (c) {
+  let key = shortKey;
+  
+  key = key.replace('-', '+');
+  key = key.replace('_', '/');
+  let binData = new Uint8Array(atob(key).split('').map(function (c) {
       return c.charCodeAt(0);
   }));
 
@@ -594,7 +598,7 @@ export function toQualifiedKey(shortKey, isLogicalElement) {
       fullKey[2] = (ElementFlags.FamilyType >> 8) & 0xff;
       fullKey[3] = ElementFlags.FamilyType & 0xff;
   } else {
-      fullKey[0] = (ElementFlags.SimpleElement >> 24) & 0xff;;
+      fullKey[0] = (ElementFlags.SimpleElement >> 24) & 0xff;
       fullKey[1] = (ElementFlags.SimpleElement >> 16) & 0xff;
       fullKey[2] = (ElementFlags.SimpleElement >> 8) & 0xff;
       fullKey[3] = ElementFlags.SimpleElement & 0xff;
