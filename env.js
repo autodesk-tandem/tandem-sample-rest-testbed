@@ -19,7 +19,7 @@ const prodEnvironment = {
   forgeHost: "https://developer.api.autodesk.com",
   forgeKey: "krVjl7bmgBR47lo9g3U1FAjeUkfmD4w7", // TODO: Replace with your Forge Key to develop locally
   loginRedirect: "http://localhost:8000",
-  tandemDbBaseURL: "https://tandem.autodesk.com/api/v1",
+  tandemDbBaseURL: "https://developer.api.autodesk.com/tandem/v1",
   tandemDbBaseURL_v2: "https://tandem.autodesk.com/api/v2",
   tandemAppBaseURL: "https://tandem.autodesk.com/app",
   dtLmvEnv: "DtProduction",
@@ -31,7 +31,7 @@ const githubPages = {
   forgeHost: "https://developer.api.autodesk.com",
   forgeKey: "krVjl7bmgBR47lo9g3U1FAjeUkfmD4w7", // Do not replace, this is for deployed version
   loginRedirect: "https://autodesk-tandem.github.io/sample-testbed-rest/index.html",
-  tandemDbBaseURL: "https://tandem.autodesk.com/api/v1",
+  tandemDbBaseURL: "https://developer.api.autodesk.com/tandem/v1",
   tandemDbBaseURL_v2: "https://tandem.autodesk.com/api/v2",
   tandemAppBaseURL: "https://tandem.autodesk.com/app",
   dtLmvEnv: "DtProduction",
