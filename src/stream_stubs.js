@@ -248,7 +248,7 @@ export async function getStreamValues365Days(streamKeys, useFullKeys) {
     //    &sort (asc or desc)
     //    &substream=XYZ (only return a specific parameter)
     if (!useFullKeys) {
-      streamKey = utils.toQualifiedKey(streamKeysArray[i], true);
+      streamKey = utils.toQualifiedKey(streamKey, true);
     }
     const requestPath = `${utils.td_baseURL}/timeseries/models/${defaultModelURN}/streams/${streamKey}?from=${timestampStart}&to=${timestampEnd}`;
 
@@ -272,7 +272,7 @@ export async function getStreamValues365Days(streamKeys, useFullKeys) {
 ** DESC: post new stream values
 **********************/
 
-export async function postNewStreamValues(streamKey, useFullKeys) {
+export async function postNewStreamValues(streamKeys, useFullKeys) {
 
   console.group("STUB: postNewStreamValues()");
 
@@ -301,7 +301,7 @@ export async function postNewStreamValues(streamKey, useFullKeys) {
 
   for (let streamKey of streamKeysArray) {
     if (!useFullKeys) {
-      streamKey = utils.toQualifiedKey(streamKeysArray[i], true);
+      streamKey = utils.toQualifiedKey(streamKey, true);
     }
     const requestPath = `${utils.td_baseURL}/timeseries/models/${defaultModelURN}/streams/${streamKey}`;
 
@@ -389,7 +389,7 @@ export async function getStreamRollupsLast30Days(streamKeys, useFullKeys) {
 
   for (let streamKey of streamKeysArray) {
     if (!useFullKeys) {
-      streamKey = utils.toQualifiedKey(streamKeysArray[i], true);
+      streamKey = utils.toQualifiedKey(streamKey, true);
     }
     const requestPath = `${utils.td_baseURL}/timeseries/models/${defaultModelURN}/streams/${streamKey}/rollups?from=${timestampStart}&to=${timestampEnd}`;
 
