@@ -6,7 +6,7 @@ This sample is a test bed application for exercising the Tandem REST API in an i
 
 It is designed to bring in as few dependencies as possible.  It is plain Javascript and HTML with the exception of jQuery and Bootstrap just to do minimal styling.  The app is designed as simple "Stubs" of functionality that for the most part just dump out results to the Chrome console window.  These interactive tests will surface useful information that you can then use in some of your other code (e.g., URNs for Facilities, Models, etc.). In cases where input is required from the user, the UI is as minimal as possible, or you are expected to change the code itself that supplies that input, or put a breakpoint in the debugger and change the value temporarily.
 
-*NOTE: There is also a Postman Collection available for testing the REST API endpoints.  See https://autodesk-tandem.github.io/API_postman.html for more information.*
+*NOTE: There is also a Postman Collection available for testing the REST API endpoints.  See [Postman Collection](https://documenter.getpostman.com/view/15787353/2s9YXk2faD) for more information.*
 
 ![Tandem TestBed App 001](./docs/Readme_img_001.png)
 
