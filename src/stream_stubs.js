@@ -14,7 +14,7 @@ export async function getStreamsFromDefaultModelPOST() {
   const defaultModelURN = utils.getDefaultModel();
   console.log("Default model", defaultModelURN);
 
-  const requestPath = utils.td_baseURL_v2 + `/modeldata/${defaultModelURN}/scan`;
+  const requestPath = utils.td_baseURL + `/modeldata/${defaultModelURN}/scan`;
   console.log(requestPath);
 
   var bodyPayload = JSON.stringify({

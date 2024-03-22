@@ -6,7 +6,6 @@ import { ElementFlags, ColumnFamilies } from "../sdk/dt-schema.js";
 export let facilityURN = null;  // our global var (set by the popup menu at the top of the app)
 
 export const td_baseURL = getEnv().tandemDbBaseURL;        // get PROD/STG from config file
-export const td_baseURL_v2 = getEnv().tandemDbBaseURL_v2;  // get PROD/STG from config file
 
 export const tdApp_baseURL = getEnv().tandemAppBaseURL;  // get PROD/STG from config file
 
@@ -365,7 +364,7 @@ export async function scanAllPropsForElements(modelURN, elementKeys, showHistory
     keys: elementKeys
   });
   const reqOpts = makeReqOptsPOST(bodyPayload);
-  const requestPath = td_baseURL_v2 + `/modeldata/${modelURN}/scan`; // NOTE: use v2 of /scan because it returns full Keys
+  const requestPath = td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
@@ -398,7 +397,7 @@ export async function scanForProperty(qualProps, modelURN, showHistory) {
     includeHistory: showHistory
   });
   const reqOpts = makeReqOptsPOST(bodyPayload);
-  const requestPath = td_baseURL_v2 + `/modeldata/${modelURN}/scan`; // NOTE: use v2 of /scan because it returns full Keys
+  const requestPath = td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
@@ -425,7 +424,7 @@ export async function scanForPropertyQPLiteral(qualProps, modelURN, showHistory)
     includeHistory: showHistory
   });
   const reqOpts = makeReqOptsPOST(bodyPayload);
-  const requestPath = td_baseURL_v2 + `/modeldata/${modelURN}/scan`; // NOTE: use v2 of /scan because it returns full Keys
+  const requestPath = td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)

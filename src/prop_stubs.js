@@ -53,8 +53,7 @@ export async function scanForUserProps() {
       });
 
     const reqOpts = utils.makeReqOptsPOST(bodyPayload);
-    //const requestPath = utils.td_baseURL + `/modeldata/${models[i].modelId}/scan`;
-    const requestPath = utils.td_baseURL_v2 + `/modeldata/${models[i].modelId}/scan`; // NOTE: use v2 of /scan because it returns full Keys
+    const requestPath = utils.td_baseURL + `/modeldata/${models[i].modelId}/scan`;
     console.log(requestPath);
 
     await fetch(requestPath, reqOpts)
@@ -263,7 +262,6 @@ export async function getScanBruteForce(modelURN) {
 
   console.group("STUB: getScanBruteForce()");
 
-  //const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;    // TBD: this has been flaky!
   const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/scan`;
 
   console.log(requestPath);
@@ -303,7 +301,7 @@ export async function getScanElementsOptions(modelURN, elemKeys, history, colFam
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
 
-  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
+  const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
@@ -351,7 +349,7 @@ export async function getScanElementsQualProps(modelURN, elemKeys, history, qual
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
 
-  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
+  const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
   await fetch(requestPath, reqOpts)
@@ -382,7 +380,7 @@ export async function getScanElementsFullChangeHistory(modelURN, elemKeys) {
   });
   const reqOpts = utils.makeReqOptsPOST(bodyPayload);
 
-  const requestPath = utils.td_baseURL_v2 + `/modeldata/${modelURN}/scan`;
+  const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/scan`;
 
   console.log(requestPath);
 
