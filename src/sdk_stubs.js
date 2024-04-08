@@ -147,7 +147,9 @@ export async function getFacilityStructure() {
   const models = await utils.getListOfModels(utils.facilityURN);
   const defaultModelId = utils.getDefaultModel();
 
+  console.info(`Reading facility assets`);
   for (const model of models) {
+    console.info(`Processing model ${model.label} (${model.modelId})`);
     const modelId = model.modelId;
 
     // skip default model
@@ -203,6 +205,7 @@ export async function getFacilityStructure() {
   // process rooms and create map between room and level
   const modelIds = new Set(modelRooms.map(i => i.modelId));
 
+  console.info(`Mapping rooms & levels`);
   for (const modelId of modelIds) {
     const roomIds = new Set(modelRooms.filter(i => i.modelId === modelId).map(i => i.roomId));
     const rooms = await utils.getElements(modelId, [... roomIds ],
@@ -231,8 +234,11 @@ export async function getFacilityStructure() {
       }
     }
   }
-  if (data.levels.length === 0) {
+  if (Object.keys(data.levels) === 0) {
     console.warn('No levels found in the facility');
+  }
+  if (Object.keys(data.rooms) === 0) {
+    console.warn('No rooms found in the facility');
   }
   // print out structure
   for (const { levelKey, level } of getLevelsFromStructure(data)) {
