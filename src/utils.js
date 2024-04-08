@@ -1,7 +1,6 @@
-
 import { getEnv } from '../env.js';
 import { makeWebsafe } from "../sdk/encode.js";
-import { ElementFlags, ColumnFamilies } from "../sdk/dt-schema.js";
+import { ElementFlags, KeyFlags, ColumnFamilies } from "../sdk/dt-schema.js";
 
 // Constants
 const kModelIdSize = 16;
@@ -634,11 +633,12 @@ export function fromShortKeyArray(text, useFullKeys, isLogical) {
           break;
       }
       if (useFullKeys) {
-        // TODO
-        //buff.writeInt32BE(isLogical ? KeyFlags.Logical : KeyFlags.Physical);
-        //binData.copy(buff, kElementFlagsSize, offset, offset + kElementIdSize);
+        const keyFlags = isLogical ? KeyFlags.Logical : KeyFlags.Physical;
+
+        writeInt32BE(buff, keyFlags);
+        buff.set(binData.subarray(offset, offset + kElementIdSize), kElementFlagsSize);
       } else {
-          buff.set(binData.subarray(offset, offset + kElementIdSize));
+        buff.set(binData.subarray(offset, offset + kElementIdSize));
       }
       const elementKey = makeWebsafe(btoa(String.fromCharCode.apply(null, buff)));
 
@@ -751,4 +751,18 @@ export async function getTaggedAssets(urn, columnFamilies = [ ColumnFamilies.Sta
     }
   }
   return results;
+}
+
+/**
+ * This is "equivalent" to the Node.js Buffer.writeInt32BE() function.
+ * 
+ * @param {Array} array 
+ * @param {any} value 
+ * @param {number} [offset]
+ */
+function writeInt32BE(array, value, offset = 0) {
+  array[offset] = (value >> 24) & 0xff;
+  array[offset + 1] = (value >> 16) & 0xff;
+  array[offset + 2] = (value >> 8) & 0xff;
+  array[offset + 3] = (value >> 8) & 0xff;
 }
