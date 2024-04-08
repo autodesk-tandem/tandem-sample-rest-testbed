@@ -145,12 +145,13 @@ export async function getFacilityStructure() {
   };
   const modelRooms = [];
   const models = await utils.getListOfModels(utils.facilityURN);
+  const defaultModelId = utils.getDefaultModel();
 
   for (const model of models) {
     const modelId = model.modelId;
 
-    // compare urns w/o prefix - default model has same urn as facility
-    if (modelId.substring(13) === utils.facilityURN.substring(13)) {
+    // skip default model
+    if (modelId === defaultModelId) {
       continue;
     }
     const assets = await utils.getTaggedAssets(model.modelId, [ ColumnFamilies.Standard, ColumnFamilies.DtProperties, ColumnFamilies.Refs, ColumnFamilies.Xrefs ]);
