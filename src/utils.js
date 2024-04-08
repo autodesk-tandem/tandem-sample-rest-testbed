@@ -1,7 +1,13 @@
-
 import { getEnv } from '../env.js';
 import { makeWebsafe } from "../sdk/encode.js";
-import { ElementFlags, ColumnFamilies } from "../sdk/dt-schema.js";
+import { ElementFlags, KeyFlags, ColumnFamilies } from "../sdk/dt-schema.js";
+
+// Constants
+const kModelIdSize = 16;
+const kElementIdSize = 20;
+const kElementFlagsSize = 4;
+const kElementIdWithFlagsSize = kElementIdSize + kElementFlagsSize;
+
 
 export let facilityURN = null;  // our global var (set by the popup menu at the top of the app)
 
@@ -586,7 +592,7 @@ export function toQualifiedKey(shortKey, isLogicalElement) {
       return c.charCodeAt(0);
   }));
 
-  let fullKey = new Uint8Array(24);
+  let fullKey = new Uint8Array(kElementIdWithFlagsSize);
   if (isLogicalElement) {
       fullKey[0] = (ElementFlags.FamilyType >> 24) & 0xff;
       fullKey[1] = (ElementFlags.FamilyType >> 16) & 0xff;
@@ -599,8 +605,164 @@ export function toQualifiedKey(shortKey, isLogicalElement) {
       fullKey[3] = ElementFlags.SimpleElement & 0xff;
   }
   
-  fullKey.set(binData, 4);
+  fullKey.set(binData, kElementFlagsSize);
 
   return makeWebsafe(btoa(String.fromCharCode.apply(null, fullKey)));
 }
 
+/**
+ * Converts encoded string of short keys to array of keys (either short or full).
+ * 
+ * @param {string} text 
+ * @param {boolean} useFullKeys 
+ * @param {boolean} [isLogical]
+ * @returns {Array.<string>}
+ */
+export function fromShortKeyArray(text, useFullKeys, isLogical) {
+  const tmp = text.replace(/-/g, '+').replace(/_/g, '/');
+  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
+  const buffSize = useFullKeys ? kElementIdWithFlagsSize : kElementIdSize;
+  const buff = new Uint8Array(buffSize);
+  const result = [];
+  let offset = 0;
+
+  while (offset < binData.length) {
+      const size = binData.length - offset;
+
+      if (size < kElementIdSize) {
+          break;
+      }
+      if (useFullKeys) {
+        const keyFlags = isLogical ? KeyFlags.Logical : KeyFlags.Physical;
+
+        writeInt32BE(buff, keyFlags);
+        buff.set(binData.subarray(offset, offset + kElementIdSize), kElementFlagsSize);
+      } else {
+        buff.set(binData.subarray(offset, offset + kElementIdSize));
+      }
+      const elementKey = makeWebsafe(btoa(String.fromCharCode.apply(null, buff)));
+
+      result.push(elementKey);
+      offset += kElementIdSize;
+  }
+  return result;
+}
+
+/**
+ * Converts xref key to model and element keys.
+ * 
+ * @param {string} text 
+ * @returns {Array.<Array.<string>>}
+ */
+export function fromXrefKeyArray(text) {
+  const modelKeys = [];
+  const elementKeys = [];
+
+  if (!text) {
+      return [ modelKeys, elementKeys ];
+  }
+  const tmp = text.replace(/-/g, '+').replace(/_/g, '/');
+  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
+  const modelBuff = new Uint8Array(kModelIdSize);
+  const keyBuff = new Uint8Array(kElementIdWithFlagsSize);
+  let offset = 0;
+
+  while (offset < binData.length) {
+      const size = binData.length - offset;
+
+      if (size < (kModelIdSize + kElementIdWithFlagsSize)) {
+          break;
+      }
+      modelBuff.set(binData.subarray(offset, offset + kModelIdSize));
+      const modelKey = makeWebsafe(btoa(String.fromCharCode.apply(null, modelBuff)));
+
+      modelKeys.push(modelKey);
+      // element key
+      keyBuff.set(binData.subarray(offset + kModelIdSize, offset + kModelIdSize + kElementIdWithFlagsSize));
+      const elementKey = makeWebsafe(btoa(String.fromCharCode.apply(null, keyBuff)));
+
+      elementKeys.push(elementKey);
+      offset += (kModelIdSize + kElementIdWithFlagsSize);
+  }
+  return [ modelKeys, elementKeys ];
+}
+
+/**
+ * Converts fully qualified key to short key.
+ * 
+ * @param {string} fullKey 
+ * @returns {string}
+ */
+export function toShortKey(fullKey) {
+  const tmp = fullKey.replace(/-/g, '+').replace(/_/g, '/');
+  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
+  const shortKey = new Uint8Array(kElementIdSize);
+
+  shortKey.set(binData.subarray(kElementFlagsSize));
+  return makeWebsafe(btoa(String.fromCharCode.apply(null, shortKey)));
+}
+
+/**
+ * Returns elements from given model.
+ * 
+ * @param {string} urn - Model URN.
+ * @param {Array.<string>|undefined} [keys] - Optional list of keys to fetch.
+ * @param {Array.<string>} [columnFamilies] - Optional list of column families to fetch.
+ * @returns {Promise<Array.<object>>}
+ */
+export async function getElements(urn, keys = undefined, columnFamilies = [ ColumnFamilies.Standard ]) {
+  const inputs = {
+    families: columnFamilies,
+    includeHistory: false,
+    skipArrays: true
+  };
+  if (keys?.length > 0) {
+    inputs.keys = keys;
+  }
+  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs)));
+  const data = await response.json();
+
+  return data.slice(1);
+}
+
+/**
+ * Returns tagged assets from given model.
+ * 
+ * @param {string} urn 
+ * @param {Array.{string}} [columnFamilies] 
+ * @returns {Promise<Array.<object>>}
+ */
+export async function getTaggedAssets(urn, columnFamilies = [ ColumnFamilies.Standard, ColumnFamilies.DtProperties, ColumnFamilies.Refs ]) {
+  const inputs = {
+    families: columnFamilies,
+    includeHistory: false,
+    skipArrays: true
+  };
+  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs)));
+  const data = await response.json();
+  const results = [];
+
+  for (const item of data) {
+    const keys = Object.keys(item);
+    const userProps = keys.filter(k => k.startsWith(`${ColumnFamilies.DtProperties}:`));
+
+    if (userProps.length > 0) {
+      results.push(item);
+    }
+  }
+  return results;
+}
+
+/**
+ * This is "equivalent" to the Node.js Buffer.writeInt32BE() function.
+ * 
+ * @param {Array} array 
+ * @param {any} value 
+ * @param {number} [offset]
+ */
+function writeInt32BE(array, value, offset = 0) {
+  array[offset] = (value >> 24) & 0xff;
+  array[offset + 1] = (value >> 16) & 0xff;
+  array[offset + 2] = (value >> 8) & 0xff;
+  array[offset + 3] = (value >> 8) & 0xff;
+}
