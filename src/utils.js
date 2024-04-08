@@ -3,6 +3,13 @@ import { getEnv } from '../env.js';
 import { makeWebsafe } from "../sdk/encode.js";
 import { ElementFlags, ColumnFamilies } from "../sdk/dt-schema.js";
 
+// Constants
+const kModelIdSize = 16;
+const kElementIdSize = 20;
+const kElementFlagsSize = 4;
+const kElementIdWithFlagsSize = kElementIdSize + kElementFlagsSize;
+
+
 export let facilityURN = null;  // our global var (set by the popup menu at the top of the app)
 
 export const td_baseURL = getEnv().tandemDbBaseURL;        // get PROD/STG from config file
@@ -586,7 +593,7 @@ export function toQualifiedKey(shortKey, isLogicalElement) {
       return c.charCodeAt(0);
   }));
 
-  let fullKey = new Uint8Array(24);
+  let fullKey = new Uint8Array(kElementIdWithFlagsSize);
   if (isLogicalElement) {
       fullKey[0] = (ElementFlags.FamilyType >> 24) & 0xff;
       fullKey[1] = (ElementFlags.FamilyType >> 16) & 0xff;
@@ -599,7 +606,7 @@ export function toQualifiedKey(shortKey, isLogicalElement) {
       fullKey[3] = ElementFlags.SimpleElement & 0xff;
   }
   
-  fullKey.set(binData, 4);
+  fullKey.set(binData, kElementFlagsSize);
 
   return makeWebsafe(btoa(String.fromCharCode.apply(null, fullKey)));
 }
@@ -615,7 +622,7 @@ export function toQualifiedKey(shortKey, isLogicalElement) {
 export function fromShortKeyArray(text, useFullKeys, isLogical) {
   const tmp = text.replace(/-/g, '+').replace(/_/g, '/');
   const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
-  const buffSize = useFullKeys ? 24 : 20;
+  const buffSize = useFullKeys ? kElementIdWithFlagsSize : kElementIdSize;
   const buff = new Uint8Array(buffSize);
   const result = [];
   let offset = 0;
@@ -623,7 +630,7 @@ export function fromShortKeyArray(text, useFullKeys, isLogical) {
   while (offset < binData.length) {
       const size = binData.length - offset;
 
-      if (size < 20) {
+      if (size < kElementIdSize) {
           break;
       }
       if (useFullKeys) {
@@ -631,12 +638,12 @@ export function fromShortKeyArray(text, useFullKeys, isLogical) {
         //buff.writeInt32BE(isLogical ? KeyFlags.Logical : KeyFlags.Physical);
         //binData.copy(buff, kElementFlagsSize, offset, offset + kElementIdSize);
       } else {
-          buff.set(binData.subarray(offset, offset + 20));
+          buff.set(binData.subarray(offset, offset + kElementIdSize));
       }
       const elementKey = makeWebsafe(btoa(String.fromCharCode.apply(null, buff)));
 
       result.push(elementKey);
-      offset += 20;
+      offset += kElementIdSize;
   }
   return result;
 }
@@ -656,28 +663,26 @@ export function fromXrefKeyArray(text) {
   }
   const tmp = text.replace(/-/g, '+').replace(/_/g, '/');
   const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
-  const modelBuff = new Uint8Array(16);
-  const keyBuff = new Uint8Array(24);
+  const modelBuff = new Uint8Array(kModelIdSize);
+  const keyBuff = new Uint8Array(kElementIdWithFlagsSize);
   let offset = 0;
 
   while (offset < binData.length) {
       const size = binData.length - offset;
 
-      if (size < (16 + 24)) {
+      if (size < (kModelIdSize + kElementIdWithFlagsSize)) {
           break;
       }
-      //binData.copy(modelBuff, offset);
-      modelBuff.set(binData.subarray(offset, offset + 16));
+      modelBuff.set(binData.subarray(offset, offset + kModelIdSize));
       const modelKey = makeWebsafe(btoa(String.fromCharCode.apply(null, modelBuff)));
 
       modelKeys.push(modelKey);
       // element key
-      //binData.copy(keyBuff, 0, offset + kModelIdSize);
-      keyBuff.set(binData.subarray(offset + 16, offset + 40));
+      keyBuff.set(binData.subarray(offset + kModelIdSize, offset + kModelIdSize + kElementIdWithFlagsSize));
       const elementKey = makeWebsafe(btoa(String.fromCharCode.apply(null, keyBuff)));
 
       elementKeys.push(elementKey);
-      offset += (16 + 24);
+      offset += (kModelIdSize + kElementIdWithFlagsSize);
   }
   return [ modelKeys, elementKeys ];
 }
@@ -691,8 +696,8 @@ export function fromXrefKeyArray(text) {
 export function toShortKey(fullKey) {
   const tmp = fullKey.replace(/-/g, '+').replace(/_/g, '/');
   const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
-  const shortKey = new Uint8Array(20);
+  const shortKey = new Uint8Array(kElementIdSize);
 
-  shortKey.set(binData.subarray(4));
+  shortKey.set(binData.subarray(kElementFlagsSize));
   return makeWebsafe(btoa(String.fromCharCode.apply(null, shortKey)));
 }
