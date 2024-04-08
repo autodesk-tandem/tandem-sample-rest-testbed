@@ -604,3 +604,95 @@ export function toQualifiedKey(shortKey, isLogicalElement) {
   return makeWebsafe(btoa(String.fromCharCode.apply(null, fullKey)));
 }
 
+/**
+ * Converts encoded string of short keys to array of keys (either short or full).
+ * 
+ * @param {string} text 
+ * @param {boolean} useFullKeys 
+ * @param {boolean} [isLogical]
+ * @returns {Array.<string>}
+ */
+export function fromShortKeyArray(text, useFullKeys, isLogical) {
+  const tmp = text.replace(/-/g, '+').replace(/_/g, '/');
+  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
+  const buffSize = useFullKeys ? 24 : 20;
+  const buff = new Uint8Array(buffSize);
+  const result = [];
+  let offset = 0;
+
+  while (offset < binData.length) {
+      const size = binData.length - offset;
+
+      if (size < 20) {
+          break;
+      }
+      if (useFullKeys) {
+        // TODO
+        //buff.writeInt32BE(isLogical ? KeyFlags.Logical : KeyFlags.Physical);
+        //binData.copy(buff, kElementFlagsSize, offset, offset + kElementIdSize);
+      } else {
+          buff.set(binData.subarray(offset, offset + 20));
+      }
+      const elementKey = makeWebsafe(btoa(String.fromCharCode.apply(null, buff)));
+
+      result.push(elementKey);
+      offset += 20;
+  }
+  return result;
+}
+
+/**
+ * Converts xref key to model and element keys.
+ * 
+ * @param {string} text 
+ * @returns {Array.<Array.<string>>}
+ */
+export function fromXrefKeyArray(text) {
+  const modelKeys = [];
+  const elementKeys = [];
+
+  if (!text) {
+      return [ modelKeys, elementKeys ];
+  }
+  const tmp = text.replace(/-/g, '+').replace(/_/g, '/');
+  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
+  const modelBuff = new Uint8Array(16);
+  const keyBuff = new Uint8Array(24);
+  let offset = 0;
+
+  while (offset < binData.length) {
+      const size = binData.length - offset;
+
+      if (size < (16 + 24)) {
+          break;
+      }
+      //binData.copy(modelBuff, offset);
+      modelBuff.set(binData.subarray(offset, offset + 16));
+      const modelKey = makeWebsafe(btoa(String.fromCharCode.apply(null, modelBuff)));
+
+      modelKeys.push(modelKey);
+      // element key
+      //binData.copy(keyBuff, 0, offset + kModelIdSize);
+      keyBuff.set(binData.subarray(offset + 16, offset + 40));
+      const elementKey = makeWebsafe(btoa(String.fromCharCode.apply(null, keyBuff)));
+
+      elementKeys.push(elementKey);
+      offset += (16 + 24);
+  }
+  return [ modelKeys, elementKeys ];
+}
+
+/**
+ * Converts fully qualified key to short key.
+ * 
+ * @param {string} fullKey 
+ * @returns {string}
+ */
+export function toShortKey(fullKey) {
+  const tmp = fullKey.replace(/-/g, '+').replace(/_/g, '/');
+  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
+  const shortKey = new Uint8Array(20);
+
+  shortKey.set(binData.subarray(4));
+  return makeWebsafe(btoa(String.fromCharCode.apply(null, shortKey)));
+}
