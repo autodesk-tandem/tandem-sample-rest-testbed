@@ -342,7 +342,7 @@ async function main() {
     $('#stubInput_getURNandKeys').modal('show');
     modalFuncCallbackNum = 1;
   });
-
+  $("#btn_getFacilityStructure").click(sdk_stubs.getFacilityStructure);
     // Diagnostic Stubs
   $("#btn_checkForDuplicateProperties").click(diagnostic_stubs.checkForDuplicateProperties);
 

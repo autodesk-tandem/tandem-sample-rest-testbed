@@ -1,4 +1,3 @@
-
 import * as utils from './utils.js';
 import { ColumnFamilies, ColumnNames, QC, ElementFlags } from "../sdk/dt-schema.js";
 
@@ -132,3 +131,160 @@ export async function getElementAndTypeProperties(modelURN, elemKeys) {
   console.groupEnd();
 }
 
+/**
+ * The function interates through the facility and prints out levels, rooms and assets.
+ */
+export async function getFacilityStructure() {
+  console.log("getFacilityStructure()");
+  const data = {
+    levels: {}, // map between level key and level
+    rooms: {}, // map between room key and room
+    assets: {}, // map between asset key and asset
+    roomAssetsMap: {}, // map between room and assets (asset key - room key)
+    roomLevelMap: {} // map between room and level (room key - level key)
+  };
+  const modelRooms = [];
+  const models = await utils.getListOfModels(utils.facilityURN);
+
+  for (const model of models) {
+    const modelId = model.modelId;
+
+    // compare urns w/o prefix - default model has same urn as facility
+    if (modelId.substring(13) === utils.facilityURN.substring(13)) {
+      continue;
+    }
+    const assets = await utils.getTaggedAssets(model.modelId, [ ColumnFamilies.Standard, ColumnFamilies.DtProperties, ColumnFamilies.Refs, ColumnFamilies.Xrefs ]);
+
+    for (const asset of assets) {
+      const assetKey = asset[QC.RowKey];
+      
+      data.assets[assetKey] = asset;
+      let roomRef = asset[QC.Rooms];
+      const assetRooms = [];
+      
+      if (roomRef) {
+        const roomKeys = utils.fromShortKeyArray(roomRef);
+
+        for (const roomKey of roomKeys) {
+          assetRooms.push({
+            modelId: modelId,
+            roomId: roomKey
+          });
+        }
+      } else {
+        roomRef = asset[QC.XRooms];
+        const roomKeys = utils.fromXrefKeyArray(roomRef);
+        const modelIds = roomKeys[0];
+        const elementKeys = roomKeys[1];
+
+        for (let i = 0; i < modelIds.length; i++) {
+          assetRooms.push({
+            modelId: `urn:adsk.dtm:${modelIds[i]}`,
+            // in case of xref key we need to decode from long key to short key
+            roomId: utils.toShortKey(elementKeys[i])
+          });
+        }
+      }
+      // build map between asset and rooms - note that asset can be linked to more than one room
+      for (const { roomId } of assetRooms) {
+        const roomKey = roomId;
+        let assetIds = data.roomAssetsMap[roomKey];
+
+        if (!assetIds) {
+          assetIds = [];
+        }
+        assetIds.push(assetKey);
+        data.roomAssetsMap[roomKey] = assetIds;
+      }
+      modelRooms.push(... assetRooms);
+    }
+  }
+  // process rooms and create map between room and level
+  const modelIds = new Set(modelRooms.map(i => i.modelId));
+
+  for (const modelId of modelIds) {
+    const roomIds = new Set(modelRooms.filter(i => i.modelId === modelId).map(i => i.roomId));
+    const rooms = await utils.getElements(modelId, [... roomIds ],
+      [ ColumnFamilies.Standard, ColumnFamilies.Refs ]);
+    const levelIds = new Set();
+
+    for (const room of rooms) {
+      const roomKey = room[QC.RowKey];
+
+      data.rooms[roomKey] = room;
+      const levelRef = room[QC.Level];
+
+      if (levelRef) {
+        levelIds.add(levelRef);
+        data.roomLevelMap[roomKey] = levelRef;
+      }
+    }
+    // process levels
+    if (levelIds.size > 0) {
+      const levels = await utils.getElements(modelId, [... levelIds ]);
+
+      for (const level of levels) {
+        const levelKey = level[QC.RowKey];
+
+        data.levels[levelKey] = level;
+      }
+    }
+  }
+  if (data.levels.length === 0) {
+    console.warn('No levels found in the facility');
+  }
+  // print out structure
+  for (const { levelKey, level } of getLevelsFromStructure(data)) {
+    console.group(`${level[QC.Name]} (${level[QC.RowKey]})`);
+    for (const { roomKey, room } of getRoomsByLevel(data, levelKey)) {
+      console.group(`${room[QC.Name]} (${room[QC.RowKey]})`);
+      const items = getAssetsByRoom(data, roomKey).map(( { asset } ) => {
+        return {
+          key: asset[QC.RowKey],
+          name: asset[QC.Name]
+        };
+      });
+
+      console.table(items);
+      console.groupEnd();
+    }
+    console.groupEnd();
+  }
+}
+
+function getLevelsFromStructure(data) {
+  const result = [];
+
+  for (const levelKey in data.levels) {
+    const level = data.levels[levelKey];
+
+    result.push({ levelKey, level });
+  }
+  return result;
+}
+
+function getRoomsByLevel(data, levelKey) {
+  const result = [];
+
+  for (const roomKey in data.rooms) {
+    if (data.roomLevelMap[roomKey] !== levelKey) {
+      continue;
+    }
+    const room = data.rooms[roomKey];
+
+    result.push({ roomKey, room });
+  }
+  return result;
+}
+
+function getAssetsByRoom(data, roomKey) {
+  const assetKeys = data.roomAssetsMap[roomKey];
+  const result = [];
+
+  for (const assetKey of assetKeys) {
+    const asset = data.assets[assetKey];
+
+    result.push({ assetKey, asset });
+  }
+  return result;
+}
