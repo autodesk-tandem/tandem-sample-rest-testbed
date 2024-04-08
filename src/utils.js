@@ -701,3 +701,54 @@ export function toShortKey(fullKey) {
   shortKey.set(binData.subarray(kElementFlagsSize));
   return makeWebsafe(btoa(String.fromCharCode.apply(null, shortKey)));
 }
+
+/**
+ * Returns elements from given model.
+ * 
+ * @param {string} urn - Model URN.
+ * @param {Array.<string>|undefined} [keys] - Optional list of keys to fetch.
+ * @param {Array.<string>} [columnFamilies] - Optional list of column families to fetch.
+ * @returns {Promise<Array.<object>>}
+ */
+export async function getElements(urn, keys = undefined, columnFamilies = [ ColumnFamilies.Standard ]) {
+  const inputs = {
+    families: columnFamilies,
+    includeHistory: false,
+    skipArrays: true
+  };
+  if (keys?.length > 0) {
+    inputs.keys = keys;
+  }
+  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs)));
+  const data = await response.json();
+
+  return data.slice(1);
+}
+
+/**
+ * Returns tagged assets from given model.
+ * 
+ * @param {string} urn 
+ * @param {Array.{string}} [columnFamilies] 
+ * @returns {Promise<Array.<object>>}
+ */
+export async function getTaggedAssets(urn, columnFamilies = [ ColumnFamilies.Standard, ColumnFamilies.DtProperties, ColumnFamilies.Refs ]) {
+  const inputs = {
+    families: columnFamilies,
+    includeHistory: false,
+    skipArrays: true
+  };
+  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs)));
+  const data = await response.json();
+  const results = [];
+
+  for (const item of data) {
+    const keys = Object.keys(item);
+    const userProps = keys.filter(k => k.startsWith(`${ColumnFamilies.DtProperties}:`));
+
+    if (userProps.length > 0) {
+      results.push(item);
+    }
+  }
+  return results;
+}
