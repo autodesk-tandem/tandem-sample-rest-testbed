@@ -104,7 +104,7 @@ export function setCurrentFacility(urn)
  * Get the facilities associated with this user.
  * 
  * @param {string} userID 
- * @returns {Promise<Array.<object>>}
+ * @returns {Promise<Array<object>>}
  */
 export async function getListOfFacilities(userID) {
 
@@ -129,7 +129,7 @@ export async function getListOfFacilities(userID) {
 /**
  * Get the the list of Facilities owned by the current team that is active.
  * 
- * @returns {Promise<Array.<object>>}
+ * @returns {Promise<Array<object>>}
  */
 export async function getListOfFacilitiesActiveTeam() {
 
@@ -199,7 +199,7 @@ export async function getSchema(modelURN) {
  * Get the the list of models for the given facility.
  * 
  * @param {string} facURN 
- * @returns {Promise<Array.<object>>}
+ * @returns {Promise<Array<object>>}
  */
 export async function getListOfModels(facURN) {
 
@@ -302,7 +302,7 @@ export async function lookupQualifiedProperty(modelURN, qualPropStr) {
  * @param {Array.<object>} qualProps 
  * @param {Array.<object>} rawProps 
  * @param {boolean} returnHistory 
- * @returns {Promise<Array.<object>>}
+ * @returns {Promise<Array<object>>}
  */
 export async function digOutPropertyValues(modelURN, qualProps, rawProps, returnHistory) {
 
@@ -339,7 +339,7 @@ export async function digOutPropertyValues(modelURN, qualProps, rawProps, return
  * @param {string} qpLiteral 
  * @param {Array.<object>} rawProps 
  * @param {boolean} returnHistory 
- * @returns {Promise<Array.<object>>}
+ * @returns {Promise<Array<object>>}
  */
 export async function digOutPropertyValuesQPLiteral(modelURN, qpLiteral, rawProps, returnHistory) {
 
@@ -373,7 +373,7 @@ export async function digOutPropertyValuesQPLiteral(modelURN, qpLiteral, rawProp
  * @param {string} modelURN 
  * @param {Array.<string>} elementKeys 
  * @param {boolean} showHistory 
- * @returns {Promise<Array.<object>>}
+ * @returns {Promise<Array<object>>}
  */
 export async function scanAllPropsForElements(modelURN, elementKeys, showHistory) {
 
@@ -407,7 +407,7 @@ export async function scanAllPropsForElements(modelURN, elementKeys, showHistory
  * @param {Array.<object>} qualProps 
  * @param {string} modelURN 
  * @param {boolean} showHistory 
- * @returns {Promise<Array.<object>>}
+ * @returns {Promise<Array<object>>}
  */
 export async function scanForProperty(qualProps, modelURN, showHistory) {
 
@@ -443,7 +443,7 @@ export async function scanForProperty(qualProps, modelURN, showHistory) {
  * @param {Array.<string>} qualProps 
  * @param {string} modelURN 
  * @param {boolean} showHistory 
- * @returns {Promise<Array.<object>>}
+ * @returns {Promise<Array<object>>}
  */
 export async function scanForPropertyQPLiteral(qualProps, modelURN, showHistory) {
 
@@ -683,7 +683,7 @@ export function fromShortKeyArray(text, useFullKeys, isLogical) {
  * Converts xref key to model and element keys.
  * 
  * @param {string} text 
- * @returns {Array.<Array.<string>>}
+ * @returns {Array<Array<string>>}
  */
 export function fromXrefKeyArray(text) {
   const modelKeys = [];
@@ -739,7 +739,7 @@ export function toShortKey(fullKey) {
  * @param {string} urn - Model URN.
  * @param {Array.<string>|undefined} [keys] - Optional list of keys to fetch.
  * @param {Array.<string>} [columnFamilies] - Optional list of column families to fetch.
- * @returns {Promise<Array.<object>>}
+ * @returns {Promise<Array<object>>}
  */
 export async function getElements(urn, keys = undefined, columnFamilies = [ ColumnFamilies.Standard ]) {
   const inputs = {
@@ -761,7 +761,7 @@ export async function getElements(urn, keys = undefined, columnFamilies = [ Colu
  * 
  * @param {string} urn 
  * @param {Array.{string}} [columnFamilies] 
- * @returns {Promise<Array.<object>>}
+ * @returns {Promise<Array<object>>}
  */
 export async function getTaggedAssets(urn, columnFamilies = [ ColumnFamilies.Standard, ColumnFamilies.DtProperties, ColumnFamilies.Refs ]) {
   const inputs = {
