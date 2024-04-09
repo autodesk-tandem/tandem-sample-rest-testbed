@@ -124,6 +124,7 @@ export async function getModelDataSchema(modelURN) {
 /**
  * Get the fragments of a given model (used in the viewer), or for only a set
  * of elementKeys within that  model
+ * 
  * @param {string} modelURN 
  * @param {Array<string>} elemKeys 
  * @returns {Promise<void>}
