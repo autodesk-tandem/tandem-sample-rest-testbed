@@ -1,11 +1,11 @@
-
 import * as utils from './utils.js';
 
-/***************************************************
-** FUNC: getModelProperties()
-** DESC: Get the properties of a given model
-**********************/
-
+/**
+ * Get the properties of a given model
+ * 
+ * @param {string} modelURN 
+ * @returns {Promise<void>}
+ */
 export async function getModelProperties(modelURN) {
 
   console.group("STUB: getModelProperties()");
@@ -24,11 +24,12 @@ export async function getModelProperties(modelURN) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getModel()
-** DESC: Get the given model (used for the viewer)
-**********************/
-
+/**
+ * Get the given model (used for the viewer).
+ * 
+ * @param {string} modelURN 
+ * @returns {Promise<void>}
+ */
 export async function getModel(modelURN) {
 
   console.group("STUB: getModel()");
@@ -47,11 +48,12 @@ export async function getModel(modelURN) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getAECModelData()
-** DESC: Get the aec model data of a given model
-**********************/
-
+/**
+ * Get the AEC model data of a given model.
+ * 
+ * @param {string} modelURN 
+ * @returns {Promise<void>}
+ */
 export async function getAECModelData(modelURN) {
 
   console.group("STUB: getAECModelData()");
@@ -70,11 +72,12 @@ export async function getAECModelData(modelURN) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getModelDataAttrs()
-** DESC: Get the attributes of a given model
-**********************/
-
+/**
+ * Get the attributes of a given model.
+ * 
+ * @param {string} modelURN 
+ * @returns {Promise<void>}
+ */
 export async function getModelDataAttrs(modelURN) {
 
   console.group("STUB: getModelDataAttrs()");
@@ -93,11 +96,12 @@ export async function getModelDataAttrs(modelURN) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getModelDataSchema()
-** DESC: Get the schema of a given model
-**********************/
-
+/**
+ * Get the schema of a given model
+ * 
+ * @param {string} modelURN 
+ * @returns {Promise<void>}
+ */
 export async function getModelDataSchema(modelURN) {
 
   console.group("STUB: getModelDataSchema()");
@@ -117,12 +121,13 @@ export async function getModelDataSchema(modelURN) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getModelDataFragments()
-** DESC: Get the fragments of a given model (used in the viewer), or for only
-**   a set of elementKeys within that  model
-**********************/
-
+/**
+ * Get the fragments of a given model (used in the viewer), or for only a set
+ * of elementKeys within that  model
+ * @param {string} modelURN 
+ * @param {Array<string>} elemKeys 
+ * @returns {Promise<void>}
+ */
 export async function getModelDataFragments(modelURN, elemKeys) {
 
   console.group("STUB: getModelDataFragments()");
