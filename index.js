@@ -17,7 +17,7 @@ import { ColumnFamilies } from "./sdk/dt-schema.js";
 /**
  * Get the list of all facilities we own directly or that are shared with us.
  * 
- * @returns {Promise<Array.<object>>} Array of facilities
+ * @returns {Promise<Array<object>>} Array of facilities
  */
 async function getAllFacilities() {
   const currentTeamFacilities = await utils.getListOfFacilitiesActiveTeam();;  // Facilities we have access to based on the current team

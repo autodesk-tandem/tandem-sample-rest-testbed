@@ -3,7 +3,7 @@ import * as utils from './utils.js';
 /**
  * See if we've already processed this set of duplicates so it doesn't end up in the report twice or more
  * 
- * @param {Array.<Array.<object>>} duplicatePropsArray 
+ * @param {Array<Array<object>>} duplicatePropsArray 
  * @param {string} categoryName 
  * @param {string} propName 
  * @returns {boolean}
