@@ -1,11 +1,10 @@
-
 import * as utils from './utils.js';
 
-/***************************************************
-** FUNC: getGroups()
-** DESC: Get the user groups (teams)
-**********************/
-
+/**
+ * Get the user groups (teams)
+ * 
+ * @returns {Promise<void>}
+  */
 export async function getGroups() {
 
   console.group("STUB: getGroups()");
@@ -23,11 +22,12 @@ export async function getGroups() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getGroup()
-** DESC: Get a specific group
-**********************/
-
+/**
+ * Get a specific group
+ * 
+ * @param {string} groupURN 
+ * @returns {Promise<void>}
+ */
 export async function getGroup(groupURN) {
 
   console.group("STUB: getGroup()");
@@ -46,11 +46,12 @@ export async function getGroup(groupURN) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getGroupMetrics()
-** DESC: Get metrics for a specific group
-**********************/
-
+/**
+ * Get metrics for a specific group
+ * 
+ * @param {string} groupURN 
+ * @returns {Promise<void>}
+ */
 export async function getGroupMetrics(groupURN) {
 
   console.group("STUB: getGroupMetrics()");
@@ -69,11 +70,12 @@ export async function getGroupMetrics(groupURN) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getFacilitiesForGroup()
-** DESC: Get facilities for a specific group
-**********************/
-
+/**
+ * Get facilities for a specific group
+ * 
+ * @param {string} groupURN 
+ * @returns {Promise<void>}
+ */
 export async function getFacilitiesForGroup(groupURN) {
 
   console.group("STUB: getFacilitiesForGroup()");
