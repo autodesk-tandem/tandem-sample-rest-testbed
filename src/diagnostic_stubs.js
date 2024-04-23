@@ -1,11 +1,13 @@
-
 import * as utils from './utils.js';
 
-/***************************************************
-** FUNC: processedPropertyAlready()
-** DESC: see if we've already processed this set of duplicates so it doesn't end up in the report twice or more
-**********************/
-
+/**
+ * See if we've already processed this set of duplicates so it doesn't end up in the report twice or more
+ * 
+ * @param {Array<Array<object>>} duplicatePropsArray 
+ * @param {string} categoryName 
+ * @param {string} propName 
+ * @returns {boolean}
+ */
 function processedPropertyAlready(duplicatePropsArray, categoryName, propName) {
   for (let j=0; j<duplicatePropsArray.length; j++) {
     const tmpArr = duplicatePropsArray[j];
@@ -17,11 +19,12 @@ function processedPropertyAlready(duplicatePropsArray, categoryName, propName) {
   return false;
 }
 
-/***************************************************
-** FUNC: checkForDuplicatePropertiesPerModel()
-** DESC: iterate through the schema and see if there are properties with same name
-**********************/
-
+/**
+ * Iterate through the schema and see if there are properties with same name.
+ * 
+ * @param {string} modelURN 
+ * @returns {Promise<void>}
+ */
 async function checkForDuplicatePropertiesPerModel(modelURN) {
 
   let duplicatePropsArray = [];
@@ -75,11 +78,11 @@ async function checkForDuplicatePropertiesPerModel(modelURN) {
   }
 }
 
-/***************************************************
-** FUNC: checkForDuplicateProperties()
-** DESC: iterate through the schema and see if there are properties with same name
-**********************/
-
+/**
+ * Iterate through the schema and see if there are properties with same name.
+ * 
+ * @returns {Promise<void>}
+ */
 export async function checkForDuplicateProperties() {
 
   console.group("STUB: scanForUserProps()");

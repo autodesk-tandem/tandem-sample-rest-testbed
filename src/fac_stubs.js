@@ -1,11 +1,10 @@
-
 import * as utils from './utils.js';
 
-/***************************************************
-** FUNC: getFacilityInfo()
-** DESC: get the information about a given Facility
-**********************/
-
+/**
+ * Get the information about a given Facility.
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getFacilityInfo() {
 
   console.group("STUB: getFacilityInfo()");
@@ -23,11 +22,11 @@ export async function getFacilityInfo() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getTemplate()
-** DESC: get the template info about this Facility
-**********************/
-
+/**
+ * Get the template info about this Facility.
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getTemplate() {
 
   console.group("STUB: getTemplate()");
@@ -45,11 +44,11 @@ export async function getTemplate() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getInlineTemplate()
-** DESC: get the template info about this Facility
-**********************/
-
+/**
+ * Get the template info about this Facility.
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getInlineTemplate() {
 
   console.group("STUB: getInlineTemplate()");
@@ -67,11 +66,11 @@ export async function getInlineTemplate() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getSubjects()
-** DESC: get the user accounts for this Facility
-**********************/
-
+/**
+ * Get the user accounts for this Facility.
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getSubjects() {
 
   console.group("STUB: getSubjects()");
@@ -89,11 +88,11 @@ export async function getSubjects() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getFacilityUserAccessLevels()
-** DESC: get the user access levels for this Facility
-**********************/
-
+/**
+ * Get the user access levels for this Facility
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getFacilityUserAccessLevels() {
 
   console.group("STUB: getFacilityUserAccessLevels()");
@@ -111,11 +110,12 @@ export async function getFacilityUserAccessLevels() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getFacilityUserAccessLevel()
-** DESC: get the user access levels for this Facility (for a specific user)
-**********************/
-
+/**
+ * Get the user access levels for this Facility (for a specific user).
+ * 
+ * @param {string} userID 
+ * @returns {Promise<void>}
+ */
 export async function getFacilityUserAccessLevel(userID) {
 
   console.group("STUB: getFacilityUserAccessLevel()");
@@ -133,11 +133,11 @@ export async function getFacilityUserAccessLevel(userID) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getThumbnail()
-** DESC: get the thumbnail image for the given Facility and display in a new browser tab
-**********************/
-
+/**
+ * Get the thumbnail image for the given Facility and display in a new browser tab.
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getThumbnail() {
 
   console.group("STUB: getThumbnail()");
@@ -157,11 +157,11 @@ export async function getThumbnail() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getSavedViews()
-** DESC: Call the TandemAppServer and get the Saved Views associated with the current facility
-**********************/
-
+/**
+ * Call the TandemAppServer and get the Saved Views associated with the current facility.
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getSavedViews() {
   console.group("STUB: getSavedViews()");
 
@@ -178,11 +178,12 @@ export async function getSavedViews() {
   console.groupEnd();
 };
 
-/***************************************************
-** FUNC: getSavedViewByUUID()
-** DESC: Call the TandemAppServer and get the Saved View with the given ID
-**********************/
-
+/**
+ * Call the TandemAppServer and get the Saved View with the given ID.
+ * 
+ * @param {string} viewUUID 
+ * @returns {Promise<void>}
+ */
 export async function getSavedViewByUUID(viewUUID) {
   console.group("STUB: getSavedViews()");
 
@@ -199,11 +200,12 @@ export async function getSavedViewByUUID(viewUUID) {
   console.groupEnd();
 };
 
-/***************************************************
-** FUNC: getSavedViewThumbnail()
-** DESC: get the thumbnail image for the given View and display in a new browser tab
-**********************/
-
+/**
+ * Get the thumbnail image for the given View and display in a new browser tab.
+ * 
+ * @param {string} viewUUID 
+ * @returns {Promise<void>}
+ */
 export async function getSavedViewThumbnail(viewUUID) {
 
   console.group("STUB: getSavedViewThumbnail()");

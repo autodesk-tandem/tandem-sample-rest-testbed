@@ -1,7 +1,13 @@
-
 import { getEnv } from '../env.js';
 import { makeWebsafe } from "../sdk/encode.js";
-import { ElementFlags, ColumnFamilies } from "../sdk/dt-schema.js";
+import { ElementFlags, KeyFlags, ColumnFamilies } from "../sdk/dt-schema.js";
+
+// Constants
+const kModelIdSize = 16;
+const kElementIdSize = 20;
+const kElementFlagsSize = 4;
+const kElementIdWithFlagsSize = kElementIdSize + kElementFlagsSize;
+
 
 export let facilityURN = null;  // our global var (set by the popup menu at the top of the app)
 
@@ -10,11 +16,11 @@ export const td_baseURL = getEnv().tandemDbBaseURL;        // get PROD/STG from 
 export const tdApp_baseURL = getEnv().tandemAppBaseURL;  // get PROD/STG from config file
 
 
-/***************************************************
-** FUNC: makeReqOptsGET()
-** DESC: pull this out to consistently generate the Request Options
-**********************/
-
+/**
+ * Generates the request options for GET requests.
+ * 
+ * @returns {object}
+ */
 export function makeReqOptsGET() {
   const myHeadersGET = new Headers();
   myHeadersGET.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
@@ -28,15 +34,13 @@ export function makeReqOptsGET() {
   return requestOptionsGET;
 }
 
-/***************************************************
-** FUNC: makeReqOptsGET_noAuth()
-** DESC: pull this out to consistently generate the Request Options
-**********************/
-
+/**
+ * Generates the request options for GET requests (without Authorization).
+ * 
+ * @returns {object}
+ */
 export function makeReqOptsGET_noAuth() {
   const myHeadersGET = new Headers();
-  //myHeadersGET.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
-
   const requestOptionsGET = {
     method: 'GET',
     headers: myHeadersGET,
@@ -46,11 +50,12 @@ export function makeReqOptsGET_noAuth() {
   return requestOptionsGET;
 }
 
-/***************************************************
-** FUNC: makeReqOptsPOST()
-** DESC: pull this out to consistently generate the Request Options
-**********************/
-
+/**
+ * Generates the request options for POST requests.
+ * 
+ * @param {string} bodyPayload 
+ * @returns 
+ */
 export function makeReqOptsPOST(bodyPayload) {
   let myHeadersPOST = new Headers();
   myHeadersPOST.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
@@ -66,40 +71,41 @@ export function makeReqOptsPOST(bodyPayload) {
   return requestOptionsPOST;
 }
 
-/***************************************************
-** FUNC: showResult()
-** DESC: dump the result of the function to the Console debug window for the browser
-**********************/
-
+/**
+ * Dumps the result of the function to the Console debug window for the browser.
+ * 
+ * @param {object} obj 
+ */
 export function showResult(obj) {
   console.log("Result from Tandem DB Server -->", obj);
 }
 
-/***************************************************
-** FUNC: getCurrentFacility()
-** DESC: getter function for our global variable keeping track of the current facility
-**********************/
-
+/**
+ * Getter function for our global variable keeping track of the current facility.
+ * 
+ * @returns {string}
+ */
 export function getCurrentFacility()
 {
   return facilityURN; // return our global var
 }
 
-/***************************************************
-** FUNC: setCurrentFacility()
-** DESC: setter function for our global variable keeping track of the current facility
-**********************/
-
+/**
+ * Setter function for our global variable keeping track of the current facility.
+ * 
+ * @param {string} urn 
+ */
 export function setCurrentFacility(urn)
 {
   facilityURN = urn; // set our global var
 }
 
-/***************************************************
-** FUNC: getListOfFacilities()
-** DESC: Get the facilities associated with this user
-**********************/
-
+/**
+ * Get the facilities associated with this user.
+ * 
+ * @param {string} userID 
+ * @returns {Promise<Array<object>>}
+ */
 export async function getListOfFacilities(userID) {
 
   const facilities = [];
@@ -120,11 +126,11 @@ export async function getListOfFacilities(userID) {
     return facilities;
 }
 
-/***************************************************
-** FUNC: getListOfFacilitiesActiveTeam()
-** DESC: get the the list of Facilities owned by the current team that is active
-**********************/
-
+/**
+ * Get the the list of Facilities owned by the current team that is active.
+ * 
+ * @returns {Promise<Array<object>>}
+ */
 export async function getListOfFacilitiesActiveTeam() {
 
   const facilities = [];
@@ -159,24 +165,25 @@ export async function getListOfFacilitiesActiveTeam() {
     return facilities;
 }
 
-/***************************************************
-** FUNC: getDefaultModel()
-** DESC: the "default" model is the one where stream exist.  We could get all the models
-**  and iterate through them looking for the one marked as default, but there is also a shortcut
-**  to just swap the "dtt" to "dtm" in the Facility URN.
-**********************/
-
+/**
+ * The "default" model is the one where stream exist.  We could get all the models
+ * and iterate through them looking for the one marked as default, but there is also a shortcut
+ * to just swap the "dtt" to "dtm" in the Facility URN.
+ * 
+ * @returns {string}
+ */
 export function getDefaultModel() {
   const defaultModelURN = getCurrentFacility().replace("urn:adsk.dtt:", "urn:adsk.dtm:");
   return defaultModelURN;
 }
 
-/***************************************************
-** FUNC: getSchema()
-** DESC: given a modelURN, find the schema for this particular model.  This is a utilty function to retrieve it since
-**  we need it in multiple other fucitons.
-**********************/
-
+/**
+ * Given a modelURN, find the schema for this particular model.  This is a utilty function to retrieve it since
+ * we need it in multiple other functions.
+ * 
+ * @param {string} modelURN 
+ * @returns {Promise<object>}
+ */
 export async function getSchema(modelURN) {
 
   const requestOpts = makeReqOptsGET();
@@ -188,11 +195,12 @@ export async function getSchema(modelURN) {
   return response;
 }
 
-/***************************************************
-** FUNC: getListOfModels()
-** DESC: get the the list of models for the given Facility
-**********************/
-
+/**
+ * Get the the list of models for the given facility.
+ * 
+ * @param {string} facURN 
+ * @returns {Promise<Array<object>>}
+ */
 export async function getListOfModels(facURN) {
 
   if (facURN == null)
@@ -213,13 +221,16 @@ export async function getListOfModels(facURN) {
   return models;
 }
 
-/***************************************************
-** FUNC: getQualifiedProperty()
-** DESC: lookup the qualified property info for a given [Category, Name] in a given model
-**  NOTE: this returns an array of property objects because there could be duplicates for a
-**  given displayName.
-**********************/
-
+/**
+ * Lookup the qualified property info for a given [Category, Name] in a given model
+ * NOTE: this returns an array of property objects because there could be duplicates for a
+ * given displayName
+ * 
+ * @param {string} modelURN 
+ * @param {string} categoryName 
+ * @param {string} propName 
+ * @returns {Promise<object>}
+ */
 export async function getQualifiedProperty(modelURN, categoryName, propName) {
 
   let qualProp = [];    // there can be multiple!
@@ -253,12 +264,14 @@ export async function getQualifiedProperty(modelURN, categoryName, propName) {
   return qualProp;
 }
 
-/***************************************************
-** FUNC: lookupQualifiedProperty()
-** DESC: lookup the qualified property info for a fully qualified Name.  This is
-**  to ensure it exists and to return the full information about that paroperty (dataType, etc)
-**********************/
-
+/**
+ * Lookup the qualified property info for a fully qualified Name.  This is
+ * to ensure it exists and to return the full information about that paroperty (dataType, etc).
+ * 
+ * @param {string} modelURN 
+ * @param {string} qualPropStr 
+ * @returns {Promise<object>}
+ */
 export async function lookupQualifiedProperty(modelURN, qualPropStr) {
 
   let qualProp = null;    // should only be One!
@@ -280,13 +293,17 @@ export async function lookupQualifiedProperty(modelURN, qualPropStr) {
   return qualProp;
 }
 
-/***************************************************
-** FUNC: digOutPropertyValues()
-** DESC: build a simple to deal with table of propValues for easy processing later.  We include enough info,
-**  so that some processing function later can do whatever is necessary (use the Key, the Model ID, ... whatever)
-**  If returnHistory=true, then it will return arrays for the property value, otherwise it will just return a single "last value".
-**********************/
-
+/**
+ * build a simple to deal with table of propValues for easy processing later.  We include enough info,
+ * so that some processing function later can do whatever is necessary (use the Key, the Model ID, ... whatever)
+ * If returnHistory=true, then it will return arrays for the property value, otherwise it will just return a single "last value".
+ * 
+ * @param {string} modelURN 
+ * @param {Array.<object>} qualProps 
+ * @param {Array.<object>} rawProps 
+ * @param {boolean} returnHistory 
+ * @returns {Promise<Array<object>>}
+ */
 export async function digOutPropertyValues(modelURN, qualProps, rawProps, returnHistory) {
 
   const propValues = [];
@@ -315,11 +332,15 @@ export async function digOutPropertyValues(modelURN, qualProps, rawProps, return
   return propValues;
 }
 
-/***************************************************
-** FUNC: digOutPropertyValuesQPLiteral()
-** DESC: Same as above, but we know the hardcoded literal for the Qualified Property (e.g. a built-in like "l:t" for the type)
-**********************/
-
+/**
+ * Same as above, but we know the hardcoded literal for the Qualified Property (e.g. a built-in like "l:t" for the type).
+ * 
+ * @param {string} modelURN 
+ * @param {string} qpLiteral 
+ * @param {Array.<object>} rawProps 
+ * @param {boolean} returnHistory 
+ * @returns {Promise<Array<object>>}
+ */
 export async function digOutPropertyValuesQPLiteral(modelURN, qpLiteral, rawProps, returnHistory) {
 
   const propValues = [];
@@ -346,11 +367,14 @@ export async function digOutPropertyValuesQPLiteral(modelURN, qpLiteral, rawProp
   return propValues;
 }
 
-/***************************************************
-** FUNC: scanAllPropsForElements()
-** DESC: scan for all props for the given elementKeys
-**********************/
-
+/**
+ * Scan for all props for the given elementKeys.
+ * 
+ * @param {string} modelURN 
+ * @param {Array.<string>} elementKeys 
+ * @param {boolean} showHistory 
+ * @returns {Promise<Array<object>>}
+ */
 export async function scanAllPropsForElements(modelURN, elementKeys, showHistory) {
 
   let foundProps = null;
@@ -377,11 +401,14 @@ export async function scanAllPropsForElements(modelURN, elementKeys, showHistory
   return foundProps;
 }
 
-/***************************************************
-** FUNC: scanForProperty()
-** DESC: scan for all elements with this property
-**********************/
-
+/**
+ * Scan for all elements with this property
+ * 
+ * @param {Array.<object>} qualProps 
+ * @param {string} modelURN 
+ * @param {boolean} showHistory 
+ * @returns {Promise<Array<object>>}
+ */
 export async function scanForProperty(qualProps, modelURN, showHistory) {
 
   let foundProps = null;
@@ -410,11 +437,14 @@ export async function scanForProperty(qualProps, modelURN, showHistory) {
   return foundProps;
 }
 
-/***************************************************
-** FUNC: scanForPropertyQPLiteral()
-** DESC: scan for all elements with this property (specified by a known hardwired string in the form ["n:c", "n:v". ...])
-**********************/
-
+/**
+ * Scan for all elements with this property (specified by a known hardwired string in the form ["n:c", "n:v". ...])
+ * 
+ * @param {Array.<string>} qualProps 
+ * @param {string} modelURN 
+ * @param {boolean} showHistory 
+ * @returns {Promise<Array<object>>}
+ */
 export async function scanForPropertyQPLiteral(qualProps, modelURN, showHistory) {
 
   let foundProps = null;
@@ -437,11 +467,12 @@ export async function scanForPropertyQPLiteral(qualProps, modelURN, showHistory)
   return foundProps;
 }
 
-/***************************************************
-** FUNC: blobToBlobUrl()
-** DESC: convert a blob to a BlobUrl
-**********************/
-
+/**
+ * Convert a blob to a BlobUrl
+ * 
+ * @param {Blob} blob 
+ * @returns {Promise<string>}
+ */
 export async function blobToBlobUrl(blob) {
 	return new Promise((resolve, _) => {
 		const reader = new FileReader();
@@ -450,11 +481,11 @@ export async function blobToBlobUrl(blob) {
 	});
 }
 
-/***************************************************
-** FUNC: getThumbnailBlobURL()
-** DESC: retrieve a thumbnail blob URL that we can use to display in the UI
-**********************/
-
+/**
+ * Retrieve a thumbnail blob URL that we can use to display in the UI
+ * 
+ * @returns {Promise<string>}
+ */
 export async function getThumbnailBlobURL() {
   const requestPath = td_baseURL + `/twins/${facilityURN}/thumbnail`;
   console.log(requestPath);
@@ -475,12 +506,12 @@ export async function getThumbnailBlobURL() {
   return retBlobURL;
 }
 
-/***************************************************
-** FUNC: getThumbnailBlob()
-** DESC: retrieve a thumbnail blob URL that we can use to display in a new browser tab.
-**  TBD: I'm not sure why the above version of this func doesn't work to open the BlobURL in a new tab. ????
-**********************/
-
+/**
+ * Retrieve a thumbnail blob URL that we can use to display in a new browser tab.
+ * TBD: I'm not sure why the above version of this func doesn't work to open the BlobURL in a new tab. ????
+ * 
+ * @returns {Promise<Blob>}
+ */
 export async function getThumbnailBlob() {
   const requestPath = td_baseURL + `/twins/${facilityURN}/thumbnail`;
   console.log(requestPath);
@@ -499,12 +530,13 @@ export async function getThumbnailBlob() {
   return retBlob;
 }
 
-/***************************************************
-** FUNC: getViewThumbnailBlob()
-** DESC: retrieve a thumbnail blob URL that we can use to display in a new browser tab.
-**  TBD: I'm not sure why the above version of this func doesn't work to open the BlobURL in a new tab. ????
-**********************/
-
+/**
+ * Retrieve a thumbnail blob URL that we can use to display in a new browser tab.
+ * TBD: I'm not sure why the above version of this func doesn't work to open the BlobURL in a new tab. ????
+ * 
+ * @param {string} viewID 
+ * @returns {Promise<Blob>}
+ */
 export async function getViewThumbnailBlob(viewID) {
   const requestPath = td_baseURL + `/twins/${facilityURN}/views/${viewID}/thumbnail`;
   console.log(requestPath);
@@ -523,11 +555,12 @@ export async function getViewThumbnailBlob(viewID) {
   return retBlob;
 }
 
-/***************************************************
-** FUNC: findClassificationNode()
-** DESC: look up a specifc node in the Facility Template
-**********************/
-
+/**
+ * Look up a specifc node in the Facility Template
+ * 
+ * @param {string} classificationStr 
+ * @returns {Promise<object>}
+ */
 export async function findClassificationNode(classificationStr) {
 
   const requestPath = td_baseURL + `/twins/${facilityURN}/inlinetemplate`;
@@ -552,11 +585,13 @@ export async function findClassificationNode(classificationStr) {
   return foundClassifNode;
 }
 
-/***************************************************
-** FUNC: makeXrefKey()
-** DESC: make an Xref key for the database that is the modelURN + the element Key
-**********************/
-
+/**
+ * Make an Xref key for the database that is the modelURN + the element Key.
+ * 
+ * @param {string} modelURN 
+ * @param {string} elemKey 
+ * @returns {string}
+ */
 export function makeXrefKey(modelURN, elemKey) {
 
   const modelId = modelURN.slice(13);   // strip off the "urn:adsk.dtm:" prefix
@@ -573,20 +608,22 @@ export function makeXrefKey(modelURN, elemKey) {
   return makeWebsafe(btoa(concatStr));    // re-encode and make web-safe to get our xrefKey
 }
 
-/***************************************************
-** FUNC: toQualifiedKey()
-** DESC: The API still doesn't consistently return "long keys" for everything.  This logic is part of the "sdk" directory
-**  that is supplied with this app, but that code is for node.js and doesn't include the Buffer object.  So, we have to have
-**  a different version here that uses browser-based code.
-**  TBD: we need to either fix API to only use long keys, or provide a more comprehensive SDK to deal with the conversion.
-**********************/
-
+/**
+ * The API still doesn't consistently return "long keys" for everything.  This logic is part of the "sdk" directory
+ * that is supplied with this app, but that code is for node.js and doesn't include the Buffer object.  So, we have to have
+ * a different version here that uses browser-based code.
+ * TBD: we need to either fix API to only use long keys, or provide a more comprehensive SDK to deal with the conversion.
+ * 
+ * @param {string} shortKey 
+ * @param {boolean} isLogicalElement 
+ * @returns {string}
+ */
 export function toQualifiedKey(shortKey, isLogicalElement) {
   let binData = new Uint8Array(atob(shortKey).split('').map(function (c) {
       return c.charCodeAt(0);
   }));
 
-  let fullKey = new Uint8Array(24);
+  let fullKey = new Uint8Array(kElementIdWithFlagsSize);
   if (isLogicalElement) {
       fullKey[0] = (ElementFlags.FamilyType >> 24) & 0xff;
       fullKey[1] = (ElementFlags.FamilyType >> 16) & 0xff;
@@ -599,8 +636,164 @@ export function toQualifiedKey(shortKey, isLogicalElement) {
       fullKey[3] = ElementFlags.SimpleElement & 0xff;
   }
   
-  fullKey.set(binData, 4);
+  fullKey.set(binData, kElementFlagsSize);
 
   return makeWebsafe(btoa(String.fromCharCode.apply(null, fullKey)));
 }
 
+/**
+ * Converts encoded string of short keys to array of keys (either short or full).
+ * 
+ * @param {string} text 
+ * @param {boolean} useFullKeys 
+ * @param {boolean} [isLogical]
+ * @returns {Array.<string>}
+ */
+export function fromShortKeyArray(text, useFullKeys, isLogical) {
+  const tmp = text.replace(/-/g, '+').replace(/_/g, '/');
+  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
+  const buffSize = useFullKeys ? kElementIdWithFlagsSize : kElementIdSize;
+  const buff = new Uint8Array(buffSize);
+  const result = [];
+  let offset = 0;
+
+  while (offset < binData.length) {
+      const size = binData.length - offset;
+
+      if (size < kElementIdSize) {
+          break;
+      }
+      if (useFullKeys) {
+        const keyFlags = isLogical ? KeyFlags.Logical : KeyFlags.Physical;
+
+        writeInt32BE(buff, keyFlags);
+        buff.set(binData.subarray(offset, offset + kElementIdSize), kElementFlagsSize);
+      } else {
+        buff.set(binData.subarray(offset, offset + kElementIdSize));
+      }
+      const elementKey = makeWebsafe(btoa(String.fromCharCode.apply(null, buff)));
+
+      result.push(elementKey);
+      offset += kElementIdSize;
+  }
+  return result;
+}
+
+/**
+ * Converts xref key to model and element keys.
+ * 
+ * @param {string} text 
+ * @returns {Array<Array<string>>}
+ */
+export function fromXrefKeyArray(text) {
+  const modelKeys = [];
+  const elementKeys = [];
+
+  if (!text) {
+      return [ modelKeys, elementKeys ];
+  }
+  const tmp = text.replace(/-/g, '+').replace(/_/g, '/');
+  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
+  const modelBuff = new Uint8Array(kModelIdSize);
+  const keyBuff = new Uint8Array(kElementIdWithFlagsSize);
+  let offset = 0;
+
+  while (offset < binData.length) {
+      const size = binData.length - offset;
+
+      if (size < (kModelIdSize + kElementIdWithFlagsSize)) {
+          break;
+      }
+      modelBuff.set(binData.subarray(offset, offset + kModelIdSize));
+      const modelKey = makeWebsafe(btoa(String.fromCharCode.apply(null, modelBuff)));
+
+      modelKeys.push(modelKey);
+      // element key
+      keyBuff.set(binData.subarray(offset + kModelIdSize, offset + kModelIdSize + kElementIdWithFlagsSize));
+      const elementKey = makeWebsafe(btoa(String.fromCharCode.apply(null, keyBuff)));
+
+      elementKeys.push(elementKey);
+      offset += (kModelIdSize + kElementIdWithFlagsSize);
+  }
+  return [ modelKeys, elementKeys ];
+}
+
+/**
+ * Converts fully qualified key to short key.
+ * 
+ * @param {string} fullKey 
+ * @returns {string}
+ */
+export function toShortKey(fullKey) {
+  const tmp = fullKey.replace(/-/g, '+').replace(/_/g, '/');
+  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
+  const shortKey = new Uint8Array(kElementIdSize);
+
+  shortKey.set(binData.subarray(kElementFlagsSize));
+  return makeWebsafe(btoa(String.fromCharCode.apply(null, shortKey)));
+}
+
+/**
+ * Returns elements from given model.
+ * 
+ * @param {string} urn - Model URN.
+ * @param {Array.<string>|undefined} [keys] - Optional list of keys to fetch.
+ * @param {Array.<string>} [columnFamilies] - Optional list of column families to fetch.
+ * @returns {Promise<Array<object>>}
+ */
+export async function getElements(urn, keys = undefined, columnFamilies = [ ColumnFamilies.Standard ]) {
+  const inputs = {
+    families: columnFamilies,
+    includeHistory: false,
+    skipArrays: true
+  };
+  if (keys?.length > 0) {
+    inputs.keys = keys;
+  }
+  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs)));
+  const data = await response.json();
+
+  return data.slice(1);
+}
+
+/**
+ * Returns tagged assets from given model.
+ * 
+ * @param {string} urn 
+ * @param {Array.{string}} [columnFamilies] 
+ * @returns {Promise<Array<object>>}
+ */
+export async function getTaggedAssets(urn, columnFamilies = [ ColumnFamilies.Standard, ColumnFamilies.DtProperties, ColumnFamilies.Refs ]) {
+  const inputs = {
+    families: columnFamilies,
+    includeHistory: false,
+    skipArrays: true
+  };
+  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs)));
+  const data = await response.json();
+  const results = [];
+
+  for (const item of data) {
+    const keys = Object.keys(item);
+    const userProps = keys.filter(k => k.startsWith(`${ColumnFamilies.DtProperties}:`));
+
+    if (userProps.length > 0) {
+      results.push(item);
+    }
+  }
+  return results;
+}
+
+/**
+ * This is "equivalent" to the Node.js Buffer.writeInt32BE() function.
+ * 
+ * @param {Array} array 
+ * @param {any} value 
+ * @param {number} [offset]
+ */
+function writeInt32BE(array, value, offset = 0) {
+  array[offset] = (value >> 24) & 0xff;
+  array[offset + 1] = (value >> 16) & 0xff;
+  array[offset + 2] = (value >> 8) & 0xff;
+  array[offset + 3] = (value >> 8) & 0xff;
+}

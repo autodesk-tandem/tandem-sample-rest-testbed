@@ -1,6 +1,5 @@
 
 import { checkLogin } from './login.js';
-import { initLMV, startViewer } from './lmv.js';
 
 import * as fac_stubs from './src/fac_stubs.js';
 import * as group_stubs from './src/group_stubs.js';
@@ -15,11 +14,11 @@ import * as utils from './src/utils.js';
 
 import { ColumnFamilies } from "./sdk/dt-schema.js";
 
-/***************************************************
-** FUNC: getAllFacilities()
-** DESC: get the list of all facilities we own directly or that are shared with us.
-**********************/
-
+/**
+ * Get the list of all facilities we own directly or that are shared with us.
+ * 
+ * @returns {Promise<Array<object>>} Array of facilities
+ */
 async function getAllFacilities() {
   const currentTeamFacilities = await utils.getListOfFacilitiesActiveTeam();;  // Facilities we have access to based on the current team
 
@@ -46,11 +45,11 @@ async function getAllFacilities() {
   return [].concat(currentTeamFacilities, sharedWithMe);  // return the full list for the popup selector
 }
 
-/***************************************************
-** FUNC: updateThumbnailImage()
-** DESC: change the thumbnail image in the "viewer" portion of the screen
-**********************/
-
+/**
+ * Change the thumbnail image in the "viewer" portion of the screen.
+ * 
+ * @returns {Promise<void>}
+ */
 async function updateThumbnailImage() {
   const thumbnailBlobURL = await utils.getThumbnailBlobURL();
   if (thumbnailBlobURL) {
@@ -61,11 +60,11 @@ async function updateThumbnailImage() {
   }
 }
 
-/***************************************************
-** FUNC: bootstrap()
-** DESC: init the Tandem viewer and get the user to login via their Autodesk ID.
-**********************/
-
+/**
+ * Init the Tandem viewer and get the user to login via their Autodesk ID.
+ * 
+ * @returns {Promise<void>}
+ */
 async function bootstrap() {
     // login in the user and set UI elements appropriately (args are HTML elementIDs)
   const userLoggedIn = await checkLogin("btn_login", "btn_logout", "btn_userProfile", "viewer");
@@ -106,12 +105,11 @@ async function bootstrap() {
   facilityPicker.style.visibility = 'initial';
 }
 
-
-/***************************************************
-** FUNC: main()
-** DESC: setup all the call backs for the stub functions (bind to the HTML menu buttons)
-**********************/
-
+/**
+ * Setup all the call backs for the stub functions (bind to the HTML menu buttons)
+ * 
+ * @returns {Promise<void>}
+ */
 async function main() {
     // init the Viewer and login
   await bootstrap();
@@ -342,7 +340,7 @@ async function main() {
     $('#stubInput_getURNandKeys').modal('show');
     modalFuncCallbackNum = 1;
   });
-
+  $("#btn_getFacilityStructure").click(sdk_stubs.getFacilityStructure);
     // Diagnostic Stubs
   $("#btn_checkForDuplicateProperties").click(diagnostic_stubs.checkForDuplicateProperties);
 
