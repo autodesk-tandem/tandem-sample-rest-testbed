@@ -1,13 +1,13 @@
-
 import * as utils from './utils.js';
-import { ColumnFamilies } from "../sdk/dt-schema.js";
 import * as sdk from '../sdk/Attribute.js';
 
-/***************************************************
-** FUNC: getQualifiedProperty()
-** DESC: lookup the qualified property info for a given [Category, Name] in a given model
-**********************/
-
+/**
+ * Lookup the qualified property info for a given [Category, Name] in a given model.
+ * 
+ * @param {string} categoryName 
+ * @param {string} propName 
+ * @returns {Promise<void>}
+ */
 export async function getQualifiedProperty(categoryName, propName) {
 
   console.group("STUB: getQualifiedProperty()");
@@ -27,11 +27,11 @@ export async function getQualifiedProperty(categoryName, propName) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: scanForUserProps()
-** DESC: scan the DB for elements with a given property
-**********************/
-
+/**
+ * Scan the DB for elements with a given property.
+ * 
+ * @returns {Promise<void>}
+ */
 export async function scanForUserProps() {
 
   console.group("STUB: scanForUserProps()");
@@ -69,11 +69,14 @@ export async function scanForUserProps() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: scanForQualifiedPropertyImp()
-** DESC: scan the DB for elements with a given property
-**********************/
-
+/**
+ * Scan the DB for elements with a given property.
+ * 
+ * @param {string} categoryName 
+ * @param {string} propertyName 
+ * @param {boolean} showHistory 
+ * @returns {Promise<void>}
+ */
 export async function scanForQualifiedPropertyImp(categoryName, propertyName, showHistory) {
 
   const models = await utils.getListOfModels();
@@ -96,11 +99,12 @@ export async function scanForQualifiedPropertyImp(categoryName, propertyName, sh
   }
 }
 
-/***************************************************
-** FUNC: scanForQualifiedProperty()
-** DESC: scan the DB for elements with a given property
-**********************/
-
+/**
+ * Scan the DB for elements with a given property
+ * 
+ * @param {string} categoryName 
+ * @param {string} propertyName 
+ */
 export async function scanForQualifiedProperty(categoryName, propertyName) {
 
   console.group("STUB: scanForQualifiedProperty()");
@@ -110,11 +114,13 @@ export async function scanForQualifiedProperty(categoryName, propertyName) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: scanForQualifiedPropertyWithHistory()
-** DESC: scan the DB for elements with a given property
-**********************/
-
+/**
+ * Scan the DB for elements with a given property.
+ * 
+ * @param {string} categoryName 
+ * @param {string} propertyName 
+ * @returns {Promise<void>}
+ */
 export async function scanForQualifiedPropertyWithHistory(categoryName, propertyName) {
 
   console.group("STUB: scanForQualifiedPropertyWithHistory()");
@@ -124,14 +130,18 @@ export async function scanForQualifiedPropertyWithHistory(categoryName, property
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: findElementsWherePropValueEqualsX()
-** DESC: get a specific property across multiple items selected where the property value is what
-** we are looking for.   EXAMPLE: find all elements where "Common | Name" = "Basic Wall".  You can
-** also specify whether to treat the matchStr as a Javascript regular expression, and you can specify
-** whether to only search the elements that are visible in the viewer, or search all elements in the db
-**********************/
-
+/**
+ * Get a specific property across multiple items selected where the property value is what
+ * we are looking for. EXAMPLE: find all elements where "Common | Name" = "Basic Wall".  You can
+ * also specify whether to treat the matchStr as a Javascript regular expression, and you can specify
+ * whether to only search the elements that are visible in the viewer, or search all elements in the db.
+ * 
+ * @param {string} propCategory 
+ * @param {string} propName 
+ * @param {string} matchStr 
+ * @param {boolean} isRegEx 
+ * @param {boolean} isCaseInsensitive 
+ */
 export async function findElementsWherePropValueEqualsX(propCategory, propName, matchStr, isRegEx, isCaseInsensitive) {
 
   console.group("STUB: findElementsWherePropValueEqualsX()");
@@ -192,19 +202,22 @@ export async function findElementsWherePropValueEqualsX(propCategory, propName, 
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: assignClassification()
-** DESC: apply a Classification to the selected elements, which will determine which Properties
-** are associated with the element. NOTE: the act of applying the classification will cause the
-** associated properties to show up in subsequent calls to get the property, but as of now, the value
-** is "undefined".  To give the value a default or initial value, you have to make a subsequent call
-** via some code like setPropertySingleElement() in the above example.
-**
-** NOTE: if you need help figuring out raw input (classifStr, modelURN, elementKeys), use the TandemTestBedApp
-** with the embedded Viewer.  It will allow you to select elements and then convert the selection to Keys:
-** See Stub: "Model Stubs: ViewerIDs -> ElementIds"
-**********************/
-
+/**
+ * Apply a Classification to the selected elements, which will determine which Properties
+ * are associated with the element. NOTE: the act of applying the classification will cause the
+ * associated properties to show up in subsequent calls to get the property, but as of now, the value
+ * is "undefined".  To give the value a default or initial value, you have to make a subsequent call
+ * via some code like setPropertySingleElement() in the above example.
+ *
+ * NOTE: if you need help figuring out raw input (classifStr, modelURN, elementKeys), use the TandemTestBedApp
+ * with the embedded Viewer.  It will allow you to select elements and then convert the selection to Keys:
+ * See Stub: "Model Stubs: ViewerIDs -> ElementIds".
+ *
+ * @param {string} classificationStr 
+ * @param {string} modelURN 
+ * @param {Array<string>} elementKeys 
+ * @returns {Promise<void>}
+ */
 export async function assignClassification(classificationStr, modelURN, elementKeys) {
 
   const classificationNode = await utils.findClassificationNode(classificationStr);
@@ -253,11 +266,12 @@ export async function assignClassification(classificationStr, modelURN, elementK
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getScanBruteForce()
-** DESC: Get all the main properties for elements in the database
-**********************/
-
+/**
+ * Get all the main properties for elements in the database.
+ * 
+ * @param {string} modelURN 
+ * @returns {Promise<void>}
+ */
 export async function getScanBruteForce(modelURN) {
 
   console.group("STUB: getScanBruteForce()");
@@ -276,11 +290,14 @@ export async function getScanBruteForce(modelURN) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getScanElementsOptions()
-** DESC: get the properties for a specific set of Keys
-**********************/
-
+/**
+ * Get the properties for a specific set of Keys.
+ * 
+ * @param {string} modelURN 
+ * @param {Array<string>} elemKeys 
+ * @param {boolean} history 
+ * @param {Array<string>} colFamilies 
+ */
 export async function getScanElementsOptions(modelURN, elemKeys, history, colFamilies) {
 
   console.group("STUB: getScanElementsOptions()");
@@ -314,11 +331,14 @@ export async function getScanElementsOptions(modelURN, elemKeys, history, colFam
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getScanElementsQualProps()
-** DESC: get the properties for a specific set of Keys
-**********************/
-
+/**
+ * Get the properties for a specific set of Keys.
+ * 
+ * @param {string} modelURN 
+ * @param {Array<string>} elemKeys 
+ * @param {boolean} history 
+ * @param {string} qualProps 
+ */
 export async function getScanElementsQualProps(modelURN, elemKeys, history, qualProps) {
 
   console.group("STUB: getScanElementsQualProps()");
@@ -362,11 +382,13 @@ export async function getScanElementsQualProps(modelURN, elemKeys, history, qual
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getScanElementsFullChangeHistory()
-** DESC: get the full change history of all properties for the given elements
-**********************/
-
+/**
+ * Get the full change history of all properties for the given elements.
+ * 
+ * @param {string} modelURN 
+ * @param {Array<string>} elemKeys 
+ * @returns {Promise<void>}
+ */
 export async function getScanElementsFullChangeHistory(modelURN, elemKeys) {
 
   console.group("STUB: getScanElementsFullChangeHistory()");
@@ -394,11 +416,16 @@ export async function getScanElementsFullChangeHistory(modelURN, elemKeys) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: setPropertySelSet()
-** DESC: set prop values on the selected entities
-**********************/
-
+/**
+ * Set prop values on the selected entities
+ * 
+ * @param {string} propCategory 
+ * @param {string} propName 
+ * @param {string} propVal 
+ * @param {string} modelURN 
+ * @param {Array<string>} elementKeys 
+ * @returns {Promise<void>}
+ */
 export async function setPropertySelSet(propCategory, propName, propVal, modelURN, elementKeys) {
 
   const qualProp = await utils.getQualifiedProperty(modelURN, propCategory, propName);
@@ -448,11 +475,15 @@ export async function setPropertySelSet(propCategory, propName, propVal, modelUR
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: setPropertySelSetQP()
-** DESC: set prop values on the selected entities
-**********************/
-
+/**
+ * Set prop values on the selected entities.
+ * 
+ * @param {string} qualPropStr 
+ * @param {string} propVal 
+ * @param {string} modelURN 
+ * @param {Array<string>} elementKeys 
+ * @returns {Promise<void>}
+ */
 export async function setPropertySelSetQP(qualPropStr, propVal, modelURN, elementKeys) {
 
   const qualProp = await utils.lookupQualifiedProperty(modelURN, qualPropStr);

@@ -1,20 +1,21 @@
 import * as utils from './utils.js';
 
-/***************************************************
-** FUNC: showResult()
-** DESC: dump the result of the function to the Console debug window for the browser
-**    NOTE: duplicate of what is in utils.js because in this case we are coming from AppServer, not DbServer
-**********************/
-
+/**
+ * Dump the result of the function to the Console debug window for the browser.
+ * 
+ * NOTE: duplicate of what is in utils.js because in this case we are coming from AppServer, not DbServer
+ * @param {any} obj 
+ */
 function showResultApp(obj) {
   console.log("Result from Tandem App Server -->", obj);
 }
 
-/***************************************************
-** FUNC: getClassifications()
-** DESC: Call the TandemAppServer and get the Classifications associated with the current group
-**********************/
-
+/**
+ * Call the TandemAppServer and get the Classifications associated with the current group.
+ * 
+ * @param {string} groupId 
+ * @returns {Promise<void>}
+ */
 export async function getClassifications(groupId) {
   console.group("STUB: getClassifications()");
 
@@ -31,11 +32,13 @@ export async function getClassifications(groupId) {
   console.groupEnd();
 };
 
-/***************************************************
-** FUNC: getClassificationByUUID()
-** DESC: Call the TandemAppServer and get the Classification with given UUID
-**********************/
-
+/**
+ * Call the TandemAppServer and get the Classification with given UUID.
+ * 
+ * @param {string} groupId 
+ * @param {string} classifUUID 
+ * @returns {Promise<void>}
+ */
 export async function getClassificationByUUID(groupId, classifUUID) {
   console.group("STUB: getClassificationByUUID()");
 
@@ -52,11 +55,12 @@ export async function getClassificationByUUID(groupId, classifUUID) {
   console.groupEnd();
 };
 
-/***************************************************
-** FUNC: getFacilityTemplates()
-** DESC: Call the TandemAppServer and get the FacilityTemplates associated with the current group
-**********************/
-
+/**
+ * Call the TandemAppServer and get the FacilityTemplates associated with the current group.
+ * 
+ * @param {string} groupId 
+ * @returns {Promise<void>}
+ */
 export async function getFacilityTemplates(groupId) {
   console.group("STUB: getFacilityTemplates()");
 
@@ -73,11 +77,13 @@ export async function getFacilityTemplates(groupId) {
   console.groupEnd();
 };
 
-/***************************************************
-** FUNC: getFacilityTemplateByUUID()
-** DESC: Call the TandemAppServer and get the FacilityTemplate with the given UUID
-**********************/
-
+/**
+ * Call the TandemAppServer and get the FacilityTemplate with the given UUID.
+ * 
+ * @param {string} groupId 
+ * @param {string} templateUUID 
+ * @returns {Promise<void>}
+ */
 export async function getFacilityTemplateByUUID(groupId, templateUUID) {
   console.group("STUB: getFacilityTemplateByUUID()");
 
@@ -94,11 +100,12 @@ export async function getFacilityTemplateByUUID(groupId, templateUUID) {
   console.groupEnd();
 };
 
-/***************************************************
-** FUNC: getParameters()
-** DESC: Call the TandemAppServer and get the Parameters associated with the current group
-**********************/
-
+/**
+ * Call the TandemAppServer and get the Parameters associated with the current group.
+ * 
+ * @param {string} groupId 
+ * @returns {Promise<void>}
+ */
 export async function getParameters(groupId) {
   console.group("STUB: getParameters()");
 
@@ -115,11 +122,13 @@ export async function getParameters(groupId) {
   console.groupEnd();
 };
 
-/***************************************************
-** FUNC: getParameterByUUID()
-** DESC: Call the TandemAppServer and get the ParameterSet with the given UUID
-**********************/
-
+/**
+ * Call the TandemAppServer and get the ParameterSet with the given UUID.
+ * 
+ * @param {string} groupId 
+ * @param {string} paramUUID 
+ * @returns {Promise<void>}
+ */
 export async function getParameterByUUID(groupId, paramUUID) {
   console.group("STUB: getParameterByUUID()");
 
@@ -138,11 +147,11 @@ export async function getParameterByUUID(groupId, paramUUID) {
   console.groupEnd();
 };
 
-/***************************************************
-** FUNC: getPreferences()
-** DESC: Call the TandemAppServer and get the Preferences associated with the current user
-**********************/
-
+/**
+ * Call the TandemAppServer and get the Preferences associated with the current user.
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getPreferences() {
   console.group("STUB: getPreferences()");
 

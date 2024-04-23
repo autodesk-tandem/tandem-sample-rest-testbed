@@ -1,12 +1,11 @@
-
 import * as utils from './utils.js';
 import { ColumnFamilies, ColumnNames, QC, ElementFlags } from "../sdk/dt-schema.js";
 
-/***************************************************
-** FUNC: getStreamsFromDefaultModelPOST()
-** DESC: scan the DB for elements that are of type Stream
-**********************/
-
+/**
+ * Scan the DB for elements that are of type Stream
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getStreamsFromDefaultModelPOST() {
 
   console.group("STUB: getStreamsFromDefaultModelPOST()");
@@ -39,11 +38,12 @@ export async function getStreamsFromDefaultModelPOST() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getStreamSecrets()
-** DESC: Get the secrets for the given streams
-**********************/
-
+/**
+ * Get the secrets for the given streams.
+ * 
+ * @param {Array<string>} streamKeys 
+ * @returns {Promise<void>}
+ */
 export async function getStreamSecrets(streamKeys) {
 
   console.group("STUB: getStreamSecrets()");
@@ -72,11 +72,12 @@ export async function getStreamSecrets(streamKeys) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: resetStreamSecrets()
-** DESC: Reset the secrets for the given streams
-**********************/
-
+/**
+ * Reset the secrets for the given streams
+ * 
+ * @param {Array<string>} streamKeys 
+ * @returns {Promise<void>}
+ */
 export async function resetStreamSecrets(streamKeys) {
 
   console.group("STUB: resetStreamSecrets()");
@@ -106,11 +107,11 @@ export async function resetStreamSecrets(streamKeys) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: prettyPrintStreamValues()
-** DESC: print out timeseries data in human readable form
-**********************/
-
+/**
+ * Print out timeseries data in human readable form
+ * 
+ * @param {object} streamDataObj 
+ */
 export function prettyPrintStreamValues(streamDataObj) {
 
     // iterate over the map structure and make a nice, readable table
@@ -127,11 +128,11 @@ export function prettyPrintStreamValues(streamDataObj) {
   }
 }
 
-/***************************************************
-** FUNC: prettyPrintLastSeenStreamValues()
-** DESC: print out timeseries data in human readable form
-**********************/
-
+/**
+ * Print out timeseries data in human readable form
+ * 
+ * @param {object} streamDataObj 
+ */
 export function prettyPrintLastSeenStreamValues(streamDataObj) {
 
     // iterate over the map structure and make a nice, readable table
@@ -150,11 +151,12 @@ export function prettyPrintLastSeenStreamValues(streamDataObj) {
   }
 }
 
-/***************************************************
-** FUNC: getStreamValues30Days()
-** DESC: get stream values for a given time range (hardwired here to 30 days)
-**********************/
-
+/**
+ * Get stream values for a given time range (hardwired here to 30 days)
+ * 
+ * @param {Array<string>} streamKeys 
+ * @returns {Promise<void>}
+ */
 export async function getStreamValues30Days(streamKeys) {
 
   console.group("STUB: getStreamValues30Days()");
@@ -197,11 +199,12 @@ export async function getStreamValues30Days(streamKeys) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getStreamValues365Days()
-** DESC: get stream values for a given time range (hardwired here to 365 days)
-**********************/
-
+/**
+ * Get stream values for a given time range (hardwired here to 365 days)
+ * 
+ * @param {Array<string>} streamKeys
+ * @returns {Promise<void>} 
+ */
 export async function getStreamValues365Days(streamKeys) {
 
   console.group("STUB: getStreamValues365Days()");
@@ -244,11 +247,12 @@ export async function getStreamValues365Days(streamKeys) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: postNewStreamValues()
-** DESC: post new stream values
-**********************/
-
+/**
+ * Post new stream values.
+ * 
+ * @param {Array<string>} streamKeys 
+ * @returns {Promise<void>}
+ */
 export async function postNewStreamValues(streamKeys) {
 
   console.group("STUB: postNewStreamValues()");
@@ -293,11 +297,12 @@ export async function postNewStreamValues(streamKeys) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getLastSeenStreamValues()
-** DESC: get the last seen values for the given streams
-**********************/
-
+/**
+ * Get the last seen values for the given streams.
+ * 
+ * @param {Array<string>} streamKeys 
+ * @returns {Promise<void>}
+ */
 export async function getLastSeenStreamValues(streamKeys) {
 
   console.group("STUB: getLastSeenStreamValues()");
@@ -328,11 +333,12 @@ export async function getLastSeenStreamValues(streamKeys) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getStreamRollupsLast30Days()
-** DESC: get summary statistics for the given streams
-**********************/
-
+/**
+ * Get summary statistics for the given streams.
+ * 
+ * @param {Array<string>} streamKeys 
+ * @returns {Promise<void>}
+ */
 export async function getStreamRollupsLast30Days(streamKeys) {
 
   console.group("STUB: getStreamRollupsLast30Days()");
@@ -371,11 +377,12 @@ export async function getStreamRollupsLast30Days(streamKeys) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: postGetStreamRollupsLast30Days()
-** DESC: get the rollups for the given streams
-**********************/
-
+/**
+ * Get the rollups for the given streams.
+ * 
+ * @param {Array<string>} streamKeys 
+ * @returns {Promise<void>}
+ */
 export async function postGetStreamRollupsLast30Days(streamKeys) {
 
   console.group("STUB: postGetStreamRollupsLast30Days()");
@@ -414,11 +421,15 @@ export async function postGetStreamRollupsLast30Days(streamKeys) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: createStream()
-** DESC: create a new stream with or without a host, classification, room, and floor
-**********************/
-
+/**
+ * Create a new stream with or without a host, classification, room, and floor.
+ * 
+ * @param {string} streamName 
+ * @param {string} hostModelURN 
+ * @param {string} hostKey 
+ * @param {string} classifStr 
+ * @returns {Promise<void>}
+ */
 export async function createStream(streamName, hostModelURN, hostKey, classifStr) {
 
     // first do a little error checking to make sure the user isn't asking us to do something silly
@@ -515,11 +526,14 @@ export async function createStream(streamName, hostModelURN, hostKey, classifStr
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: assignHostToStream()
-** DESC: assign a new Host to the stream
-**********************/
-
+/**
+ * Assign a new Host to the stream.
+ * 
+ * @param {string} streamKey 
+ * @param {string} hostModelURN 
+ * @param {string} hostKey 
+ * @returns {Promise<void>}
+ */
 export async function assignHostToStream(streamKey, hostModelURN, hostKey) {
 
   console.group("STUB: assignHostToStream()");
@@ -558,11 +572,12 @@ export async function assignHostToStream(streamKey, hostModelURN, hostKey) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: removeHostFromStream()
-** DESC: remove any host reference from the given stream
-**********************/
-
+/**
+ * Remove any host reference from the given stream.
+ * 
+ * @param {Array<string>} streamKeys 
+ * @returns {Promise<void>}
+ */
 export async function removeHostFromStream(streamKeys) {
 
   console.group("STUB: removeHostFromStream()");
@@ -601,13 +616,14 @@ export async function removeHostFromStream(streamKeys) {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: deleteStreams()
-** DESC: completely delete the stream.
-**  There is also a way to just delete the timeseries data from the Stream, but not the Stream itself.
-**  See Postman collection for /timeseries/models/:modelID/deletestreamsdata
-**********************/
-
+/**
+ * Completely delete the stream.
+ * There is also a way to just delete the timeseries data from the Stream, but not the Stream itself.
+ * See Postman collection for /timeseries/models/:modelID/deletestreamsdata
+ * 
+ * @param {Array<string>} streamKeys 
+ * @returns {Promise<void>}
+ */
 export async function deleteStreams(streamKeys) {
 
   console.group("STUB: deleteStreams()");

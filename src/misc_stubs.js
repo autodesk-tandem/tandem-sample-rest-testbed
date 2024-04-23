@@ -1,11 +1,10 @@
-
 import * as utils from './utils.js';
 
-/***************************************************
-** FUNC: getHealth()
-** DESC: Get the health stats of the systems
-**********************/
-
+/**
+ * Get the health stats of the systems
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getHealth() {
 
   console.group("STUB: getHealth()");
@@ -25,11 +24,12 @@ export async function getHealth() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getFacilitiesForUser()
-** DESC: Get the facilities associated with this user
-**********************/
-
+/**
+ * Get the facilities associated with this user.
+ * 
+ * @param {string} userID 
+ * @returns {Promise<void>}
+ */
 export async function getFacilitiesForUser(userID) {
 
   console.group("STUB: getFacilitiesForUser()");

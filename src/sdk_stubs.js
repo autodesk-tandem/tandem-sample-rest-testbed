@@ -1,11 +1,11 @@
 import * as utils from './utils.js';
-import { ColumnFamilies, ColumnNames, QC, ElementFlags } from "../sdk/dt-schema.js";
+import { ColumnFamilies, QC } from "../sdk/dt-schema.js";
 
-/***************************************************
-** FUNC: prettyPrintElementKeyAndName()
-** DESC: iterate through the facility and get all rooms
-**********************/
-
+/**
+ * Iterate through the facility and get all rooms
+ * 
+ * @param {Array.<object>} elems 
+ */
 function prettyPrintElementKeyAndName(elems) {
     // Dig out the values for Name so we can display in an easy to read table
   let prettyPrint = [];
@@ -16,11 +16,11 @@ function prettyPrintElementKeyAndName(elems) {
     console.table(prettyPrint);
 }
 
-/***************************************************
-** FUNC: getRoomsAndSpaces()
-** DESC: iterate through the facility and get all rooms and spaces
-**********************/
-
+/**
+ * iterate through the facility and get all rooms and spaces
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getRoomsAndSpaces() {
 
   console.group("STUB: getRoomsAndSpaces()");
@@ -51,11 +51,11 @@ export async function getRoomsAndSpaces() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getLevels()
-** DESC: iterate through the facility and get all Levels
-**********************/
-
+/**
+ * Iterate through the facility and get all Levels.
+ * 
+ * @returns {Promise<void>}
+ */
 export async function getLevels() {
 
   console.group("STUB: getLevels()");
@@ -78,11 +78,13 @@ export async function getLevels() {
   console.groupEnd();
 }
 
-/***************************************************
-** FUNC: getElementAndTypeProperties()
-** DESC: get the properties for a specific elementKey, and also get their Type properties
-**********************/
-
+/**
+ * Get the properties for a specific elementKey, and also get their Type properties.
+ * 
+ * @param {string} modelURN 
+ * @param {Array.<string>} elemKeys 
+ * @returns 
+ */
 export async function getElementAndTypeProperties(modelURN, elemKeys) {
 
   console.group("STUB: getElementAndTypeProperties()");
@@ -133,6 +135,8 @@ export async function getElementAndTypeProperties(modelURN, elemKeys) {
 
 /**
  * The function interates through the facility and prints out levels, rooms and assets.
+ * 
+ * @returns {Promise<void>}
  */
 export async function getFacilityStructure() {
   console.log("getFacilityStructure()");
@@ -259,6 +263,12 @@ export async function getFacilityStructure() {
   }
 }
 
+/**
+ * Gets the levels from the structure data.
+ * 
+ * @param {any} data 
+ * @returns {Array<{ levelKey: string, level: any }>}
+ */
 function getLevelsFromStructure(data) {
   const result = [];
 
@@ -270,6 +280,13 @@ function getLevelsFromStructure(data) {
   return result;
 }
 
+/**
+ * Gets the rooms by level from the structure.
+ * 
+ * @param {any} data 
+ * @param {string} levelKey 
+ * @returns {Array<{ roomKey: string, room: any}>}
+ */
 function getRoomsByLevel(data, levelKey) {
   const result = [];
 
@@ -284,6 +301,13 @@ function getRoomsByLevel(data, levelKey) {
   return result;
 }
 
+/**
+ * Gets te assets by room from the structure.
+ * 
+ * @param {any} data 
+ * @param {string} roomKey 
+ * @returns {Array<{ assetKey: string, asset: any }>}
+ */
 function getAssetsByRoom(data, roomKey) {
   const assetKeys = data.roomAssetsMap[roomKey];
   const result = [];
