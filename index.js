@@ -14,36 +14,190 @@ import * as utils from './src/utils.js';
 
 import { ColumnFamilies } from "./sdk/dt-schema.js";
 
+
 /**
- * Get the list of all facilities we own directly or that are shared with us.
+ * Check to see if there is at least one account with one facility
  * 
- * @returns {Promise<Array<object>>} Array of facilities
+ * @param {any} teams
+ * @returns {boolean}
  */
-async function getAllFacilities() {
-  const currentTeamFacilities = await utils.getListOfFacilitiesActiveTeam();;  // Facilities we have access to based on the current team
+function noFacilitiesAvailable(teams) {
 
-    // we will construct a readable table to dump out the info for the user
-  let printOutFacilities = [];
-  let tmp = null;
-  for (let i=0; i<currentTeamFacilities.length; i++) {
-    tmp = currentTeamFacilities[i];
-    printOutFacilities.push({ name: tmp.settings.props["Identity Data"]["Building Name"], shared: "via current team", twinID: tmp.urn });
+    // check if we are part of any accounts
+  if (teams == null) {
+    alert("No account found. Make sure you have an account setup in Autodesk Tandem.");
+    return true;
   }
-  console.log("getListOfFacilitiesActiveTeam()", currentTeamFacilities);  // dump out raw return result
 
-  const sharedWithMe = await utils.getListOfFacilities("@me");  // Facilities we have access to because they've been directly shared with us
-
-  for (let i=0; i<sharedWithMe.length; i++) {
-    tmp = sharedWithMe[i];
-    printOutFacilities.push({ name: tmp.settings.props["Identity Data"]["Building Name"], shared: "directly with me", twinID: tmp.urn });
+  let foundOne = false;
+  for (let i = 0; i < teams.length; i++) {
+    if (teams[i].facilities.size > 0) {    // check if map of twins is empty
+      foundOne = true;
+      break;
+    }
   }
-  console.log("getUsersFacilities()", sharedWithMe);  // dump out raw return result
+  if (!foundOne) {
+    alert("No facilities found. Make sure you have access to at least one facility in Autodesk Tandem.");
+    return true;
+  }
 
-    // now try to print out a readable table
-  console.table(printOutFacilities);
-
-  return [].concat(currentTeamFacilities, sharedWithMe);  // return the full list for the popup selector
+  return false; // this means we are OK
 }
+
+/**
+ * Alphabetically sort the Facilities by BuildingName and return a Map instead of the original Object
+ * 
+ * @param {any} facilities
+ * @returns {Map}
+ */
+function sortFacilities(facilities) {
+
+    // Convert the object entries to an array of key-value pairs
+  const entries = Object.entries(facilities);
+
+    // Sort the entries based on the `Building Name` property in the values
+  const sortedEntries = entries.sort((a, b) => {
+      const nameA = a[1].props["Identity Data"]["Building Name"].toLowerCase();
+      const nameB = b[1].props["Identity Data"]["Building Name"].toLowerCase();
+      if (nameA < nameB) return -1;
+      if (nameA > nameB) return 1;
+      return 0;
+  });
+
+    // Convert the sorted entries back into a Map so we can use more easily later on
+  const sortedMap = new Map(sortedEntries);
+
+  return sortedMap;
+}
+
+/**
+ * Build up a structure that includes all Teams and their respective Facilities
+ * 
+ * @returns {object}
+ */
+async function buildTeamsAndFacilitiesStructure() {
+
+    // get the list of all teams and then sort them alphabetically
+  let teams = await utils.getListOfGroups();
+
+  if (teams) {
+      // for each team, get the info about its facilities and assign to a new property we create
+    for (let i=0; i<teams.length; i++) {
+      teams[i].facilities = sortFacilities(await utils.getListOfFacilitiesForGroup(teams[i].urn));
+    }
+    teams.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())); // Sort alphabetically
+  }
+
+    // there are also Facilities that are just shared directly with a given user.
+    // make a "fake" team to be represented in the drop down if we have some of these
+  const sharedWithMe = await utils.getFacilitiesForUser("@me");  // Facilities we have access to because they've been directly shared with us
+  if (sharedWithMe != null) {
+    const fakeTeam = { name: "** SHARED DIRECTLY **", facilities: sharedWithMe };
+
+    fakeTeam.facilities = sortFacilities(sharedWithMe);
+
+    if (teams == null)  // ?? might be impossible to not have at least one team, but let's be sure
+        teams = [];
+    teams.push(fakeTeam);   // always push to end, regardless of alphabetical place
+  }
+
+  return teams;
+}
+
+/**
+ * Populate the entries in the Teams dropdown menu
+ * 
+ * @param {any} teams
+ * @returns {Promise<void>}
+ */
+async function populateTeamsDropdown(teams) {
+
+  const acctPicker = document.getElementById('acctPicker');
+  const preferredTeam = window.localStorage.getItem('tandem-testbed-rest-last-team');  // the last one that was used
+
+  const safePreferredTeam = teams.find(t => t.name === preferredTeam) || teams[0];   // make sure we can find last used, or else use first
+
+    // add all the account names to the acct dropdown picker
+  for (let i = 0; i < teams.length; i++) {
+    const option = document.createElement('option');
+    option.text = teams[i].name;
+    option.selected = teams[i].name === safePreferredTeam.name;  // set initial selection in dropdown
+
+    acctPicker.appendChild(option);
+  }
+
+  populateFacilitiesDropdown(teams, safePreferredTeam.name); // this will load the Facilities on first pass initialization
+
+    // this callback will load the Facilities when the dropdown list gets a different selection
+  acctPicker.onchange = () => {
+    const newTeamName = acctPicker.value;
+    window.localStorage.setItem('tandem-testbed-rest-last-team', newTeamName);
+    populateFacilitiesDropdown(teams, newTeamName);
+  }
+  acctPicker.style.visibility = 'initial';
+}
+
+/**
+ * Populate the entries in the Facilities dropdown menu
+ * 
+ * @param {any} teams
+ * @param {string} teamName
+ * @returns {Promise<void>}
+ */
+async function populateFacilitiesDropdown(teams, teamName) {
+
+      // setup facility picker UI
+  const facilityPicker = document.getElementById('facilityPicker');
+  facilityPicker.innerHTML = '';  // clear out any previous options
+
+    // find the current team
+  const curTeam = teams.find(obj => obj.name === teamName);
+
+    // load preferred or random facility
+  const preferredFacilityURN = window.localStorage.getItem('tandem-testbed-rest-last-facility');
+
+    // see if we can find that one in our list of facilities
+  let safeFacilityURN = curTeam.facilities.entries().next().key // safe in case we can't find the last-used
+  let facility = curTeam.facilities.entries().next().value;
+  for (const [key, value] of curTeam.facilities.entries()) {
+      if (key === preferredFacilityURN) {
+        safeFacilityURN = key;
+        facility = value;
+        break; // Exit the loop once the key is found
+      }
+  }
+    // now build the dropdown list
+  let tempFacility = null;
+  for (const [key, value] of curTeam.facilities.entries()) {
+    const option = document.createElement('option');
+    option.text = value.props["Identity Data"]["Building Name"];
+    option.selected = key == safeFacilityURN;
+
+    facilityPicker.appendChild(option);
+  }
+
+  utils.setCurrentFacility(safeFacilityURN);  // store this as our "global" variable for all the stub functions
+  updateThumbnailImage();
+
+    // this callback will load the facility that the user picked in the Facility dropdown
+  facilityPicker.onchange = () => {
+    let i=0;
+    let foundURN = null;
+    for (const [key, value] of curTeam.facilities.entries()) {
+      if (i == facilityPicker.selectedIndex) {
+        foundURN = key;
+        break;
+      }
+      i++;
+    }
+    
+    window.localStorage.setItem('tandem-testbed-rest-last-facility', foundURN);
+    utils.setCurrentFacility(foundURN);  // store this as our "global" variable for all the stub functions
+    updateThumbnailImage();
+  }
+  facilityPicker.style.visibility = 'initial';
+}
+
 
 /**
  * Change the thumbnail image in the "viewer" portion of the screen.
@@ -60,7 +214,7 @@ async function updateThumbnailImage() {
   }
 }
 
-/**
+/** 
  * Init the Tandem viewer and get the user to login via their Autodesk ID.
  * 
  * @returns {Promise<void>}
@@ -71,38 +225,12 @@ async function bootstrap() {
   if (!userLoggedIn)
     return;   // when user does login, it will go through the bootstrap process again
 
-  const facilities = await getAllFacilities();
-
-  if (facilities.length == 0) {
-    alert("NO FACILITIES AVAILABLE");
+  const teams = await buildTeamsAndFacilitiesStructure();
+  console.log("Teams and Facilities:", teams);
+  if (noFacilitiesAvailable(teams))
     return;
-  }
 
-    // load preferred or random facility
-  const preferredFacilityUrn = window.localStorage.getItem('tandem-testbed-rest-last-facility');
-  const preferredFacility = facilities.find(f=>f.urn === preferredFacilityUrn) || facilities[0];
-  utils.setCurrentFacility(preferredFacility.urn);  // store this as our "global" variable for all the stub functions
-  updateThumbnailImage();
-
-    // setup facility picker UI
-  const facilityPicker = document.getElementById('facilityPicker');
-
-  for (let facility of facilities) {
-      const option = document.createElement('option');
-      option.text = facility.settings.props["Identity Data"]["Building Name"];
-      option.selected = facility == preferredFacility;
-
-      facilityPicker.appendChild(option);
-  }
-
-    // if the user changes the current facility, update the thumbnail and our global variable in utils.js
-  facilityPicker.onchange = async () => {
-    const newFacility = facilities[facilityPicker.selectedIndex];
-    window.localStorage.setItem('tandem-testbed-rest-last-facility', newFacility.urn);
-    utils.setCurrentFacility(newFacility.urn);  // store this as our "global" variable for all the stub functions
-    updateThumbnailImage();
-  }
-  facilityPicker.style.visibility = 'initial';
+  populateTeamsDropdown(teams);
 }
 
 /**
@@ -600,4 +728,9 @@ async function main() {
 
 };
 
-main();
+
+// trigger things when the HTML is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  //console.log("DOMContentLoaded");
+  main();
+});
