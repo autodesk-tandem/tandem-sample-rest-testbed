@@ -101,6 +101,69 @@ export function setCurrentFacility(urn)
 }
 
 /**
+ * Get list of groups (teams)
+ * 
+ * @returns {Promise<Array<object>>}
+*/
+export async function getListOfGroups() {
+
+  let teams = null;
+
+  const requestPath = td_baseURL + `/groups`;
+
+  await fetch(requestPath, makeReqOptsGET())
+    .then((response) => response.json())
+    .then((obj) => {
+      teams = obj;
+    })
+    .catch(error => console.log('error', error));
+
+  return teams;
+}
+
+/**
+ * Get list of facilities for a specific group
+ * 
+ * @param {string} groupURN 
+ * @returns {Promise<Array<object>>}
+ */
+export async function getListOfFacilitiesForGroup(groupURN) {
+
+  const requestPath = td_baseURL + `/groups/${groupURN}/twins`;
+  let twins = null;
+
+  await fetch(requestPath, makeReqOptsGET())
+    .then((response) => response.json())
+    .then((obj) => {
+      twins = obj;
+    })
+    .catch(error => console.log('error', error));
+
+  return twins;
+}
+
+/**
+ * Get the information about a given Facility.
+ * 
+ * @returns {Promise<object>}
+ */
+export async function getFacilityInfo(facilityURN) {
+
+  let twinInfo = null;
+
+  const requestPath = td_baseURL + `/twins/${facilityURN}`;
+
+  await fetch(requestPath, makeReqOptsGET())
+    .then((response) => response.json())
+    .then((obj) => {
+      twinInfo = obj;
+    })
+    .catch(error => console.log('error', error));
+
+  return twinInfo;
+}
+
+/**
  * Get the facilities associated with this user.
  * 
  * @param {string} userID 
@@ -163,6 +226,27 @@ export async function getListOfFacilitiesActiveTeam() {
     .catch(error => console.log('error', error));
 
     return facilities;
+}
+
+/**
+ * Get the facilities associated with this user.
+ * 
+ * @param {string} userID 
+ * @returns {Promise<void>}
+ */
+export async function getFacilitiesForUser(userID) {
+
+  let facilities = null;
+  const requestPath = td_baseURL + `/users/${userID}/twins`;
+
+  await fetch(requestPath, makeReqOptsGET())
+    .then((response) => response.json())
+    .then((obj) => {
+      facilities = obj;
+    })
+    .catch(error => console.log('error', error));
+
+  return facilities;
 }
 
 /**
