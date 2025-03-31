@@ -711,10 +711,6 @@ async function main() {
       stream_stubs.postNewStreamValues(keys);
     else if (modalFuncCallbackNum == 5)
       stream_stubs.getLastSeenStreamValues(keys);
-    else if (modalFuncCallbackNum == 6)
-      stream_stubs.getStreamRollupsLast30Days(keys);
-    else if (modalFuncCallbackNum == 7)
-      stream_stubs.postGetStreamRollupsLast30Days(keys);
     else if (modalFuncCallbackNum == 8)
       stream_stubs.addHostToStream(keys);
     else if (modalFuncCallbackNum == 9)
