@@ -5,7 +5,7 @@ const stgEnvironment = {
   name: "stg",
   oxygenHost: "https://accounts-staging.autodesk.com",
   forgeHost: "https://developer-stg.api.autodesk.com",
-  forgeKey: "hZy6ABuq8STldhv3X6IDrgyXUOVZZHtW", // TODO: Replace with your Forge Key to develop locally
+  forgeKey: "dfPQL99PtzJAtw7jakGTSD1tuFcUMl33JwsgF0xamdiMp0M8", // TODO: Replace with your Forge Key to develop locally
   loginRedirect: "http://localhost:8000",
   tandemDbBaseURL: "https://tandem-stg.autodesk.com/api/v1",
   tandemAppBaseURL: "https://tandem-stg.autodesk.com/app",
@@ -16,7 +16,7 @@ const prodEnvironment = {
   name: "prod",
   oxygenHost: "https://accounts.autodesk.com",
   forgeHost: "https://developer.api.autodesk.com",
-  forgeKey: "krVjl7bmgBR47lo9g3U1FAjeUkfmD4w7", // TODO: Replace with your Forge Key to develop locally
+  forgeKey: "dfPQL99PtzJAtw7jakGTSD1tuFcUMl33JwsgF0xamdiMp0M8", // TODO: Replace with your Forge Key to develop locally
   loginRedirect: "http://localhost:8000",
   tandemDbBaseURL: "https://tandem.autodesk.com/api/v1",
   tandemAppBaseURL: "https://tandem.autodesk.com/app",
