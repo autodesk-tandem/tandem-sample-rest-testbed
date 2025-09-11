@@ -57,7 +57,7 @@ export async function checkLogin(idStr_login, idStr_logout, idStr_userProfile, i
           window.sessionStorage.token = token['access_token'];
           window.sessionStorage.refreshToken = token['refresh_token'];
           // schedule token refresh
-          const nextRefresh = 60; //token['expires_in'] - 60;
+          const nextRefresh = token['expires_in'] - 60;
           
           setTimeout(() => refreshToken(), nextRefresh * 1000);
         }
