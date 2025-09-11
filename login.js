@@ -51,9 +51,15 @@ export async function checkLogin(idStr_login, idStr_logout, idStr_userProfile, i
         });
         
         if (resp.ok) {
-          const credentials = await resp.json();
-        
-          window.sessionStorage.token = credentials['access_token'];
+          const token = await resp.json();
+
+          // save token
+          window.sessionStorage.token = token['access_token'];
+          window.sessionStorage.refreshToken = token['refresh_token'];
+          // schedule token refresh
+          const nextRefresh = 60; //token['expires_in'] - 60;
+          
+          setTimeout(() => refreshToken(), nextRefresh * 1000);
         }
       } catch (err) {
         console.error(err);
@@ -78,20 +84,22 @@ export async function checkLogin(idStr_login, idStr_logout, idStr_userProfile, i
 }
 
 function generateRandomString(length) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  const array = new Uint8Array(length);
-  window.crypto.getRandomValues(array);
-  for (let i = 0; i < length; i++) {
-    result += chars[array[i] % chars.length];
-  }
-  return result;
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const array = new Uint8Array(length);
+    
+    window.crypto.getRandomValues(array);
+    let result = '';
+    
+    for (let i = 0; i < length; i++) {
+        result += chars[array[i] % chars.length];
+    }
+    return result;
 }
 
 async function generateCodeChallenge(str) {
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   
-  return window.btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    return window.btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
 export async function doRedirection(forge_clientID, scope) {
@@ -100,15 +108,12 @@ export async function doRedirection(forge_clientID, scope) {
     const challenge = await generateCodeChallenge(codeVerifier);
 
     window.localStorage.setItem('codeVerifier', codeVerifier);
-    const nonce='12345';
     const url = new URL('https://developer.api.autodesk.com/authentication/v2/authorize');
       
     url.searchParams.append('response_type', 'code');
     url.searchParams.append('client_id', forge_clientID);
     url.searchParams.append('redirect_uri', redirect_uri);
     url.searchParams.append('scope', scope);
-    //url.searchParams.append('nonce', nonce);
-    //url.searchParams.append('prompt', 'login');
     url.searchParams.append('code_challenge', challenge);
     url.searchParams.append('code_challenge_method', 'S256');
 
@@ -130,4 +135,32 @@ export async function loadUserProfileImg(div) {
     });
     const user = await res.json();
     getElem(div).src = user.picture;
+}
+
+async function refreshToken() {
+    const refreshToken = window.sessionStorage.refreshToken;
+    const payload = {
+        'grant_type': 'refresh_token',
+        'client_id': env.forgeKey,
+        'refresh_token': refreshToken,
+    };
+    const resp = await fetch('https://developer.api.autodesk.com/authentication/v2/token', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: Object.keys(payload).map(key => encodeURIComponent(key) + '=' + encodeURIComponent(payload[key])).join('&')
+    });
+    
+    if (!resp.ok) {
+        throw new Error(await resp.text());
+    }
+    const token = await resp.json();
+
+    window.sessionStorage.token = token['access_token'];
+    window.sessionStorage.refreshToken = token['refresh_token'];
+    // schedule token refresh
+    const nextRefresh = token['expires_in'] - 60;
+
+    setTimeout(() => refreshToken(), nextRefresh * 1000);
 }
