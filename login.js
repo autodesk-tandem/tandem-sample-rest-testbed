@@ -138,11 +138,11 @@ export async function loadUserProfileImg(div) {
 }
 
 async function refreshToken() {
-    const refreshToken = window.sessionStorage.refreshToken;
+    const token = window.sessionStorage.refreshToken;
     const payload = {
         'grant_type': 'refresh_token',
         'client_id': env.forgeKey,
-        'refresh_token': refreshToken,
+        'refresh_token': token,
     };
     const resp = await fetch('https://developer.api.autodesk.com/authentication/v2/token', {
         method: 'POST',
@@ -155,12 +155,12 @@ async function refreshToken() {
     if (!resp.ok) {
         throw new Error(await resp.text());
     }
-    const token = await resp.json();
+    const newToken = await resp.json();
 
-    window.sessionStorage.token = token['access_token'];
-    window.sessionStorage.refreshToken = token['refresh_token'];
+    window.sessionStorage.token = newToken['access_token'];
+    window.sessionStorage.refreshToken = newToken['refresh_token'];
     // schedule token refresh
-    const nextRefresh = token['expires_in'] - 60;
+    const nextRefresh = newToken['expires_in'] - 60;
 
     setTimeout(() => refreshToken(), nextRefresh * 1000);
 }
