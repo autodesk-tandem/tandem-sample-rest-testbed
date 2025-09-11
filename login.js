@@ -120,14 +120,6 @@ export async function doRedirection(forge_clientID, scope) {
     location.href = url.toString();
 }
 
-export function setTokenStorage() {
-    const params = location.hash.slice(1).split('&').map(i=>{
-        return i.split('=') });
-    if (params[0][0]=="access_token") {
-        window.sessionStorage.token = params[0][1];
-    }
-}
-
   // look up the profile image for this user's Autodesk ID and put in the specified <div> in the DOM
 export async function loadUserProfileImg(div) {
     const res = await fetch(`https://api.userprofile.autodesk.com/userinfo`, {
