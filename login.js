@@ -20,13 +20,13 @@ export function logout() {
 };
 
   // when HTML page opens up, attach callbacks for login.logout and set values for current state UI
-export function checkLogin(idStr_login, idStr_logout, idStr_userProfile, idStr_viewer) {
+export async function checkLogin(idStr_login, idStr_logout, idStr_userProfile, idStr_viewer) {
 
   getElem(idStr_login).addEventListener("click", login);
   getElem(idStr_logout).addEventListener("click", logout);
 
-  if (!!location.hash)
-      setTokenStorage();
+  // Always attempt to fetch token from backend on page load
+  await setTokenStorage();
 
   if (window.sessionStorage.token) {
     hide(idStr_login);
@@ -46,15 +46,21 @@ export function checkLogin(idStr_login, idStr_logout, idStr_userProfile, idStr_v
 }
 
 export function doRedirection(forge_clientID, scope) {
-    const redirect_uri = encodeURIComponent(location.href.split('#')[0]);
-    location.href = `${env.forgeHost}/authentication/v2/authorize?response_type=token&client_id=${forge_clientID}&redirect_uri=${redirect_uri}&scope=${scope}`;
+    // Use Authorization Code flow
+    const redirect_uri = encodeURIComponent('http://localhost:5000/oauth/callback');
+    location.href = `${env.forgeHost}/authentication/v2/authorize?response_type=code&client_id=${forge_clientID}&redirect_uri=${redirect_uri}&scope=${scope}`;
 }
 
-export function setTokenStorage() {
-    const params = location.hash.slice(1).split('&').map(i=>{
-        return i.split('=') });
-    if (params[0][0]=="access_token") {
-        window.sessionStorage.token = params[0][1];
+export async function setTokenStorage() {
+    // Fetch access token from backend after OAuth code exchange
+    try {
+        const res = await fetch('/api/token');
+        if (res.ok) {
+            const data = await res.json();
+            window.sessionStorage.token = data.access_token;
+        }
+    } catch (e) {
+        console.error('Failed to fetch access token:', e);
     }
 }
 
