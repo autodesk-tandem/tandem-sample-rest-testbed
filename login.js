@@ -69,14 +69,22 @@ export async function checkLogin(idStr_login, idStr_logout, idStr_userProfile, i
       window.history.replaceState({}, document.title, url.pathname + url.search);
     }
   }
+  let loggedIn = false;
+
   if (window.sessionStorage.token) {
+    try {
+      await loadUserProfileImg(idStr_userProfile);
+      loggedIn = true;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+  if (loggedIn) {
     hide(idStr_login);
     show(idStr_logout);
     show(idStr_userProfile);
-    loadUserProfileImg(idStr_userProfile);
     return true;  // they are logged in
-  }
-  else {
+  } else {
     hide(idStr_logout);
     hide(idStr_userProfile);
     return false; // they are not logged in
@@ -130,29 +138,34 @@ export async function loadUserProfileImg(div) {
 }
 
 async function refreshToken() {
-    const token = window.sessionStorage.refreshToken;
-    const payload = {
-        'grant_type': 'refresh_token',
-        'client_id': env.forgeKey,
-        'refresh_token': token,
-    };
-    const resp = await fetch('https://developer.api.autodesk.com/authentication/v2/token', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: Object.keys(payload).map(key => encodeURIComponent(key) + '=' + encodeURIComponent(payload[key])).join('&')
-    });
-    
-    if (!resp.ok) {
-        throw new Error(await resp.text());
+    console.log('refreshing token...');
+    try {
+        const token = window.sessionStorage.refreshToken;
+        const payload = {
+            'grant_type': 'refresh_token',
+            'client_id': env.forgeKey,
+            'refresh_token': token,
+        };
+        const resp = await fetch('https://developer.api.autodesk.com/authentication/v2/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: Object.keys(payload).map(key => encodeURIComponent(key) + '=' + encodeURIComponent(payload[key])).join('&')
+        });
+        
+        if (!resp.ok) {
+            throw new Error(await resp.text());
+        }
+        const newToken = await resp.json();
+
+        window.sessionStorage.token = newToken['access_token'];
+        window.sessionStorage.refreshToken = newToken['refresh_token'];
+        // schedule token refresh
+        const nextRefresh = newToken['expires_in'] - 60;
+
+        setTimeout(() => refreshToken(), nextRefresh * 1000);
+    } catch (err) {
+        console.error(err);
     }
-    const newToken = await resp.json();
-
-    window.sessionStorage.token = newToken['access_token'];
-    window.sessionStorage.refreshToken = newToken['refresh_token'];
-    // schedule token refresh
-    const nextRefresh = newToken['expires_in'] - 60;
-
-    setTimeout(() => refreshToken(), nextRefresh * 1000);
 }
