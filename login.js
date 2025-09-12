@@ -3,12 +3,13 @@ import { getEnv } from './env.js';
 // get our URL and Keys from the environment.js config file
 const env = getEnv();
 
-  // helper functions to get/show/hide HTML elements
+// helper functions to get/show/hide HTML elements
 const getElem = (id) => {return document.getElementById(id)};
 const show = (id) => { getElem(id).style.display="block"};
 const hide = (id) => { getElem(id).style.display="none"};
 
-
+// remember timeoout handle for token refresh
+let refreshHandle = null;
 export async function login() {
   const scope = 'data:read data:write user-profile:read';
 
@@ -17,6 +18,10 @@ export async function login() {
 
 export function logout() {
   delete(window.sessionStorage.token);
+  if (refreshHandle) {
+    clearTimeout(refreshHandle);
+    refreshHandle = null;
+  }
   location.reload();
 };
 
@@ -59,7 +64,7 @@ export async function checkLogin(idStr_login, idStr_logout, idStr_userProfile, i
           // schedule token refresh
           const nextRefresh = token['expires_in'] - 60;
           
-          setTimeout(() => refreshToken(), nextRefresh * 1000);
+          refreshHandle = setTimeout(() => refreshToken(), nextRefresh * 1000);
         }
       } catch (err) {
         console.error(err);
@@ -139,6 +144,11 @@ export async function loadUserProfileImg(div) {
 
 async function refreshToken() {
     console.log('refreshing token...');
+
+    if (refreshHandle) {
+      clearTimeout(refreshHandle);
+      refreshHandle = null;
+    }
     try {
         const token = window.sessionStorage.refreshToken;
         const payload = {
@@ -164,7 +174,7 @@ async function refreshToken() {
         // schedule token refresh
         const nextRefresh = newToken['expires_in'] - 60;
 
-        setTimeout(() => refreshToken(), nextRefresh * 1000);
+        refreshHandle = setTimeout(() => refreshToken(), nextRefresh * 1000);
     } catch (err) {
         console.error('Token refresh error:', err);
     }
