@@ -76,7 +76,7 @@ export async function checkLogin(idStr_login, idStr_logout, idStr_userProfile, i
       await loadUserProfileImg(idStr_userProfile);
       loggedIn = true;
     } catch (err) {
-      console.error(err);
+      console.error('Error loading user profile:', err);
     }
   }
   if (loggedIn) {
@@ -166,6 +166,6 @@ async function refreshToken() {
 
         setTimeout(() => refreshToken(), nextRefresh * 1000);
     } catch (err) {
-        console.error(err);
+        console.error('Token refresh error:', err);
     }
 }
