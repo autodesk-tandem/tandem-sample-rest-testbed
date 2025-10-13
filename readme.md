@@ -29,7 +29,7 @@ If you would like to use the source to debug or extend with your own test stub f
 
 1. Clone the repository to your local machine
 2. Make sure you have an account and access to at least one facility at https://tandem.autodesk.com
-3. Create a new Application on the Forge Developer Portal to get your Client_ID: https://forge.autodesk.com
+3. Create a new Application on the APS Developer Portal to get your Client_ID: https://aps.autodesk.com
 
 ![Tandem TestBed App 010](./docs/Readme_img_010.png)
 ![Tandem TestBed App 011](./docs/Readme_img_011.png)
@@ -38,11 +38,11 @@ If you would like to use the source to debug or extend with your own test stub f
 
 ## Setup and Configuration
 
-1. Add your application Client_ID to the code.  Find the appropriate lines in the file `env.js` as shown in the image below.
+1. Add your application Client_ID to the code. Find the appropriate lines in the file `env.js` and replace with your APS Client ID from https://aps.autodesk.com
 
 ![Tandem TestBed App 020](./docs/Readme_img_020.png)
 
-2. If you are developing internally at Autodesk, make sure to use the appropriate environment consistently.  Depending on whether you are using STAGING or PRODUCTION (as shown in the image above), set the Viewer to load into the HTML page using the same environment.
+2. If you are developing internally at Autodesk, make sure to use the appropriate environment consistently. Depending on whether you are using STAGING or PRODUCTION (as shown in the image above), set the Viewer to load into the HTML page using the same environment.
 
 ![Tandem TestBed App 021](./docs/Readme_img_021.png)
 
@@ -70,9 +70,3 @@ Some properties are built-in and should be more standard on most models, like in
 
 
 *NOTE: if you are testing the REST API using the Postman collection, this Test Bed App is very useful for retrieving URNS, and other information that needs to be supplied to the REST API.*
-
-## Errors
-
-The token refresh mechanism occasionally fails (bug!).  Try reloading or doing a logout/login if you see strange errors.
-
-![Tandem TestBed App 050](./docs/Readme_img_050.png)
