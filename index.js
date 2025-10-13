@@ -12,7 +12,7 @@ import * as sdk_stubs from './src/sdk_stubs.js';
 import * as diagnostic_stubs from './src/diagnostic_stubs.js';
 import * as utils from './src/utils.js';
 
-import { ColumnFamilies } from "./sdk/dt-schema.js";
+import { ColumnFamilies, SchemaVersion } from "./sdk/dt-schema.js";
 
 
 /**
@@ -177,10 +177,11 @@ async function populateFacilitiesDropdown(teams, teamName) {
   }
 
   utils.setCurrentFacility(safeFacilityURN);  // store this as our "global" variable for all the stub functions
+  await checkSchemaVersion(safeFacilityURN);  // Check schema version and display warning if incompatible
   updateThumbnailImage();
 
     // this callback will load the facility that the user picked in the Facility dropdown
-  facilityPicker.onchange = () => {
+  facilityPicker.onchange = async () => {
     let i=0;
     let foundURN = null;
     for (const [key, value] of curTeam.facilities.entries()) {
@@ -193,6 +194,7 @@ async function populateFacilitiesDropdown(teams, teamName) {
     
     window.localStorage.setItem('tandem-testbed-rest-last-facility', foundURN);
     utils.setCurrentFacility(foundURN);  // store this as our "global" variable for all the stub functions
+    await checkSchemaVersion(foundURN);  // Check schema version and display warning if incompatible
     updateThumbnailImage();
   }
   facilityPicker.style.visibility = 'initial';
@@ -211,6 +213,79 @@ async function updateThumbnailImage() {
   }
   else {
     document.getElementById("img_thumbnailPlaceholder").src = "./images/no_thumbnail.png";
+  }
+}
+
+/**
+ * Check if the facility has a compatible schema version.
+ * If not, display a warning message and return false.
+ * 
+ * @param {string} facilityURN - Facility URN to check
+ * @returns {Promise<boolean>} - True if compatible, false otherwise
+ */
+async function checkSchemaVersion(facilityURN) {
+  try {
+    const facilityInfo = await utils.getFacilityInfo(facilityURN);
+    
+    if (!facilityInfo || facilityInfo.schemaVersion === undefined) {
+      console.warn('Unable to determine facility schema version');
+      return true; // Allow to proceed if we can't determine version
+    }
+    
+    if (facilityInfo.schemaVersion < SchemaVersion) {
+      // Display warning message
+      const imgElement = document.getElementById("img_thumbnailPlaceholder");
+      imgElement.style.display = 'none';
+      
+      // Create or update warning div
+      let warningDiv = document.getElementById("schema_version_warning");
+      if (!warningDiv) {
+        warningDiv = document.createElement('div');
+        warningDiv.id = "schema_version_warning";
+        warningDiv.style.cssText = `
+          padding: 40px;
+          margin: 20px;
+          background-color: #fff3cd;
+          border: 2px solid #ffc107;
+          border-radius: 8px;
+          text-align: center;
+        `;
+        imgElement.parentNode.appendChild(warningDiv);
+      }
+      
+      warningDiv.innerHTML = `
+        <h3 style="color: #856404; margin-bottom: 20px;">
+          ⚠️ Incompatible Schema Version
+        </h3>
+        <p style="color: #856404; font-size: 16px; margin-bottom: 15px;">
+          This facility is using <strong>schema version ${facilityInfo.schemaVersion}</strong>.
+        </p>
+        <p style="color: #856404; font-size: 16px; margin-bottom: 15px;">
+          The API currently only supports <strong>schema version ${SchemaVersion}</strong>.
+        </p>
+        <p style="color: #856404; font-size: 16px; margin-bottom: 20px;">
+          To use this facility, please open it in <strong>Autodesk Tandem</strong> first to upgrade the schema.
+        </p>
+        <a href="https://tandem.autodesk.com" target="_blank" class="btn btn-warning" style="font-size: 16px;">
+          Open in Tandem
+        </a>
+      `;
+      
+      console.warn(`⚠️ Facility schema version (${facilityInfo.schemaVersion}) is incompatible. Required: ${SchemaVersion}`);
+      return false;
+    } else {
+      // Schema version is compatible, remove warning if it exists
+      const warningDiv = document.getElementById("schema_version_warning");
+      if (warningDiv) {
+        warningDiv.remove();
+      }
+      const imgElement = document.getElementById("img_thumbnailPlaceholder");
+      imgElement.style.display = 'block';
+      return true;
+    }
+  } catch (error) {
+    console.error('Error checking schema version:', error);
+    return true; // Allow to proceed on error
   }
 }
 

@@ -1,5 +1,5 @@
 
-const SchemaVersion = 1;
+const SchemaVersion = 2;
 
 /**
  * Type-specific prefixes for rows in the Meta table
