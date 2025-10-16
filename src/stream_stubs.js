@@ -1,5 +1,7 @@
+import * as keys from '../tandem/keys.js';
+import { ColumnFamilies, ColumnNames, QC, ElementFlags } from '../tandem/constants.js';
+
 import * as utils from './utils.js';
-import { ColumnFamilies, ColumnNames, QC, ElementFlags } from "../sdk/dt-schema.js";
 
 /**
  * Scan the DB for elements that are of type Stream
@@ -390,7 +392,7 @@ export async function createStream(streamName, hostModelURN, hostKey, classifStr
     mutsArray.push(["i", ColumnFamilies.Standard, ColumnNames.Classification, classifStr]);
   if (useHost) {
       // we need to generate an xrefKey which is the modelURN and elementKey smashed together
-    const hostXref = utils.makeXrefKey(hostModelURN, hostKey);
+    const hostXref = keys.makeXrefKey(hostModelURN, hostKey);
     mutsArray.push(["i", ColumnFamilies.Xrefs, ColumnNames.Parent, hostXref])
   }
 
@@ -455,7 +457,7 @@ export async function assignHostToStream(streamKey, hostModelURN, hostKey) {
   console.log("Default model", defaultModelURN);
 
     // need to make an xrefKey by combining the hostModelURN and the hostElementKey
-  const hostXref = utils.makeXrefKey(hostModelURN, hostKey);
+  const hostXref = keys.makeXrefKey(hostModelURN, hostKey);
   let mutsArray = [
     ["i", ColumnFamilies.Xrefs, ColumnNames.Parent, hostXref]
   ];

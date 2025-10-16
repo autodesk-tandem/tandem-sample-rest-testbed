@@ -1,12 +1,5 @@
 import { getEnv } from '../env.js';
-import { makeWebsafe } from "../sdk/encode.js";
-import { ElementFlags, KeyFlags, ColumnFamilies } from "../sdk/dt-schema.js";
-
-// Constants
-const kModelIdSize = 16;
-const kElementIdSize = 20;
-const kElementFlagsSize = 4;
-const kElementIdWithFlagsSize = kElementIdSize + kElementFlagsSize;
+import { AttributeType, ColumnFamilies } from "../tandem/constants.js";
 
 
 export let facilityURN = null;  // our global var (set by the popup menu at the top of the app)
@@ -670,154 +663,6 @@ export async function findClassificationNode(classificationStr) {
 }
 
 /**
- * Make an Xref key for the database that is the modelURN + the element Key.
- * 
- * @param {string} modelURN 
- * @param {string} elemKey 
- * @returns {string}
- */
-export function makeXrefKey(modelURN, elemKey) {
-
-  const modelId = modelURN.slice(13);   // strip off the "urn:adsk.dtm:" prefix
-
-    // convert from websafe to regular so it works with atob()
-  const modelId_enc = modelId.replace(/-/g, '+').replace(/_/g, '/');
-  const modelId_dec = atob(modelId_enc);
-
-  const elemKey_enc = elemKey.replace(/-/g, '+').replace(/_/g, '/');
-  const elemKey_dec = atob(elemKey_enc);
-
-  const concatStr = modelId_dec + elemKey_dec;  // concat them together
-
-  return makeWebsafe(btoa(concatStr));    // re-encode and make web-safe to get our xrefKey
-}
-
-/**
- * The API still doesn't consistently return "long keys" for everything.  This logic is part of the "sdk" directory
- * that is supplied with this app, but that code is for node.js and doesn't include the Buffer object.  So, we have to have
- * a different version here that uses browser-based code.
- * TBD: we need to either fix API to only use long keys, or provide a more comprehensive SDK to deal with the conversion.
- * 
- * @param {string} shortKey 
- * @param {boolean} isLogicalElement 
- * @returns {string}
- */
-export function toQualifiedKey(shortKey, isLogicalElement) {
-  let binData = new Uint8Array(atob(shortKey).split('').map(function (c) {
-      return c.charCodeAt(0);
-  }));
-
-  let fullKey = new Uint8Array(kElementIdWithFlagsSize);
-  if (isLogicalElement) {
-      fullKey[0] = (ElementFlags.FamilyType >> 24) & 0xff;
-      fullKey[1] = (ElementFlags.FamilyType >> 16) & 0xff;
-      fullKey[2] = (ElementFlags.FamilyType >> 8) & 0xff;
-      fullKey[3] = ElementFlags.FamilyType & 0xff;
-  } else {
-      fullKey[0] = (ElementFlags.SimpleElement >> 24) & 0xff;;
-      fullKey[1] = (ElementFlags.SimpleElement >> 16) & 0xff;
-      fullKey[2] = (ElementFlags.SimpleElement >> 8) & 0xff;
-      fullKey[3] = ElementFlags.SimpleElement & 0xff;
-  }
-  
-  fullKey.set(binData, kElementFlagsSize);
-
-  return makeWebsafe(btoa(String.fromCharCode.apply(null, fullKey)));
-}
-
-/**
- * Converts encoded string of short keys to array of keys (either short or full).
- * 
- * @param {string} text 
- * @param {boolean} useFullKeys 
- * @param {boolean} [isLogical]
- * @returns {Array.<string>}
- */
-export function fromShortKeyArray(text, useFullKeys, isLogical) {
-  const tmp = text.replace(/-/g, '+').replace(/_/g, '/');
-  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
-  const buffSize = useFullKeys ? kElementIdWithFlagsSize : kElementIdSize;
-  const buff = new Uint8Array(buffSize);
-  const result = [];
-  let offset = 0;
-
-  while (offset < binData.length) {
-      const size = binData.length - offset;
-
-      if (size < kElementIdSize) {
-          break;
-      }
-      if (useFullKeys) {
-        const keyFlags = isLogical ? KeyFlags.Logical : KeyFlags.Physical;
-
-        writeInt32BE(buff, keyFlags);
-        buff.set(binData.subarray(offset, offset + kElementIdSize), kElementFlagsSize);
-      } else {
-        buff.set(binData.subarray(offset, offset + kElementIdSize));
-      }
-      const elementKey = makeWebsafe(btoa(String.fromCharCode.apply(null, buff)));
-
-      result.push(elementKey);
-      offset += kElementIdSize;
-  }
-  return result;
-}
-
-/**
- * Converts xref key to model and element keys.
- * 
- * @param {string} text 
- * @returns {Array<Array<string>>}
- */
-export function fromXrefKeyArray(text) {
-  const modelKeys = [];
-  const elementKeys = [];
-
-  if (!text) {
-      return [ modelKeys, elementKeys ];
-  }
-  const tmp = text.replace(/-/g, '+').replace(/_/g, '/');
-  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
-  const modelBuff = new Uint8Array(kModelIdSize);
-  const keyBuff = new Uint8Array(kElementIdWithFlagsSize);
-  let offset = 0;
-
-  while (offset < binData.length) {
-      const size = binData.length - offset;
-
-      if (size < (kModelIdSize + kElementIdWithFlagsSize)) {
-          break;
-      }
-      modelBuff.set(binData.subarray(offset, offset + kModelIdSize));
-      const modelKey = makeWebsafe(btoa(String.fromCharCode.apply(null, modelBuff)));
-
-      modelKeys.push(modelKey);
-      // element key
-      keyBuff.set(binData.subarray(offset + kModelIdSize, offset + kModelIdSize + kElementIdWithFlagsSize));
-      const elementKey = makeWebsafe(btoa(String.fromCharCode.apply(null, keyBuff)));
-
-      elementKeys.push(elementKey);
-      offset += (kModelIdSize + kElementIdWithFlagsSize);
-  }
-  return [ modelKeys, elementKeys ];
-}
-
-/**
- * Converts fully qualified key to short key.
- * 
- * @param {string} fullKey 
- * @returns {string}
- */
-export function toShortKey(fullKey) {
-  const tmp = fullKey.replace(/-/g, '+').replace(/_/g, '/');
-  const binData = new Uint8Array(atob(tmp).split('').map(c => c.charCodeAt(0)));
-  const shortKey = new Uint8Array(kElementIdSize);
-
-  shortKey.set(binData.subarray(kElementFlagsSize));
-  return makeWebsafe(btoa(String.fromCharCode.apply(null, shortKey)));
-}
-
-/**
  * Returns elements from given model.
  * 
  * @param {string} urn - Model URN.
@@ -869,15 +714,57 @@ export async function getTaggedAssets(urn, columnFamilies = [ ColumnFamilies.Sta
 }
 
 /**
- * This is "equivalent" to the Node.js Buffer.writeInt32BE() function.
  * 
- * @param {Array} array 
  * @param {any} value 
- * @param {number} [offset]
+ * @param {AttributeType} type 
+ * @param {boolean} [useDefault]
+ * @returns {any}
  */
-function writeInt32BE(array, value, offset = 0) {
-  array[offset] = (value >> 24) & 0xff;
-  array[offset + 1] = (value >> 16) & 0xff;
-  array[offset + 2] = (value >> 8) & 0xff;
-  array[offset + 3] = (value >> 8) & 0xff;
+export function parseInputAttrValue(value, type, useDefault = true) {
+  switch(type) {
+    case AttributeType.DbKey:
+    case AttributeType.Integer: {
+      // empty
+      if (value === undefined || value === '') {
+        return undefined;
+      }
+      return useDefault ? Number.parseInt(value) || 0 : Number.parseInt(value);
+    }
+    case AttributeType.Double: {
+      // empty
+      if (value === undefined || value === '') {
+        return undefined;
+      }
+      if (useDefault) {
+        return Number(value) || 0;
+      }
+      // Number("") returns 0 in contrast to Number.parseInt/Float("") which return NaN
+      // If we return two different values in these cases, we will have to test for empty strings in the UI, lets do it here
+      if (value === "") {
+        return Number.NaN;
+      }
+      return Number(value);
+    }
+    case AttributeType.Float: {
+      // empty
+      if (value === undefined || value === '') {
+        return undefined;
+      }
+      return useDefault ? Number.parseFloat(value) || 0 : Number.parseFloat(value);
+    }
+    case AttributeType.String: return (value || "").toString();
+    case AttributeType.DateTime: {
+      return value || '';
+    }
+    case AttributeType.Boolean: {
+      // empty
+      if (value === undefined || value === '') {
+        return undefined;
+      }
+      return typeof value === "boolean"
+        ? value ? 1 : 0
+        : Number.parseInt(value || '0') ? 1 : 0;
+    }
+    default: return value;
+  }
 }

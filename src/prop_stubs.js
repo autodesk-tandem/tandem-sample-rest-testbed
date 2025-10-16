@@ -1,5 +1,4 @@
 import * as utils from './utils.js';
-import * as sdk from '../sdk/Attribute.js';
 
 /**
  * Lookup the qualified property info for a given [Category, Name] in a given model.
@@ -442,7 +441,7 @@ export async function setPropertySelSet(propCategory, propName, propVal, modelUR
 
   console.group("STUB: setPropertySelSet()");
 
-  const typedValue =  sdk.parseInputAttrValue(propVal, qualProp.dataType);  // convert from the String in dialog input to proper data type
+  const typedValue =  utils.parseInputAttrValue(propVal, qualProp.dataType);  // convert from the String in dialog input to proper data type
 
   console.log("Element keys:", elementKeysArray);
   console.log(`Setting value for "${propCategory} | ${propName}" = `, typedValue);
@@ -500,7 +499,7 @@ export async function setPropertySelSetQP(qualPropStr, propVal, modelURN, elemen
 
   console.group("STUB: setPropertySelSetQP()");
 
-  const typedValue =  sdk.parseInputAttrValue(propVal, qualProp.dataType);  // convert from the String in dialog input to proper data type
+  const typedValue =  utils.parseInputAttrValue(propVal, qualProp.dataType);  // convert from the String in dialog input to proper data type
 
   console.log("Element keys:", elementKeysArray);
   console.log(`Setting value for "${qualProp.category} | ${qualProp.name}" = `, typedValue);
