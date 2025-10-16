@@ -1,5 +1,8 @@
+import * as keys from '../tandem/keys.js';
+import { ColumnFamilies, QC } from '../tandem/constants.js';
+
 import * as utils from './utils.js';
-import { ColumnFamilies, QC } from "../sdk/dt-schema.js";
+
 
 /**
  * Iterate through the facility and get all rooms
@@ -117,17 +120,17 @@ export async function getElementAndTypeProperties(modelURN, elemKeys) {
 
     // we now have the main Element properties.  We need to dig out the Type elementKey and then call /scan on that.
     // However, currently the /scan API returns "short keys" for this, so we will have to convert to a long key.
-  const typeRef = await utils.digOutPropertyValuesQPLiteral(modelURN, "l:t", elementProps, false);
+  const typeRef = await utils.digOutPropertyValuesQPLiteral(modelURN, QC.FamilyType, elementProps, false);
   if (typeRef) {
     console.assert(typeRef.length == 1);  // we are only demonstrating this for a single element to keep logic understandable
-    const longKey = utils.toQualifiedKey(typeRef[0].value, true);
+    const longKey = keys.toFullKey(typeRef[0].value, true);
     console.log("Long key for Type:", longKey);
 
     const typeProps = await utils.scanAllPropsForElements(modelURN, [longKey], false);
     console.log("Type Properties", typeProps);
   }
   else {
-    console.log("ERROR: Could not find Type property (\"l:t\")");
+    console.log(`ERROR: Could not find Type property (\"${QC.FamilyType}\")`);
   }
 
   console.groupEnd();
@@ -170,7 +173,7 @@ export async function getFacilityStructure() {
       const assetRooms = [];
       
       if (roomRef) {
-        const roomKeys = utils.fromShortKeyArray(roomRef);
+        const roomKeys = keys.fromShortKeyArray(roomRef);
 
         for (const roomKey of roomKeys) {
           assetRooms.push({
@@ -180,7 +183,7 @@ export async function getFacilityStructure() {
         }
       } else {
         roomRef = asset[QC.XRooms];
-        const roomKeys = utils.fromXrefKeyArray(roomRef);
+        const roomKeys = keys.fromXrefKeyArray(roomRef);
         const modelIds = roomKeys[0];
         const elementKeys = roomKeys[1];
 
@@ -188,7 +191,7 @@ export async function getFacilityStructure() {
           assetRooms.push({
             modelId: `urn:adsk.dtm:${modelIds[i]}`,
             // in case of xref key we need to decode from long key to short key
-            roomId: utils.toShortKey(elementKeys[i])
+            roomId: keys.toShortKey(elementKeys[i])
           });
         }
       }

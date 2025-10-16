@@ -12,7 +12,7 @@ import * as sdk_stubs from './src/sdk_stubs.js';
 import * as diagnostic_stubs from './src/diagnostic_stubs.js';
 import * as utils from './src/utils.js';
 
-import { ColumnFamilies, SchemaVersion } from "./sdk/dt-schema.js";
+import { ColumnFamilies, SchemaVersion } from './tandem/constants.js';
 
 
 /**
