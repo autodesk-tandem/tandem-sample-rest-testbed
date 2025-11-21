@@ -152,7 +152,7 @@ export async function getModelDataFragments(modelURN, elemKeys) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.makeReqOptsPOST(bodyPayload))
+  await fetch(requestPath, utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion))
     .then((response) => response.text())
     .then((text) => {
       utils.showResult(text);
