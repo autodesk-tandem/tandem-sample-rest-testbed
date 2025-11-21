@@ -1,8 +1,9 @@
 import { getEnv } from '../env.js';
-import { AttributeType, ColumnFamilies } from "../tandem/constants.js";
+import { AttributeType, ColumnFamilies, Region } from "../tandem/constants.js";
 
 
 export let facilityURN = null;  // our global var (set by the popup menu at the top of the app)
+export let facilityRegion = 'US';  // our global var (set according to seelcted facility)
 
 export const td_baseURL = getEnv().tandemDbBaseURL;        // get PROD/STG from config file
 
@@ -14,10 +15,13 @@ export const tdApp_baseURL = getEnv().tandemAppBaseURL;  // get PROD/STG from co
  * 
  * @returns {object}
  */
-export function makeReqOptsGET() {
+export function makeReqOptsGET(region) {
   const myHeadersGET = new Headers();
-  myHeadersGET.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
 
+  myHeadersGET.append('Authorization', `Bearer ${window.sessionStorage.token}`); // use our login to the app
+  if (region) {
+    myHeadersGET.append('Region', region); // specify region header if provided
+  }
   const requestOptionsGET = {
     method: 'GET',
     headers: myHeadersGET,
@@ -88,9 +92,10 @@ export function getCurrentFacility()
  * 
  * @param {string} urn 
  */
-export function setCurrentFacility(urn)
+export function setCurrentFacility(urn, region)
 {
   facilityURN = urn; // set our global var
+  facilityRegion = region; // set our global var
 }
 
 /**
@@ -121,18 +126,25 @@ export async function getListOfGroups() {
  * @returns {Promise<Array<object>>}
  */
 export async function getListOfFacilitiesForGroup(groupURN) {
+  let results = {};
 
-  const requestPath = td_baseURL + `/groups/${groupURN}/twins`;
-  let twins = null;
+  for (const region of Object.keys(Region)) {
+    console.log(`Fetching facilities for Group: ${groupURN} in Region: ${region}`);
+    // @me is a special identifier which refers to the facilities shared directly with the current user
+    const requestPath = groupURN === '@me' ? `${td_baseURL}/users/@me/twins` : `${td_baseURL}/groups/${groupURN}/twins`;
+    let twins = null;
 
-  await fetch(requestPath, makeReqOptsGET())
-    .then((response) => response.json())
-    .then((obj) => {
-      twins = obj;
-    })
-    .catch(error => console.log('error', error));
-
-  return twins;
+    await fetch(requestPath, makeReqOptsGET(region))
+      .then((response) => response.json())
+      .then((obj) => {
+        twins = obj;
+      })
+      .catch(error => console.log('error', error));
+    if (twins) {
+      results = {...results, ...twins};
+    }
+  }
+  return results;
 }
 
 /**
@@ -140,13 +152,13 @@ export async function getListOfFacilitiesForGroup(groupURN) {
  * 
  * @returns {Promise<object>}
  */
-export async function getFacilityInfo(facilityURN) {
+export async function getFacilityInfo(facilityURN, region) {
 
   let twinInfo = null;
 
   const requestPath = td_baseURL + `/twins/${facilityURN}`;
 
-  await fetch(requestPath, makeReqOptsGET())
+  await fetch(requestPath, makeReqOptsGET(region))
     .then((response) => response.json())
     .then((obj) => {
       twinInfo = obj;
@@ -567,7 +579,7 @@ export async function getThumbnailBlobURL() {
   const requestPath = td_baseURL + `/twins/${facilityURN}/thumbnail`;
   console.log(requestPath);
 
-  const requestOpts = makeReqOptsGET();
+  const requestOpts = makeReqOptsGET(facilityRegion);
 
   let retBlobURL = null;
 
@@ -618,7 +630,7 @@ export async function getViewThumbnailBlob(viewID) {
   const requestPath = td_baseURL + `/twins/${facilityURN}/views/${viewID}/thumbnail`;
   console.log(requestPath);
 
-  const requestOpts = makeReqOptsGET();
+  const requestOpts = makeReqOptsGET(utils.facilityRegion);
 
   let retBlob = null;
 
