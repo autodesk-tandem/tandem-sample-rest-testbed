@@ -12,7 +12,7 @@ import * as sdk_stubs from './src/sdk_stubs.js';
 import * as diagnostic_stubs from './src/diagnostic_stubs.js';
 import * as utils from './src/utils.js';
 
-import { ColumnFamilies, SchemaVersion } from './tandem/constants.js';
+import { ColumnFamilies, RegionLabelMap, SchemaVersion } from './tandem/constants.js';
 
 
 /**
@@ -51,20 +51,18 @@ function noFacilitiesAvailable(teams) {
  * @returns {Map}
  */
 function sortFacilities(facilities) {
-
-    // Convert the object entries to an array of key-value pairs
+  // Convert the object entries to an array of key-value pairs
   const entries = Object.entries(facilities);
 
-    // Sort the entries based on the `Building Name` property in the values
+  // Sort the entries based on the `Building Name` property in the values
   const sortedEntries = entries.sort((a, b) => {
-      const nameA = a[1].props["Identity Data"]["Building Name"].toLowerCase();
-      const nameB = b[1].props["Identity Data"]["Building Name"].toLowerCase();
-      if (nameA < nameB) return -1;
-      if (nameA > nameB) return 1;
-      return 0;
+      const nameA = a[1].props['Identity Data']?.['Building Name'].toLowerCase();
+      const nameB = b[1].props['Identity Data']?.['Building Name'].toLowerCase();
+
+      return nameA.localeCompare(nameB);
   });
 
-    // Convert the sorted entries back into a Map so we can use more easily later on
+  // Convert the sorted entries back into a Map so we can use more easily later on
   const sortedMap = new Map(sortedEntries);
 
   return sortedMap;
