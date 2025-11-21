@@ -51,7 +51,7 @@ export async function scanForUserProps() {
         includeHistory: showHistory
       });
 
-    const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+    const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
     const requestPath = utils.td_baseURL + `/modeldata/${models[i].modelId}/scan`;
     console.log(requestPath);
 
@@ -251,7 +251,7 @@ export async function assignClassification(classificationStr, modelURN, elementK
     desc: "REST TestBedApp: updated classification"
   });
 
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
   const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/mutate`;
   console.log(requestPath);
 
@@ -279,7 +279,7 @@ export async function getScanBruteForce(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.makeReqOptsGET())
+  await fetch(requestPath, utils.makeReqOptsGET(utils.facilityRegion))
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -315,7 +315,7 @@ export async function getScanElementsOptions(modelURN, elemKeys, history, colFam
     includeHistory: history,
     keys: elemKeysArray
   });
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
 
   const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
@@ -366,7 +366,7 @@ export async function getScanElementsQualProps(modelURN, elemKeys, history, qual
     includeHistory: history,
     keys: elemKeysArray
   });
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
 
   const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
@@ -399,7 +399,7 @@ export async function getScanElementsFullChangeHistory(modelURN, elemKeys) {
     includeHistory: true,
     keys: elemKeysArray
   });
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
 
   const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/scan`;
 
@@ -460,7 +460,7 @@ export async function setPropertySelSet(propCategory, propName, propVal, modelUR
     desc: "REST TestBedApp: updated property"
   });
 
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
   const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/mutate`;
   console.log(requestPath);
 
@@ -518,7 +518,7 @@ export async function setPropertySelSetQP(qualPropStr, propVal, modelURN, elemen
     desc: "REST TestBedApp: updated property"
   });
 
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
   const requestPath = utils.td_baseURL + `/modeldata/${modelURN}/mutate`;
   console.log(requestPath);
 
