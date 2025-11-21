@@ -53,10 +53,13 @@ export function makeReqOptsGET_noAuth() {
  * @param {string} bodyPayload 
  * @returns 
  */
-export function makeReqOptsPOST(bodyPayload) {
+export function makeReqOptsPOST(bodyPayload, region) {
   let myHeadersPOST = new Headers();
-  myHeadersPOST.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
-  myHeadersPOST.append("Content-Type", "application/json");
+  myHeadersPOST.append('Authorization', `Bearer ${window.sessionStorage.token}`); // use our login to the app
+  myHeadersPOST.append('Content-Type', 'application/json');
+  if (region) {
+    myHeadersPOST.append('Region', region); // specify region header if provided
+  }
 
   let requestOptionsPOST = {
     method: 'POST',
@@ -476,7 +479,7 @@ export async function scanAllPropsForElements(modelURN, elementKeys, showHistory
     includeHistory: showHistory,
     keys: elementKeys
   });
-  const reqOpts = makeReqOptsPOST(bodyPayload);
+  const reqOpts = makeReqOptsPOST(bodyPayload, facilityRegion);
   const requestPath = td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
@@ -512,7 +515,7 @@ export async function scanForProperty(qualProps, modelURN, showHistory) {
     qualifiedColumns: qualColumns,
     includeHistory: showHistory
   });
-  const reqOpts = makeReqOptsPOST(bodyPayload);
+  const reqOpts = makeReqOptsPOST(bodyPayload, facilityRegion);
   const requestPath = td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
@@ -542,7 +545,7 @@ export async function scanForPropertyQPLiteral(qualProps, modelURN, showHistory)
     qualifiedColumns: qualProps,
     includeHistory: showHistory
   });
-  const reqOpts = makeReqOptsPOST(bodyPayload);
+  const reqOpts = makeReqOptsPOST(bodyPayload, facilityRegion);
   const requestPath = td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
@@ -691,7 +694,7 @@ export async function getElements(urn, keys = undefined, columnFamilies = [ Colu
   if (keys?.length > 0) {
     inputs.keys = keys;
   }
-  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs)));
+  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs), facilityRegion));
   const data = await response.json();
 
   return data.slice(1);
@@ -710,7 +713,7 @@ export async function getTaggedAssets(urn, columnFamilies = [ ColumnFamilies.Sta
     includeHistory: false,
     skipArrays: true
   };
-  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs)));
+  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs), facilityRegion));
   const data = await response.json();
   const results = [];
 
