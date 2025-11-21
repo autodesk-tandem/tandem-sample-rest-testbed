@@ -275,7 +275,7 @@ export function getDefaultModel() {
  */
 export async function getSchema(modelURN) {
 
-  const requestOpts = makeReqOptsGET();
+  const requestOpts = makeReqOptsGET(facilityRegion);
 
   const requestPath = td_baseURL + `/modeldata/${modelURN}/schema`;
   console.log(requestPath);
@@ -297,7 +297,7 @@ export async function getListOfModels(facURN) {
 
   let models = null;
 
-  const requestOpts = makeReqOptsGET();
+  const requestOpts = makeReqOptsGET(facilityRegion);
   const requestPath = td_baseURL + `/twins/${facURN}`;
 
   await fetch(requestPath, requestOpts)
@@ -605,7 +605,7 @@ export async function getThumbnailBlob() {
   const requestPath = td_baseURL + `/twins/${facilityURN}/thumbnail`;
   console.log(requestPath);
 
-  const requestOpts = makeReqOptsGET();
+  const requestOpts = makeReqOptsGET(facilityRegion);
 
   let retBlob = null;
 
@@ -657,7 +657,7 @@ export async function findClassificationNode(classificationStr) {
 
   let foundClassifNode = null;
 
-  await fetch(requestPath, makeReqOptsGET())
+  await fetch(requestPath, makeReqOptsGET(facilityRegion))
     .then((response) => response.json())
     .then((templ) => {
       //showResult(templ);
