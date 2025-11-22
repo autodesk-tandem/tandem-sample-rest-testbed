@@ -129,24 +129,20 @@ export async function getListOfGroups() {
  * @returns {Promise<Array<object>>}
  */
 export async function getListOfFacilitiesForGroup(groupURN) {
-  let results = {};
-
-  for (const region of Object.keys(Region)) {
-    console.log(`Fetching facilities for Group: ${groupURN} in Region: ${region}`);
-    // @me is a special identifier which refers to the facilities shared directly with the current user
+  const promises = Object.keys(Region).map((region) => {
+    // @me is a special identifier which refers to the facilities shared directly
+    // with the current user - in this case we need to use different endpoint
     const requestPath = groupURN === '@me' ? `${td_baseURL}/users/@me/twins` : `${td_baseURL}/groups/${groupURN}/twins`;
-    let twins = null;
 
-    await fetch(requestPath, makeReqOptsGET(region))
+    return fetch(requestPath, makeReqOptsGET(region))
       .then((response) => response.json())
       .then((obj) => {
-        twins = obj;
-      })
-      .catch(error => console.log('error', error));
-    if (twins) {
-      results = {...results, ...twins};
-    }
-  }
+        return obj;
+      });
+  });
+  const allTwins = await Promise.all(promises);
+  const results = Object.assign({}, ...allTwins);
+  
   return results;
 }
 
