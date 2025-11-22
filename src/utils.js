@@ -3,7 +3,7 @@ import { AttributeType, ColumnFamilies, Region } from "../tandem/constants.js";
 
 
 export let facilityURN = null;  // our global var (set by the popup menu at the top of the app)
-export let facilityRegion = 'US';  // our global var (set according to seelcted facility)
+export let facilityRegion = 'us';  // our global var (set according to seelcted facility)
 
 export const td_baseURL = getEnv().tandemDbBaseURL;        // get PROD/STG from config file
 
@@ -98,7 +98,7 @@ export function getCurrentFacility()
 export function setCurrentFacility(urn, region)
 {
   facilityURN = urn; // set our global var
-  facilityRegion = region; // set our global var
+  facilityRegion = region.toLowerCase(); // set our global var
 }
 
 /**
