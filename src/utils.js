@@ -129,16 +129,15 @@ export async function getListOfGroups() {
  * @returns {Promise<Array<object>>}
  */
 export async function getListOfFacilitiesForGroup(groupURN) {
-  const promises = Object.keys(Region).map((region) => {
+  const promises = Object.keys(Region).map(async (region) => {
     // @me is a special identifier which refers to the facilities shared directly
     // with the current user - in this case we need to use different endpoint
     const requestPath = groupURN === '@me' ? `${td_baseURL}/users/@me/twins` : `${td_baseURL}/groups/${groupURN}/twins`;
 
-    return fetch(requestPath, makeReqOptsGET(region))
-      .then((response) => response.json())
-      .then((obj) => {
-        return obj;
-      });
+    const response = await fetch(requestPath, makeReqOptsGET(region));
+    const obj = await response.json();
+
+    return obj;
   });
   const allTwins = await Promise.all(promises);
   const results = Object.assign({}, ...allTwins);
