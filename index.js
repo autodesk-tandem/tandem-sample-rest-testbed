@@ -163,36 +163,35 @@ async function populateFacilitiesDropdown(team) {
   const preferredFacilityURN = window.localStorage.getItem('tandem-testbed-rest-last-facility');
 
   if (!team.facilities) {
-    team.facilities = sortFacilities(await utils.getListOfFacilitiesForGroup(team.urn));
+    const facilities = await utils.getListOfFacilitiesForGroup(team.urn);
+
+    team.facilities = Object.entries(facilities).map(([urn, facility]) => ({
+      urn,
+      name: facility.props?.['Identity Data']?.['Building Name'] || 'Unnamed Facility',
+      region: facility.region
+    })).sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
   }
   // see if we can find that one in our list of facilities
-  let [safeFacilityURN, facility] = team.facilities.entries().next().value;
+  const selectedFacility = team.facilities?.find(f => f.urn === preferredFacilityURN) || team.facilities[0];
 
-  for (const [key, value] of team.facilities.entries()) {
-      if (key === preferredFacilityURN) {
-        safeFacilityURN = key;
-        facility = value;
-        break; // Exit the loop once the key is found
-      }
-  }
   // now build the dropdown list
-  for (const [key, value] of team.facilities.entries()) {
+  for (const facility of team.facilities) {
     const option = document.createElement('option');
 
-    option.value = key;
-    option.text = value.props['Identity Data']?.['Building Name'];
-    option.selected = key == safeFacilityURN;
+    option.value = facility.urn;
+    option.text = facility.name;
+    option.selected = facility.urn === selectedFacility.urn;
     facilityPicker.appendChild(option);
   }
 
-  utils.setCurrentFacility(safeFacilityURN, RegionLabelMap[facility.region]);  // store this as our "global" variable for all the stub functions
-  await checkSchemaVersion(safeFacilityURN, RegionLabelMap[facility.region]);  // Check schema version and display warning if incompatible
+  utils.setCurrentFacility(selectedFacility.urn, RegionLabelMap[selectedFacility.region]);  // store this as our "global" variable for all the stub functions
+  await checkSchemaVersion(selectedFacility.urn, RegionLabelMap[selectedFacility.region]);  // Check schema version and display warning if incompatible
   updateThumbnailImage();
 
     // this callback will load the facility that the user picked in the Facility dropdown
   facilityPicker.onchange = async () => {
     const facilityURN = facilityPicker.value;
-    const facility = team.facilities.get(facilityURN); 
+    const facility = team.facilities.find(f => f.urn === facilityURN); 
     
     window.localStorage.setItem('tandem-testbed-rest-last-facility', facilityURN);
     utils.setCurrentFacility(facilityURN, RegionLabelMap[facility.region]);  // store this as our "global" variable for all the stub functions
