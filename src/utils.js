@@ -1,8 +1,9 @@
 import { getEnv } from '../env.js';
-import { AttributeType, ColumnFamilies } from "../tandem/constants.js";
+import { AttributeType, ColumnFamilies, Region } from "../tandem/constants.js";
 
 
 export let facilityURN = null;  // our global var (set by the popup menu at the top of the app)
+export let facilityRegion = 'us';  // our global var (set according to seelcted facility)
 
 export const td_baseURL = getEnv().tandemDbBaseURL;        // get PROD/STG from config file
 
@@ -14,10 +15,13 @@ export const tdApp_baseURL = getEnv().tandemAppBaseURL;  // get PROD/STG from co
  * 
  * @returns {object}
  */
-export function makeReqOptsGET() {
+export function makeReqOptsGET(region) {
   const myHeadersGET = new Headers();
-  myHeadersGET.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
 
+  myHeadersGET.append('Authorization', `Bearer ${window.sessionStorage.token}`); // use our login to the app
+  if (region) {
+    myHeadersGET.append('Region', region); // specify region header if provided
+  }
   const requestOptionsGET = {
     method: 'GET',
     headers: myHeadersGET,
@@ -49,10 +53,13 @@ export function makeReqOptsGET_noAuth() {
  * @param {string} bodyPayload 
  * @returns 
  */
-export function makeReqOptsPOST(bodyPayload) {
+export function makeReqOptsPOST(bodyPayload, region) {
   let myHeadersPOST = new Headers();
-  myHeadersPOST.append("Authorization", "Bearer " + window.sessionStorage.token); // use our login to the app
-  myHeadersPOST.append("Content-Type", "application/json");
+  myHeadersPOST.append('Authorization', `Bearer ${window.sessionStorage.token}`); // use our login to the app
+  myHeadersPOST.append('Content-Type', 'application/json');
+  if (region) {
+    myHeadersPOST.append('Region', region); // specify region header if provided
+  }
 
   let requestOptionsPOST = {
     method: 'POST',
@@ -88,9 +95,10 @@ export function getCurrentFacility()
  * 
  * @param {string} urn 
  */
-export function setCurrentFacility(urn)
+export function setCurrentFacility(urn, region)
 {
   facilityURN = urn; // set our global var
+  facilityRegion = region.toLowerCase(); // set our global var
 }
 
 /**
@@ -121,18 +129,20 @@ export async function getListOfGroups() {
  * @returns {Promise<Array<object>>}
  */
 export async function getListOfFacilitiesForGroup(groupURN) {
+  const promises = Object.keys(Region).map(async (region) => {
+    // @me is a special identifier which refers to the facilities shared directly
+    // with the current user - in this case we need to use different endpoint
+    const requestPath = groupURN === '@me' ? `${td_baseURL}/users/@me/twins` : `${td_baseURL}/groups/${groupURN}/twins`;
 
-  const requestPath = td_baseURL + `/groups/${groupURN}/twins`;
-  let twins = null;
+    const response = await fetch(requestPath, makeReqOptsGET(region));
+    const obj = await response.json();
 
-  await fetch(requestPath, makeReqOptsGET())
-    .then((response) => response.json())
-    .then((obj) => {
-      twins = obj;
-    })
-    .catch(error => console.log('error', error));
-
-  return twins;
+    return obj;
+  });
+  const allTwins = await Promise.all(promises);
+  const results = Object.assign({}, ...allTwins);
+  
+  return results;
 }
 
 /**
@@ -140,13 +150,13 @@ export async function getListOfFacilitiesForGroup(groupURN) {
  * 
  * @returns {Promise<object>}
  */
-export async function getFacilityInfo(facilityURN) {
+export async function getFacilityInfo(facilityURN, region) {
 
   let twinInfo = null;
 
   const requestPath = td_baseURL + `/twins/${facilityURN}`;
 
-  await fetch(requestPath, makeReqOptsGET())
+  await fetch(requestPath, makeReqOptsGET(region))
     .then((response) => response.json())
     .then((obj) => {
       twinInfo = obj;
@@ -263,7 +273,7 @@ export function getDefaultModel() {
  */
 export async function getSchema(modelURN) {
 
-  const requestOpts = makeReqOptsGET();
+  const requestOpts = makeReqOptsGET(facilityRegion);
 
   const requestPath = td_baseURL + `/modeldata/${modelURN}/schema`;
   console.log(requestPath);
@@ -285,7 +295,7 @@ export async function getListOfModels(facURN) {
 
   let models = null;
 
-  const requestOpts = makeReqOptsGET();
+  const requestOpts = makeReqOptsGET(facilityRegion);
   const requestPath = td_baseURL + `/twins/${facURN}`;
 
   await fetch(requestPath, requestOpts)
@@ -464,7 +474,7 @@ export async function scanAllPropsForElements(modelURN, elementKeys, showHistory
     includeHistory: showHistory,
     keys: elementKeys
   });
-  const reqOpts = makeReqOptsPOST(bodyPayload);
+  const reqOpts = makeReqOptsPOST(bodyPayload, facilityRegion);
   const requestPath = td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
@@ -500,7 +510,7 @@ export async function scanForProperty(qualProps, modelURN, showHistory) {
     qualifiedColumns: qualColumns,
     includeHistory: showHistory
   });
-  const reqOpts = makeReqOptsPOST(bodyPayload);
+  const reqOpts = makeReqOptsPOST(bodyPayload, facilityRegion);
   const requestPath = td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
@@ -530,7 +540,7 @@ export async function scanForPropertyQPLiteral(qualProps, modelURN, showHistory)
     qualifiedColumns: qualProps,
     includeHistory: showHistory
   });
-  const reqOpts = makeReqOptsPOST(bodyPayload);
+  const reqOpts = makeReqOptsPOST(bodyPayload, facilityRegion);
   const requestPath = td_baseURL + `/modeldata/${modelURN}/scan`;
   console.log(requestPath);
 
@@ -567,7 +577,7 @@ export async function getThumbnailBlobURL() {
   const requestPath = td_baseURL + `/twins/${facilityURN}/thumbnail`;
   console.log(requestPath);
 
-  const requestOpts = makeReqOptsGET();
+  const requestOpts = makeReqOptsGET(facilityRegion);
 
   let retBlobURL = null;
 
@@ -593,7 +603,7 @@ export async function getThumbnailBlob() {
   const requestPath = td_baseURL + `/twins/${facilityURN}/thumbnail`;
   console.log(requestPath);
 
-  const requestOpts = makeReqOptsGET();
+  const requestOpts = makeReqOptsGET(facilityRegion);
 
   let retBlob = null;
 
@@ -618,7 +628,7 @@ export async function getViewThumbnailBlob(viewID) {
   const requestPath = td_baseURL + `/twins/${facilityURN}/views/${viewID}/thumbnail`;
   console.log(requestPath);
 
-  const requestOpts = makeReqOptsGET();
+  const requestOpts = makeReqOptsGET(utils.facilityRegion);
 
   let retBlob = null;
 
@@ -645,7 +655,7 @@ export async function findClassificationNode(classificationStr) {
 
   let foundClassifNode = null;
 
-  await fetch(requestPath, makeReqOptsGET())
+  await fetch(requestPath, makeReqOptsGET(facilityRegion))
     .then((response) => response.json())
     .then((templ) => {
       //showResult(templ);
@@ -679,7 +689,7 @@ export async function getElements(urn, keys = undefined, columnFamilies = [ Colu
   if (keys?.length > 0) {
     inputs.keys = keys;
   }
-  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs)));
+  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs), facilityRegion));
   const data = await response.json();
 
   return data.slice(1);
@@ -698,7 +708,7 @@ export async function getTaggedAssets(urn, columnFamilies = [ ColumnFamilies.Sta
     includeHistory: false,
     skipArrays: true
   };
-  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs)));
+  const response = await fetch(`${td_baseURL}/modeldata/${urn}/scan`, makeReqOptsPOST(JSON.stringify(inputs), facilityRegion));
   const data = await response.json();
   const results = [];
 

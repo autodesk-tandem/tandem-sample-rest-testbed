@@ -14,7 +14,7 @@ export async function getModelProperties(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.makeReqOptsGET())
+  await fetch(requestPath, utils.makeReqOptsGET(utils.facilityRegion))
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -38,7 +38,7 @@ export async function getModel(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.makeReqOptsGET())
+  await fetch(requestPath, utils.makeReqOptsGET(utils.facilityRegion))
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -62,7 +62,7 @@ export async function getAECModelData(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.makeReqOptsGET())
+  await fetch(requestPath, utils.makeReqOptsGET(utils.facilityRegion))
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -86,7 +86,7 @@ export async function getModelDataAttrs(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.makeReqOptsGET())
+  await fetch(requestPath, utils.makeReqOptsGET(utils.facilityRegion))
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -110,7 +110,7 @@ export async function getModelDataSchema(modelURN) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.makeReqOptsGET())
+  await fetch(requestPath, utils.makeReqOptsGET(utils.facilityRegion))
     .then((response) => response.json())
     .then((obj) => {
       utils.showResult(obj);
@@ -152,7 +152,7 @@ export async function getModelDataFragments(modelURN, elemKeys) {
 
   console.log(requestPath);
 
-  await fetch(requestPath, utils.makeReqOptsPOST(bodyPayload))
+  await fetch(requestPath, utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion))
     .then((response) => response.text())
     .then((text) => {
       utils.showResult(text);

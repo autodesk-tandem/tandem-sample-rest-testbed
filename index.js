@@ -12,7 +12,7 @@ import * as sdk_stubs from './src/sdk_stubs.js';
 import * as diagnostic_stubs from './src/diagnostic_stubs.js';
 import * as utils from './src/utils.js';
 
-import { ColumnFamilies, SchemaVersion } from './tandem/constants.js';
+import { ColumnFamilies, RegionLabelMap, SchemaVersion } from './tandem/constants.js';
 
 
 /**
@@ -51,20 +51,18 @@ function noFacilitiesAvailable(teams) {
  * @returns {Map}
  */
 function sortFacilities(facilities) {
-
-    // Convert the object entries to an array of key-value pairs
+  // Convert the object entries to an array of key-value pairs
   const entries = Object.entries(facilities);
 
-    // Sort the entries based on the `Building Name` property in the values
+  // Sort the entries based on the `Building Name` property in the values
   const sortedEntries = entries.sort((a, b) => {
-      const nameA = a[1].props["Identity Data"]["Building Name"].toLowerCase();
-      const nameB = b[1].props["Identity Data"]["Building Name"].toLowerCase();
-      if (nameA < nameB) return -1;
-      if (nameA > nameB) return 1;
-      return 0;
+      const nameA = a[1].props['Identity Data']?.['Building Name'].toLowerCase();
+      const nameB = b[1].props['Identity Data']?.['Building Name'].toLowerCase();
+
+      return nameA.localeCompare(nameB);
   });
 
-    // Convert the sorted entries back into a Map so we can use more easily later on
+  // Convert the sorted entries back into a Map so we can use more easily later on
   const sortedMap = new Map(sortedEntries);
 
   return sortedMap;
@@ -104,6 +102,17 @@ async function buildTeamsAndFacilitiesStructure() {
   return teams;
 }
 
+async function getTeams() {
+  let teams = await utils.getListOfGroups();
+
+  teams.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+  teams.push({
+    name: "** SHARED DIRECTLY **",
+    urn: "@me"
+  });
+  return teams;
+}
+
 /**
  * Populate the entries in the Teams dropdown menu
  * 
@@ -118,21 +127,22 @@ async function populateTeamsDropdown(teams) {
   const safePreferredTeam = teams.find(t => t.name === preferredTeam) || teams[0];   // make sure we can find last used, or else use first
 
     // add all the account names to the acct dropdown picker
-  for (let i = 0; i < teams.length; i++) {
+  for (const team of teams) {
     const option = document.createElement('option');
-    option.text = teams[i].name;
-    option.selected = teams[i].name === safePreferredTeam.name;  // set initial selection in dropdown
 
+    option.value = team.urn;
+    option.text = team.name;
+    option.selected = team.name === safePreferredTeam.name;  // set initial selection in dropdown
     acctPicker.appendChild(option);
   }
-
-  populateFacilitiesDropdown(teams, safePreferredTeam.name); // this will load the Facilities on first pass initialization
-
-    // this callback will load the Facilities when the dropdown list gets a different selection
+  await populateFacilitiesDropdown(safePreferredTeam);
+  // this callback will load the Facilities when the dropdown list gets a different selection
   acctPicker.onchange = () => {
-    const newTeamName = acctPicker.value;
-    window.localStorage.setItem('tandem-testbed-rest-last-team', newTeamName);
-    populateFacilitiesDropdown(teams, newTeamName);
+    const newTeamUrn = acctPicker.value;
+    const team = teams.find(t => t.urn === newTeamUrn);
+
+    window.localStorage.setItem('tandem-testbed-rest-last-team', team.name);
+    populateFacilitiesDropdown(team);
   }
   acctPicker.style.visibility = 'initial';
 }
@@ -144,57 +154,48 @@ async function populateTeamsDropdown(teams) {
  * @param {string} teamName
  * @returns {Promise<void>}
  */
-async function populateFacilitiesDropdown(teams, teamName) {
-
-      // setup facility picker UI
+async function populateFacilitiesDropdown(team) {
+  // setup facility picker UI
   const facilityPicker = document.getElementById('facilityPicker');
+  
   facilityPicker.innerHTML = '';  // clear out any previous options
-
-    // find the current team
-  const curTeam = teams.find(obj => obj.name === teamName);
-
-    // load preferred or random facility
+  // load preferred or random facility
   const preferredFacilityURN = window.localStorage.getItem('tandem-testbed-rest-last-facility');
 
-    // see if we can find that one in our list of facilities
-  let safeFacilityURN = curTeam.facilities.entries().next().key // safe in case we can't find the last-used
-  let facility = curTeam.facilities.entries().next().value;
-  for (const [key, value] of curTeam.facilities.entries()) {
-      if (key === preferredFacilityURN) {
-        safeFacilityURN = key;
-        facility = value;
-        break; // Exit the loop once the key is found
-      }
-  }
-    // now build the dropdown list
-  let tempFacility = null;
-  for (const [key, value] of curTeam.facilities.entries()) {
-    const option = document.createElement('option');
-    option.text = value.props["Identity Data"]["Building Name"];
-    option.selected = key == safeFacilityURN;
+  if (!team.facilities) {
+    const facilities = await utils.getListOfFacilitiesForGroup(team.urn);
 
+    team.facilities = Object.entries(facilities).map(([urn, facility]) => ({
+      urn,
+      name: facility.props?.['Identity Data']?.['Building Name'] || 'Unnamed Facility',
+      region: facility.region
+    })).sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+  }
+  // see if we can find that one in our list of facilities
+  const selectedFacility = team.facilities?.find(f => f.urn === preferredFacilityURN) || team.facilities[0];
+
+  // now build the dropdown list
+  for (const facility of team.facilities) {
+    const option = document.createElement('option');
+
+    option.value = facility.urn;
+    option.text = facility.name;
+    option.selected = facility.urn === selectedFacility.urn;
     facilityPicker.appendChild(option);
   }
 
-  utils.setCurrentFacility(safeFacilityURN);  // store this as our "global" variable for all the stub functions
-  await checkSchemaVersion(safeFacilityURN);  // Check schema version and display warning if incompatible
+  utils.setCurrentFacility(selectedFacility.urn, RegionLabelMap[selectedFacility.region]);  // store this as our "global" variable for all the stub functions
+  await checkSchemaVersion(selectedFacility.urn, RegionLabelMap[selectedFacility.region]);  // Check schema version and display warning if incompatible
   updateThumbnailImage();
 
     // this callback will load the facility that the user picked in the Facility dropdown
   facilityPicker.onchange = async () => {
-    let i=0;
-    let foundURN = null;
-    for (const [key, value] of curTeam.facilities.entries()) {
-      if (i == facilityPicker.selectedIndex) {
-        foundURN = key;
-        break;
-      }
-      i++;
-    }
+    const facilityURN = facilityPicker.value;
+    const facility = team.facilities.find(f => f.urn === facilityURN); 
     
-    window.localStorage.setItem('tandem-testbed-rest-last-facility', foundURN);
-    utils.setCurrentFacility(foundURN);  // store this as our "global" variable for all the stub functions
-    await checkSchemaVersion(foundURN);  // Check schema version and display warning if incompatible
+    window.localStorage.setItem('tandem-testbed-rest-last-facility', facilityURN);
+    utils.setCurrentFacility(facilityURN, RegionLabelMap[facility.region]);  // store this as our "global" variable for all the stub functions
+    await checkSchemaVersion(facilityURN, RegionLabelMap[facility.region]);  // Check schema version and display warning if incompatible
     updateThumbnailImage();
   }
   facilityPicker.style.visibility = 'initial';
@@ -223,9 +224,9 @@ async function updateThumbnailImage() {
  * @param {string} facilityURN - Facility URN to check
  * @returns {Promise<boolean>} - True if compatible, false otherwise
  */
-async function checkSchemaVersion(facilityURN) {
+async function checkSchemaVersion(facilityURN, region) {
   try {
-    const facilityInfo = await utils.getFacilityInfo(facilityURN);
+    const facilityInfo = await utils.getFacilityInfo(facilityURN, region);
     
     if (!facilityInfo || facilityInfo.schemaVersion === undefined) {
       console.warn('Unable to determine facility schema version');
@@ -300,11 +301,9 @@ async function bootstrap() {
   if (!userLoggedIn)
     return;   // when user does login, it will go through the bootstrap process again
 
-  const teams = await buildTeamsAndFacilitiesStructure();
-  console.log("Teams and Facilities:", teams);
-  if (noFacilitiesAvailable(teams))
-    return;
-
+  const teams = await getTeams();
+  
+  console.log("Teams:", teams);
   populateTeamsDropdown(teams);
 }
 

@@ -24,7 +24,7 @@ export async function getStreamsFromDefaultModelPOST() {
     ],
     includeHistory: false
   });
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
 
   await fetch(requestPath, reqOpts)
     .then((response) => response.json())
@@ -59,7 +59,7 @@ export async function getStreamSecrets(streamKeys) {
   var bodyPayload = JSON.stringify({
     keys: streamKeysArray
   });
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
 
   const requestPath = utils.td_baseURL + `/models/${defaultModelURN}/getstreamssecrets`;
   console.log(requestPath);
@@ -94,7 +94,7 @@ export async function resetStreamSecrets(streamKeys) {
     keys: streamKeysArray,
     hardReset: true
   });
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
 
   const requestPath = utils.td_baseURL + `/models/${defaultModelURN}/resetstreamssecrets`;
   console.log(requestPath);
@@ -189,7 +189,7 @@ export async function getStreamValues30Days(streamKeys) {
     console.log(`Stream ${streamKeysArray[i]}-->`)
     console.log(requestPath);
 
-    await fetch(requestPath, utils.makeReqOptsGET())
+    await fetch(requestPath, utils.makeReqOptsGET(utils.facilityRegion))
       .then((response) => response.json())
       .then((obj) => {
         utils.showResult(obj);
@@ -237,7 +237,7 @@ export async function getStreamValues365Days(streamKeys) {
     console.log(`Stream ${streamKeysArray[i]}-->`)
     console.log(requestPath);
 
-    await fetch(requestPath, utils.makeReqOptsGET())
+    await fetch(requestPath, utils.makeReqOptsGET(utils.facilityRegion))
       .then((response) => response.json())
       .then((obj) => {
         utils.showResult(obj);
@@ -280,7 +280,7 @@ export async function postNewStreamValues(streamKeys) {
     ts: timestamp
   });
 
-  const reqOptsPOST = utils.makeReqOptsPOST(bodyPayload);
+  const reqOptsPOST = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
 
   for (let i=0; i<streamKeysArray.length; i++) {
     const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams/${streamKeysArray[i]}`;
@@ -319,7 +319,7 @@ export async function getLastSeenStreamValues(streamKeys) {
     keys: streamKeysArray
   });
 
-  const reqOptsPOST = utils.makeReqOptsPOST(bodyPayload);
+  const reqOptsPOST = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
 
   const requestPath = utils.td_baseURL + `/timeseries/models/${defaultModelURN}/streams`;
   console.log(requestPath);
@@ -404,7 +404,7 @@ export async function createStream(streamName, hostModelURN, hostKey, classifStr
   console.log(bodyPayload);
 
     // now use the /create endpoint to make the new stream
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
   const requestPath = utils.td_baseURL + `/modeldata/${defaultModelURN}/create`;
   console.log(requestPath);
 
@@ -423,7 +423,7 @@ export async function createStream(streamName, hostModelURN, hostKey, classifStr
       keys: [newStreamKey],
       hardReset: true
     });
-    const reqOpts2 = utils.makeReqOptsPOST(bodyPayload2);
+    const reqOpts2 = utils.makeReqOptsPOST(bodyPayload2, utils.facilityRegion);
 
     const requestPath2 = utils.td_baseURL + `/models/${defaultModelURN}/resetstreamssecrets`;
     console.log(requestPath2);
@@ -472,7 +472,7 @@ export async function assignHostToStream(streamKey, hostModelURN, hostKey) {
   console.log(bodyPayload);
 
     // now use the /mutate endpoint to modify the stream
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
   const requestPath = utils.td_baseURL + `/modeldata/${defaultModelURN}/mutate`;
   console.log(requestPath);
 
@@ -516,7 +516,7 @@ export async function removeHostFromStream(streamKeys) {
     desc: "REST TestBedApp: removed stream host"
   });
 
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
   const requestPath = utils.td_baseURL + `/modeldata/${defaultModelURN}/mutate`;
   console.log(requestPath);
 
@@ -562,7 +562,7 @@ export async function deleteStreams(streamKeys) {
     desc: "REST TestBedApp: deleted Stream(s)"
   });
 
-  const reqOpts = utils.makeReqOptsPOST(bodyPayload);
+  const reqOpts = utils.makeReqOptsPOST(bodyPayload, utils.facilityRegion);
   const requestPath = utils.td_baseURL + `/modeldata/${defaultModelURN}/mutate`;
   console.log(requestPath);
 
