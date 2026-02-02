@@ -165,7 +165,7 @@ async function populateFacilitiesDropdown(team) {
   if (!team.facilities) {
     const facilities = await utils.getListOfFacilitiesForGroup(team.urn);
 
-    team.facilities = Object.entries(facilities).map(([urn, facility]) => ({
+    team.facilities = Object.entries(facilities || {}).map(([urn, facility]) => ({
       urn,
       name: facility.props?.['Identity Data']?.['Building Name'] || 'Unnamed Facility',
       region: facility.region
@@ -173,6 +173,14 @@ async function populateFacilitiesDropdown(team) {
   }
   // see if we can find that one in our list of facilities
   const selectedFacility = team.facilities?.find(f => f.urn === preferredFacilityURN) || team.facilities[0];
+
+  // Handle case where team has no facilities
+  if (!selectedFacility) {
+    console.warn(`No facilities found for team: ${team.name}`);
+    facilityPicker.innerHTML = '<option value="">No facilities available</option>';
+    facilityPicker.style.visibility = 'initial';
+    return;
+  }
 
   // now build the dropdown list
   for (const facility of team.facilities) {
