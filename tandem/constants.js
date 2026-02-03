@@ -21,6 +21,20 @@ export const RegionLabelMap = {
     'aus': Region.AUS
 };
 
+/**
+ * Normalize region strings from API to standard format
+ * @param {string} region - Raw region from API
+ * @returns {string} Normalized region code ('US', 'EMEA', 'AUS')
+ */
+export function normalizeRegion(region) {
+    if (!region) return Region.US;
+    const upper = region.toUpperCase();
+    if (upper === 'US' || upper === 'USA') return Region.US;
+    if (upper === 'EMEA' || upper === 'EU') return Region.EMEA;
+    if (upper === 'AUS' || upper === 'AUSTRALIA') return Region.AUS;
+    return Region.US; // Default fallback
+}
+
 export const kModelIdSize = 16;
 export const kElementIdSize = 20;
 export const kElementFlagsSize = 4;

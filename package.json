@@ -1,0 +1,27 @@
+{
+  "name": "tandem-sample-rest-testbed",
+  "version": "1.0.0",
+  "description": "Developer-focused testbed for learning the Autodesk Tandem REST API",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "serve": "npx http-server -p 8000"
+  },
+  "keywords": [
+    "autodesk",
+    "tandem",
+    "rest",
+    "api",
+    "testbed",
+    "education",
+    "developer"
+  ],
+  "author": "Autodesk Inc.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/autodesk-tandem/tandem-sample-rest-testbed"
+  }
+}
+
+

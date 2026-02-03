@@ -1,6 +1,5 @@
 /**
  * Utility functions for working with Tandem keys and xrefs
- * Adapted from tandem-sample-rest-testbed
  */
 
 import {

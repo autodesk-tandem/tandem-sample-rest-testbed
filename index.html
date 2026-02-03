@@ -1,245 +1,389 @@
 <!DOCTYPE html>
-<html>
-  <head>
-      <title>TandemTestBed (REST)</title>
-      <script src="./3rdParty/jquery-3.6.0.min.js"></script>
-      <script src="./3rdParty/bootstrap-4.0.0/dist/js/bootstrap.bundle.js"></script>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tandem TestBed (REST API)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'tandem-blue': '#0696D7',
+                        'tandem-dark': '#0D2C54',
+                        'dark-bg': '#1a1a1a',
+                        'dark-card': '#2a2a2a',
+                        'dark-border': '#404040',
+                        'dark-text': '#e0e0e0',
+                        'dark-text-secondary': '#a0a0a0',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        
+        /* Custom scrollbar for dark mode */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #404040;
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #505050;
+        }
+        
+        /* Stub button styles */
+        .stub-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            border: 1px solid #0696D7;
+            color: #0696D7;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            background: transparent;
+        }
+        
+        .stub-button:hover {
+            background: #0696D7;
+            color: white;
+        }
+        
+        .stub-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Console hint */
+        .console-hint {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 1rem;
+            font-size: 0.75rem;
+            color: #a0a0a0;
+            font-style: italic;
+        }
+        
+        /* Stub section */
+        .stub-section {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-radius: 0.375rem;
+        }
+        
+        .stub-section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 0.75rem;
+        }
+        
+        /* Input form styles - Compact version */
+        .stub-input-form {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 0.25rem;
+        }
+        
+        .stub-input-form label {
+            display: block;
+            font-size: 0.7rem;
+            color: #a0a0a0;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+        }
+        
+        .stub-input-form input {
+            width: 100%;
+            padding: 0.375rem 0.5rem;
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-radius: 0.25rem;
+            color: #e0e0e0;
+            font-size: 0.75rem;
+            margin-bottom: 0.375rem;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .stub-input-form input:focus {
+            outline: none;
+            border-color: #0696D7;
+        }
+        
+        .stub-input-form select {
+            width: 100%;
+            padding: 0.375rem 0.5rem;
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-radius: 0.25rem;
+            color: #e0e0e0;
+            font-size: 0.7rem;
+            margin-bottom: 0.375rem;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .stub-input-form select:focus {
+            outline: none;
+            border-color: #0696D7;
+        }
+        
+        .stub-input-form button {
+            padding: 0.375rem 0.75rem;
+            background: #0696D7;
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .stub-input-form button:hover {
+            background: #0577B0;
+        }
+        
+        /* Dropdown menu styles */
+        .dropdown-menu {
+            position: relative;
+            margin-bottom: 0.75rem;
+        }
+        
+        .dropdown-toggle {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            background: #333333;
+            border: 1px solid #404040;
+            border-radius: 0.375rem;
+            color: #e0e0e0;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        
+        .dropdown-toggle:hover {
+            background: #404040;
+            border-color: #0696D7;
+        }
+        
+        .dropdown-toggle-icon {
+            transition: transform 0.2s;
+        }
+        
+        .dropdown-toggle.active .dropdown-toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        .dropdown-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-top: none;
+            border-radius: 0 0 0.375rem 0.375rem;
+            margin-top: -0.375rem;
+        }
+        
+        .dropdown-content.show {
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+            transition: max-height 0.3s ease-in;
+        }
+        
+        .dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            color: #a0a0a0;
+            font-size: 0.8125rem;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s;
+            border-bottom: 1px solid #333333;
+        }
+        
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-item:hover {
+            background: #333333;
+            color: #0696D7;
+            padding-left: 1.25rem;
+        }
+        
+        .dropdown-item:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-dark-bg min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="bg-dark-card shadow-lg border-b border-dark-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-14">
+                <!-- Logo and Title -->
+                <div class="flex items-center space-x-3">
+                    <img src="./images/autodesk-tandem-small-social-400.png" width="32" height="32" alt="Tandem" class="rounded">
+                    <h1 class="text-lg font-semibold text-dark-text">Tandem TestBed (REST API)</h1>
+                </div>
 
-      <!-- CSS only -->
-      <link href="./3rdParty/bootstrap-4.0.0/dist/css/bootstrap.css" rel="stylesheet" type="text/css">
-  </head>
-  <body>
-      <!-- this is the Nav Bar across the top -->
-    <nav class="navbar navbar-light bg-light justify-content-between">
-      <form class="form-inline">
-        <a class="btn my-2 my-sm-0" target="_blank" rel="noreferrer noopener" href="https://intandem.autodesk.com">
-          <img src="./images/autodesk-tandem-small-social-400.png" width="30" height="30" class="d-inline-block align-top" alt="Tandem">
-        </a>
-        <h5>Tandem Test Bed (REST API)</h5>
-      </form>
-      <form class="form-inline">
-        <label class="mr-sm-2" for="acctPicker">Account</label>
-        <select id="acctPicker" class="form-control custom-select custom-select-sm" name="acctToLoad">
-            <!-- Options filled in by function in index.js -->
-        </select>
-      </form>
-      <form class="form-inline">
-          <label class="mr-sm-2" for="facilityPicker">Facility</label>
-          <select id="facilityPicker" class="form-control custom-select custom-select-sm" name="facilityToLoad">
-              <!-- Options filled in by function in index.js -->
-          </select>
-      </form>
-      <form class="form-inline">
-        <a class="btn btn-outline-success btn-sm" href="#" id="btn_login">Login</a>
-        <a class="btn btn-outline-dark btn-sm" href="#" id="btn_logout">Logout</a>
-        <a class="btn" target="_blank" rel="noreferrer noopener" href="https://accounts.autodesk.com/users/@me/view">
-          <img src="./images/genericProfile.png" width="40" height="40" class="rounded-circle" alt="User" id="btn_userProfile"/>
-        </a>
-        <a class="btn" target="_blank" rel="noreferrer noopener" href="https://github.com/autodesk-tandem/tandem-sample-rest-testbed">
-          <img src="https://github.githubassets.com/favicons/favicon.png"/>
-        </a>
-      </form>
-    </nav>
-    <!-- the rest is the Viewer window and the Stub Menus -->
-  <div class="container d-flex justify-content-start">
-    <div class="row">
-      <div style="left:0; position: absolute; display: flex; align-items: stretch; height: calc(100% - 75px); width: calc(100%);">
-          <div style="position:relative; flex-grow: 1;">
-              <!--<div id="viewer" style="height: 100%; width: 100%;">-->
-                  <!--Viewer will mount here-->
-                  <img id="img_thumbnailPlaceholder" src="" style='height: 100%; width: 100%; object-fit: contain; vertical-align: top;'/>
-              <!--</div>-->
-          </div>
-          <div class="col-md-4" id="wo_pane">
-            <div class="row form-group mt-5">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Facility stubs -->
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuFacility" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Facility Stubs
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuFacility">
-                  <button class="dropdown-item" type="button" id="btn_getFacilityInfo">GET Facility Info</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilityTemplate">GET Facility Template</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilityInlineTemplate">GET Facility Inline Template</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilitySubjects">GET Facility Subjects</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilityUserAccessLevels">GET User Access Levels</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilityUserAccessLevel">GET User Access Level (for UserID)</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilityThumbnail">GET Facility Thumbnail</button>
-                  <button class="dropdown-item" type="button" id="btn_getSavedViews">GET Saved Views</button>
-                  <button class="dropdown-item" type="button" id="btn_getSavedViewByUUID">GET Saved View (by UUID)</button>
-                  <button class="dropdown-item" type="button" id="btn_getSavedViewThumbnail">GET Saved View Thumbnail</button>
+                <!-- Account and Facility Selectors -->
+                <div class="flex items-center space-x-3">
+                    <!-- Account Selector -->
+                    <div class="flex items-center space-x-2">
+                        <label for="accountSelect" class="text-xs font-medium text-dark-text-secondary">Account</label>
+                        <select id="accountSelect" 
+                                class="block w-44 rounded border-dark-border bg-dark-bg text-dark-text shadow-sm focus:border-tandem-blue focus:ring-tandem-blue text-xs py-1.5 px-2 border hidden">
+                            <option value="">Select Account...</option>
+                        </select>
+                    </div>
+
+                    <!-- Facility Selector -->
+                    <div class="flex items-center space-x-2">
+                        <label for="facilitySelect" class="text-xs font-medium text-dark-text-secondary">Facility</label>
+                        <select id="facilitySelect" 
+                                class="block w-44 rounded border-dark-border bg-dark-bg text-dark-text shadow-sm focus:border-tandem-blue focus:ring-tandem-blue text-xs py-1.5 px-2 border hidden">
+                            <option value="">Select Facility...</option>
+                        </select>
+                    </div>
                 </div>
-              </div>
-            </div>
-            <div class="row form-group">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Model stubs -->
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuModels" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Model Stubs
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuModels">
-                  <button class="dropdown-item" type="button" id="btn_getModelProperties">GET Model Properties</button>
-                  <button class="dropdown-item" type="button" id="btn_getModel">GET Model</button>
-                  <button class="dropdown-item" type="button" id="btn_getAECModelData">GET AEC Model Data</button>
-                  <button class="dropdown-item" type="button" id="btn_getModelDataAttrs">GET Model Data Attributes</button>
-                  <button class="dropdown-item" type="button" id="btn_getModelDataSchema">GET Model Data Schema</button>
-                  <button class="dropdown-item" type="button" id="btn_getModelDataFragments">GET Model Data Fragments</button>
+
+                <!-- User Actions -->
+                <div class="flex items-center space-x-2">
+                    <button id="loginBtn" 
+                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-tandem-blue hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tandem-blue transition">
+                        Sign In
+                    </button>
+                    <button id="logoutBtn" 
+                            class="hidden inline-flex items-center px-3 py-1.5 border border-dark-border text-xs font-medium rounded text-dark-text bg-dark-card hover:bg-dark-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tandem-blue transition">
+                        Sign Out
+                    </button>
+                    <a id="userProfileLink" 
+                       class="hidden" 
+                       href="https://accounts.autodesk.com/users/@me/view" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       title="View profile">
+                        <img id="userProfileImg" 
+                             class="h-8 w-8 rounded-full ring-2 ring-dark-border shadow-sm" 
+                             src="" 
+                             alt="User profile">
+                    </a>
+                    <a href="https://github.com/autodesk-tandem/tandem-sample-rest-testbed" 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       title="View source code"
+                       class="flex items-center justify-center h-8 w-8 rounded hover:bg-dark-border transition">
+                        <img src="https://github.githubassets.com/favicons/favicon.png" 
+                             alt="GitHub Repository" 
+                             class="h-5 w-5 invert opacity-80 hover:opacity-100">
+                    </a>
                 </div>
-              </div>
             </div>
-            <div class="row form-group">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Property stubs -->
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuProps" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Property Stubs
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuProps">
-                  <button class="dropdown-item" type="button" id="btn_getQualifiedProp">Get Qualified Property</button>
-                  <button class="dropdown-item" type="button" id="btn_scanForUserProps">Scan For All User-defined Properties</button>
-                  <button class="dropdown-item" type="button" id="btn_scanForQualifiedProp">Scan For Qualified Property (history=false)</button>
-                  <button class="dropdown-item" type="button" id="btn_scanForQualifiedPropWithHistory">Scan For Qualified Property (history=true)</button>
-                  <button class="dropdown-item" type="button" id="btn_findElementsWherePropValueEqualsX">Find Elements Where PropValue = X</button>
-                  <button class="dropdown-item" type="button" id="btn_assignClassificaiton">Assign Classification</button>
-                  <button class="dropdown-item" type="button" id="btn_getScanBruteForce">GET /scan (brute force)</button>
-                  <button class="dropdown-item" type="button" id="btn_getScanElementsOptions">POST /scan (with Options)</button>
-                  <button class="dropdown-item" type="button" id="btn_getScanElementsQualProps">POST /scan (Qualified Properties)</button>
-                  <button class="dropdown-item" type="button" id="btn_getScanElementsFullChangeHistory">POST /scan (Specific Elements, Full change history)</button>
-                  <button class="dropdown-item" type="button" id="btn_setPropertyOnElements">POST /mutate Set Property Value</button>
-                  <button class="dropdown-item" type="button" id="btn_setPropertyOnElementsQP">POST /mutate Set Property Value (using Qualified Property)</button>
-                </div>
-              </div>
-            </div>
-            <div class="row form-group">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Group stubs -->
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuGroups" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Group Stubs
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuGroups">
-                  <button class="dropdown-item" type="button" id="btn_getGroups">GET Groups</button>
-                  <button class="dropdown-item" type="button" id="btn_getGroup">GET Group (by GroupURN)</button>
-                  <button class="dropdown-item" type="button" id="btn_getGroupMetrics">GET Group Metrics (by GroupURN)</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilitiesForGroup">GET Facilities for Group (by GroupURN)</button>
-                </div>
-              </div>
-            </div>
-            <div class="row form-group">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Stream stubs -->
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuStreams" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Streams Stubs
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuStreams">
-                  <button class="dropdown-item" type="button" id="btn_getStreamsFromDefaultModelPOST">POST /scan Get Streams (from default model)</button>
-                  <button class="dropdown-item" type="button" id="btn_getStreamSecrets">POST Get Stream Secrets</button>
-                  <button class="dropdown-item" type="button" id="btn_resetStreamSecrets">POST Reset Stream Secrets</button>
-                  <button class="dropdown-item" type="button" id="btn_getStreamValues30Days">GET Stream Values (last 30 days)</button>
-                  <button class="dropdown-item" type="button" id="btn_getStreamValues365Days">GET Stream Values (last year)</button>
-                  <button class="dropdown-item" type="button" id="btn_postNewStreamValues">POST New Stream Values</button>
-                  <button class="dropdown-item" type="button" id="btn_getLastSeenStreamValues">POST Get Last Seen Stream Values</button>
-                  <button class="dropdown-item" type="button" id="btn_createStream">Create Stream</button>
-                  <button class="dropdown-item" type="button" id="btn_assignHostToStream">Assign Host to Stream</button>
-                  <button class="dropdown-item" type="button" id="btn_removeHostFromStream">Remove Host from Stream</button>
-                  <button class="dropdown-item" type="button" id="btn_deleteStream">Delete Stream</button>
-                </div>
-              </div>
-            </div>
-            <div class="row form-group">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for Tandem Miscellaneous stubs -->
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuMisc" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Miscellaneous Stubs
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuMisc">
-                  <button class="dropdown-item" type="button" id="btn_getHealth">GET Health</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilitiesForMe">GET Facilities for Me (@me)</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilitiesForUser">GET Facilities for User (UserID)</button>
-                </div>
-              </div>
-            </div>
-            <div class="row form-group">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for TandemApp stubs -->
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuTdApp" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Tandem App Stubs
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuTdApp">
-                  <button class="dropdown-item" type="button" id="btn_getClassifications">GET Classifications (by GroupID)</button>
-                  <button class="dropdown-item" type="button" id="btn_getClassificationByUUID">GET Classification (by GroupID and UUID)</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilityTemplates">GET Facility Templates (by GroupID)</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilityTemplateByUUID">GET Facility Template (by GroupID and UUID)</button>
-                  <button class="dropdown-item" type="button" id="btn_getParameters">GET Parameters (by GroupID)</button>
-                  <button class="dropdown-item" type="button" id="btn_getParameterByUUID">GET Parameter (by GroupID and UUID)</button>
-                  <button class="dropdown-item" type="button" id="btn_getPreferences">GET Preferences</button>
-                </div>
-              </div>
-            </div>
-            <div class="row form-group">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for SDK stubs -->
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuSDK" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  SDK Stubs
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuSDK">
-                  <button class="dropdown-item" type="button" id="btn_getRoomsAndSpaces">Get Rooms and Spaces</button>
-                  <button class="dropdown-item" type="button" id="btn_getLevels">Get Levels</button>
-                  <button class="dropdown-item" type="button" id="btn_getElementAndTypeProperties">Get Element AND Type Properties</button>
-                  <button class="dropdown-item" type="button" id="btn_getFacilityStructure">Get Facility Structure</button>
-                </div>
-              </div>
-            </div>
-            <div class="row form-group">
-              <div class="col-md dropdown dropright"> <!--Dropdown menu for Diagnostic stubs -->
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuDiagnostics" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Diagnostic Stubs
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuDiagnostics">
-                  <button class="dropdown-item" type="button" id="btn_checkForDuplicateProperties">Check for Duplicate Properties</button>
-                </div>
-              </div>
-            </div>
-            <div class="row form-group mt-5">
-              <div class="col-md-8">
-                  <p class="text-muted bg-light font-italic">NOTE: output from stub functions goes to the Chrome debugger window.  Make sure to open the Chrome Developer Tools.</p>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
+    </nav>
 
-        <!--  The following mechanism loads in partial HTML that defines a modal dialog to get input for
-              some of the stub funcitons. It will inject the HTML from the given path and then then the
-              bound JS functions in index.js will retrieve the values and call the appropriate functions
-              with the given input -->
-      <script>
-         $(function(){
-          $("#stubInputInject_GetPropertyName").load("./stubInput/getPropertyName.html", "#stubInput_getPropertyName");
-          $("#stubInputInject_GetPropertyFilter").load("./stubInput/getPropertyFilter.html", "#stubInput_getPropertyFilter");
-          $("#stubInputInject_SetPropertyValue").load("./stubInput/setPropertyValue.html", "#stubInput_setPropertyValue");
-          $("#stubInputInject_SetPropertyValueQP").load("./stubInput/setPropertyValueQP.html", "#stubInput_setPropertyValueQP");
-          $("#stubInputInject_SetClassification").load("./stubInput/setClassification.html", "#stubInput_setClassification");
-          $("#stubInputInject_GetURN").load("./stubInput/getURN.html", "#stubInput_getURN");
-          $("#stubInputInject_GetUserID").load("./stubInput/getUserID.html", "#stubInput_getUserID");
-          $("#stubInputInject_GetUUID").load("./stubInput/getUUID.html", "#stubInput_getUUID");
-          $("#stubInputInject_GetURNandUUID").load("./stubInput/getURNandUUID.html", "#stubInput_getURNandUUID");
-          $("#stubInputInject_GetURNandKeys").load("./stubInput/getURNandKeys.html", "#stubInput_getURNandKeys");
-          $("#stubInputInject_GetScanOptions").load("./stubInput/getScanOptions.html", "#stubInput_getScanOptions");
-          $("#stubInputInject_GetScanQualProps").load("./stubInput/getScanQualProps.html", "#stubInput_getScanQualProps");
-          $("#stubInputInject_GetKeys").load("./stubInput/getKeys.html", "#stubInput_getKeys");
-          $("#stubInputInject_CreateStream").load("./stubInput/createStream.html", "#stubInput_createStream");
-          $("#stubInputInject_AddStreamHost").load("./stubInput/addStreamHost.html", "#stubInput_addStreamHost");
-         });
-      </script>
-      <div id="stubInputInject_GetPropertyName"></div>
-      <div id="stubInputInject_GetPropertyFilter"></div>
-      <div id="stubInputInject_SetPropertyValue"></div>
-      <div id="stubInputInject_SetPropertyValueQP"></div>
-      <div id="stubInputInject_SetClassification"></div>
-      <div id="stubInputInject_GetURN"></div>
-      <div id="stubInputInject_GetUserID"></div>
-      <div id="stubInputInject_GetUUID"></div>
-      <div id="stubInputInject_GetURNandUUID"></div>
-      <div id="stubInputInject_GetURNandKeys"></div>
-      <div id="stubInputInject_GetScanOptions"></div>
-      <div id="stubInputInject_GetScanQualProps"></div>
-      <div id="stubInputInject_GetKeys"></div>
-      <div id="stubInputInject_CreateStream"></div>
-      <div id="stubInputInject_AddStreamHost"></div>
+    <!-- Main Content -->
+    <main class="h-screen flex flex-col">
+        <!-- Welcome Message (shown when not logged in) -->
+        <div id="welcomeMessage" class="flex-1 flex items-center justify-center">
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center mb-4">
+                    <img src="./images/autodesk-tandem-small-social-400.png" width="64" height="64" alt="Tandem" class="rounded">
+                </div>
+                <h2 class="text-xl font-bold text-dark-text mb-2">Welcome to Tandem REST API Testbed</h2>
+                <p class="text-xs text-dark-text-secondary mb-5">Sign in to explore Tandem REST API endpoints</p>
+                <button onclick="document.getElementById('loginBtn').click()" 
+                        class="inline-flex items-center px-5 py-2 border border-transparent text-sm font-medium rounded text-white bg-tandem-blue hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tandem-blue transition">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+                    </svg>
+                    Sign In with Autodesk
+                </button>
+            </div>
+        </div>
 
-        <!-- this is the JS module that kicks off login and loading of the Tandem Viewer -->
-      <script type="module" src="./index.js"></script>
+        <!-- Dashboard Content (shown when logged in) -->
+        <div id="dashboardContent" class="hidden flex-1 flex" style="height: calc(100vh - 56px);">
+            <!-- Left Side: Viewer / Thumbnail Area -->
+            <div class="flex-1 relative bg-dark-bg flex flex-col">
+                <!-- Thumbnail/Viewer Area -->
+                <div class="flex-1 flex items-center justify-center p-4">
+                    <img id="facilityThumbnail" 
+                         src="" 
+                         alt="Facility Thumbnail" 
+                         class="hidden max-w-full max-h-full object-contain"
+                         style="max-height: calc(100vh - 200px);">
+                    <div id="thumbnailPlaceholder" class="text-center text-dark-text-secondary">
+                        <svg class="w-24 h-24 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <p class="text-sm">Select a facility to view</p>
+                    </div>
+                </div>
+            </div>
 
-    </body>
+            <!-- Right Side: STUB Functions Panel -->
+            <div class="w-96 bg-dark-card border-l border-dark-border overflow-y-auto">
+                <!-- STUB Functions Dropdown Menus -->
+                <div id="stubsContainer" class="p-4">
+                    <!-- Dropdowns will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+        <div class="bg-dark-card rounded border border-dark-border p-5 shadow-2xl">
+            <div class="flex items-center space-x-3">
+                <svg class="animate-spin h-5 w-5 text-tandem-blue" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span class="text-dark-text text-sm font-medium">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import main app module -->
+    <script type="module" src="./js/app.js"></script>
+</body>
 </html>
+
