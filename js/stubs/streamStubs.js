@@ -7,7 +7,7 @@
  * Output goes to browser console - open DevTools to see results.
  */
 
-import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST, getDefaultModelURN } from '../api.js';
+import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST, makeRequestOptionsPUT, makeRequestOptionsPATCH, getDefaultModelURN } from '../api.js';
 import { ColumnFamilies, ColumnNames, QC, ElementFlags, MutateActions } from '../../tandem/constants.js';
 import { makeXrefKey } from '../../tandem/keys.js';
 
@@ -417,6 +417,327 @@ export async function removeHostFromStream(facilityURN, region, streamKeys) {
     console.error('Error:', error);
     console.groupEnd();
     return null;
+  }
+}
+
+/**
+ * Get stream configurations for all streams in the default model
+ *
+ * A "stream configuration" is separate from the stream element itself. It lives in a
+ * dedicated storage column (Settings) and controls how the server interprets incoming
+ * IoT data, how long it is retained, and when alerts should fire.
+ *
+ * Only streams that have been configured will appear in this response. Streams that
+ * have never been configured are valid streams but will be absent from the result.
+ *
+ * Response shape (array of StreamConfig objects):
+ * [
+ *   {
+ *     "elementId": "<full base64 stream key>",
+ *     "streamSettings": {
+ *       "sourceMapping": {                       // maps parameter IDs to JSON paths in the ingest payload
+ *         "<familyId:paramId>": {
+ *           "path": "temperature",              // dot-notation path into the POST body (e.g. "sensors.0.temp")
+ *           "ts": "timestamp"                   // optional: path to a timestamp field in the payload
+ *         }
+ *       },
+ *       "thresholds": {                          // optional: alert thresholds per parameter
+ *         "<familyId:paramId>": {
+ *           "lower": { "warn": 18, "alert": 15 },
+ *           "upper": { "warn": 23, "alert": 25 },
+ *           "alertDefinition": { "evaluationPeriodSec": 300 }  // optional: debounce window
+ *         }
+ *       },
+ *       "frequency": 60000,                      // optional: storage granularity in ms (default: 60000)
+ *       "retentionPeriod": 365,                  // optional: data retention in days
+ *       "offlineTimeout": 3600                   // optional: seconds before stream is considered offline
+ *     }
+ *   }
+ * ]
+ *
+ * NOTE: "elementId" uses the full (long) base64 key encoding, not the short key used
+ * elsewhere in the API. When passing a stream key to PUT /stream-configs/{elementID}
+ * the server will accept either the short or long form.
+ */
+export async function getStreamConfigs(facilityURN, region) {
+  console.group("STUB: getStreamConfigs()");
+
+  const defaultModelURN = getDefaultModelURN(facilityURN);
+  console.log("Default model:", defaultModelURN);
+
+  const requestPath = `${tandemBaseURL}/models/${defaultModelURN}/stream-configs`;
+  console.log("Request:", requestPath);
+
+  try {
+    const response = await fetch(requestPath, makeRequestOptionsGET(region));
+    const result = await response.json();
+    console.log("Result from Tandem DB Server -->", result);
+    if (Array.isArray(result)) {
+      console.log(`Found ${result.length} stream config(s)`);
+      console.table(result.map(c => ({ elementId: c.elementId, hasSettings: !!c.streamSettings })));
+    }
+    console.groupEnd();
+    return result;
+  } catch (error) {
+    console.error('Error:', error);
+    console.groupEnd();
+    return null;
+  }
+}
+
+/**
+ * Get stream configuration for a single stream
+ *
+ * Returns the same StreamConfig shape as getStreamConfigs() but for one stream only.
+ * The stream key can be either the short key (as returned by getStreamsFromDefaultModel)
+ * or the full base64 key — the server normalizes it.
+ *
+ * Returns HTTP 404 if the stream exists but has never been configured.
+ */
+export async function getStreamConfig(facilityURN, region, streamKey) {
+  console.group("STUB: getStreamConfig()");
+
+  const defaultModelURN = getDefaultModelURN(facilityURN);
+  console.log("Default model:", defaultModelURN);
+  console.log("Stream key:", streamKey);
+
+  const requestPath = `${tandemBaseURL}/models/${defaultModelURN}/stream-configs/${streamKey}`;
+  console.log("Request:", requestPath);
+
+  try {
+    const response = await fetch(requestPath, makeRequestOptionsGET(region));
+    const result = await response.json();
+    console.log("Result from Tandem DB Server -->", result);
+    if (result?.streamSettings) {
+      console.log("Stream settings:", result.streamSettings);
+    }
+    console.groupEnd();
+    return result;
+  } catch (error) {
+    console.error('Error:', error);
+    console.groupEnd();
+    return null;
+  }
+}
+
+/**
+ * Save (replace) the stream configuration for a single stream
+ * [PUT /models/{modelURN}/stream-configs/{streamKey}]
+ *
+ * IMPORTANT — FULL REPLACE, NOT PARTIAL UPDATE:
+ * Despite using PUT semantics, the server writes the entire streamSettings object as
+ * one atomic upsert. Any field you omit from the payload will be erased. Always read
+ * the current config first (getStreamConfig), merge your changes, then PUT the result.
+ *
+ * PUT vs. PATCH — what is the actual difference?
+ *   PUT  → targets ONE stream (key in the URL); body wraps a single "streamConfig" object.
+ *   PATCH → targets MULTIPLE streams in one call; body wraps a "streamConfigs" array.
+ *   Internally the server routes both to the same UpdateStreamConfigs function, so the
+ *   capability (which fields you can set) is identical. Choose PUT for single-stream
+ *   updates and PATCH when you need to update several streams atomically.
+ *
+ * Full streamSettings schema:
+ * {
+ *   "sourceMapping": {                       // maps ingest payload fields → Tandem parameters
+ *     "<familyId:paramId>": {
+ *       "path": "temperature",              // JSON path into the POST /streams/{key} body
+ *       "ts": "timestamp"                   // optional: path to a timestamp field
+ *     }
+ *   },
+ *   "thresholds": {                          // optional: alert thresholds per parameter
+ *     "<familyId:paramId>": {
+ *       "lower": { "warn": 18, "alert": 15 },
+ *       "upper": { "warn": 23, "alert": 25 },
+ *       "alertDefinition": { "evaluationPeriodSec": 300 }
+ *     }
+ *   },
+ *   "frequency": 60000,                      // optional: storage granularity in ms
+ *                                            //   allowed values: 60000, 300000, 900000,
+ *                                            //   1800000, 3600000, 7200000, 21600000,
+ *                                            //   43200000, 86400000
+ *                                            //   NOTE: frequency can only be decreased, never increased
+ *   "retentionPeriod": 365,                  // optional: data retention in days; must be >= frequency
+ *   "offlineTimeout": 3600                   // optional: seconds before stream is marked offline
+ * }
+ *
+ * Full request body shape:
+ * {
+ *   "description": "human-readable change description",  // optional, defaults to "stream-config-update"
+ *   "streamConfig": {
+ *     "streamSettings": { ... }             // see schema above
+ *   }
+ * }
+ *
+ * @param {string} streamKey    - Short or full base64 key of the stream to configure
+ * @param {string} settingsJson - Accepts two shapes:
+ *   (a) Just the streamSettings object (sourceMapping, thresholds, etc. at the top level)
+ *   (b) The full StreamConfig response from GET /stream-configs/{key}
+ *       (has "elementId" + "streamSettings" at the top level)
+ *   Shape (b) lets you copy the GET response directly into this field, edit it, and PUT
+ *   it back without having to manually unwrap the nesting.
+ */
+export async function saveStreamConfig(facilityURN, region, streamKey, settingsJson) {
+  console.group("STUB: saveStreamConfig()");
+
+  const defaultModelURN = getDefaultModelURN(facilityURN);
+  console.log("Default model:", defaultModelURN);
+  console.log("Stream key:", streamKey);
+
+  let parsed;
+  try {
+    parsed = JSON.parse(settingsJson);
+  } catch {
+    console.error("ERROR: settingsJson is not valid JSON");
+    console.groupEnd();
+    return null;
+  }
+
+  // Accept two input shapes:
+  //   1. The raw streamSettings object (sourceMapping, thresholds, etc. at the top level)
+  //   2. The full StreamConfig object returned by GET /stream-configs/{key}
+  //      (has "elementId" + "streamSettings" at the top level)
+  // This lets you copy the GET response directly into this field, edit it, and PUT it back.
+  let streamSettings;
+  if (parsed.streamSettings !== undefined) {
+    console.log("Detected full StreamConfig shape — extracting streamSettings");
+    streamSettings = parsed.streamSettings;
+  } else {
+    streamSettings = parsed;
+  }
+
+  const bodyPayload = JSON.stringify({
+    description: "REST TestBed: save stream config",
+    streamConfig: { streamSettings }
+  });
+
+  console.log("Body payload:", bodyPayload);
+
+  const requestPath = `${tandemBaseURL}/models/${defaultModelURN}/stream-configs/${streamKey}`;
+  console.log("Request:", requestPath);
+
+  try {
+    const response = await fetch(requestPath, makeRequestOptionsPUT(bodyPayload, region));
+    if (response.ok) {
+      console.log("✓ Stream config saved successfully");
+    } else {
+      console.log("Response status:", response.status);
+    }
+    console.groupEnd();
+    return response.ok;
+  } catch (error) {
+    console.error('Error:', error);
+    console.groupEnd();
+    return false;
+  }
+}
+
+/**
+ * Batch-update stream configurations for multiple streams in one call
+ * [PATCH /models/{modelURN}/stream-configs]
+ *
+ * IMPORTANT — FULL REPLACE PER STREAM, NOT PARTIAL UPDATE:
+ * Each streamSettings object in the array completely replaces the existing config for
+ * that stream. The HTTP verb "PATCH" here means "batch operation", not "partial update".
+ * Always read current configs first (getStreamConfigs), apply your changes, then PATCH.
+ *
+ * PUT vs. PATCH — what is the actual difference?
+ *   PUT  → targets ONE stream (key in the URL); body wraps a single "streamConfig" object.
+ *   PATCH → targets MULTIPLE streams in one call; body wraps a "streamConfigs" array.
+ *   Internally the server routes both to the same UpdateStreamConfigs function, so the
+ *   capability (which fields you can set) is identical. Choose PATCH when you need to
+ *   update several streams atomically (e.g. bulk-apply thresholds from a template).
+ *
+ * If any stream in the batch fails validation the server may return HTTP 207 Multi-Status
+ * (partial update error) — check the response body for per-stream error details.
+ *
+ * Full request body shape:
+ * {
+ *   "description": "human-readable change description",  // optional, defaults to "stream-config-update"
+ *   "streamConfigs": [
+ *     {
+ *       "elementId": "<full base64 stream key>",         // required; identifies which stream to update
+ *       "streamSettings": {
+ *         "sourceMapping": {
+ *           "<familyId:paramId>": { "path": "temperature", "ts": "timestamp" }
+ *         },
+ *         "thresholds": {
+ *           "<familyId:paramId>": {
+ *             "lower": { "warn": 18, "alert": 15 },
+ *             "upper": { "warn": 23, "alert": 25 },
+ *             "alertDefinition": { "evaluationPeriodSec": 300 }
+ *           }
+ *         },
+ *         "frequency": 60000,       // ms; see PUT stub for allowed values
+ *         "retentionPeriod": 365,   // days
+ *         "offlineTimeout": 3600    // seconds
+ *       }
+ *     }
+ *   ]
+ * }
+ *
+ * @param {string} configsJson - Accepts two shapes:
+ *   (a) A JSON array of StreamConfig objects — the direct response from GET /stream-configs:
+ *       [ { "elementId": "...", "streamSettings": { ... } }, ... ]
+ *   (b) The full request body object (in case you constructed it manually):
+ *       { "streamConfigs": [ ... ], "description": "..." }
+ *   Shape (a) lets you copy the GET Stream Configs response directly, edit the entries
+ *   you want to change, and PATCH them back without any restructuring.
+ */
+export async function updateStreamConfigs(facilityURN, region, configsJson) {
+  console.group("STUB: updateStreamConfigs()");
+
+  const defaultModelURN = getDefaultModelURN(facilityURN);
+  console.log("Default model:", defaultModelURN);
+
+  let parsed;
+  try {
+    parsed = JSON.parse(configsJson);
+  } catch {
+    console.error("ERROR: configsJson is not valid JSON");
+    console.groupEnd();
+    return null;
+  }
+
+  // Accept two input shapes:
+  //   1. A plain array [ { elementId, streamSettings }, ... ]  — the GET /stream-configs response
+  //   2. The full request body { streamConfigs: [...], description: "..." }
+  // Shape 1 is the most natural: copy the GET response, edit entries, paste and PATCH.
+  let streamConfigs;
+  if (Array.isArray(parsed)) {
+    streamConfigs = parsed;
+  } else if (Array.isArray(parsed.streamConfigs)) {
+    console.log("Detected full request body shape — extracting streamConfigs array");
+    streamConfigs = parsed.streamConfigs;
+  } else {
+    console.error("ERROR: expected a JSON array or an object with a 'streamConfigs' array");
+    console.groupEnd();
+    return null;
+  }
+
+  const bodyPayload = JSON.stringify({
+    description: "REST TestBed: batch update stream configs",
+    streamConfigs
+  });
+
+  console.log(`Updating ${streamConfigs.length} stream config(s)`);
+  console.log("Body payload:", bodyPayload);
+
+  const requestPath = `${tandemBaseURL}/models/${defaultModelURN}/stream-configs`;
+  console.log("Request:", requestPath);
+
+  try {
+    const response = await fetch(requestPath, makeRequestOptionsPATCH(bodyPayload, region));
+    if (response.ok) {
+      console.log("✓ Stream configs updated successfully");
+    } else {
+      console.log("Response status:", response.status);
+    }
+    console.groupEnd();
+    return response.ok;
+  } catch (error) {
+    console.error('Error:', error);
+    console.groupEnd();
+    return false;
   }
 }
 

@@ -1420,6 +1420,68 @@ export async function renderStubs(container, facilityURN, region) {
         onExecute: (values) => 
           streamStubs.resetStreamSecrets(currentFacilityURN, currentFacilityRegion, values.streamKeys || '')
       }
+    },
+    {
+      label: 'GET Stream Configs',
+      hasInput: false,
+      action: () => streamStubs.getStreamConfigs(currentFacilityURN, currentFacilityRegion)
+    },
+    {
+      label: 'GET Stream Config',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Stream Key',
+            id: 'streamKey',
+            placeholder: 'Single stream key'
+          }
+        ],
+        onExecute: (values) =>
+          streamStubs.getStreamConfig(currentFacilityURN, currentFacilityRegion, values.streamKey || '')
+      }
+    },
+    {
+      label: 'PUT Save Stream Config',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Stream Key',
+            id: 'streamKey',
+            placeholder: 'Single stream key'
+          },
+          {
+            label: 'Stream Settings (JSON)  —  tip: paste the GET response here, edit, then Execute',
+            id: 'settingsJson',
+            type: 'textarea',
+            rows: 6,
+            placeholder: '{\n  "elementId": "<from GET stream-configs>",\n  "streamSettings": {\n    "sourceMapping": { "<familyId:paramId>": { "path": "temperature", "ts": "ts" } },\n    "thresholds": { "<familyId:paramId>": { "lower": { "warn": 18, "alert": 15 }, "upper": { "warn": 23, "alert": 25 } } },\n    "offlineTimeout": 3600\n  }\n}'
+          }
+        ],
+        onExecute: (values) =>
+          streamStubs.saveStreamConfig(currentFacilityURN, currentFacilityRegion, values.streamKey || '', values.settingsJson || '{}')
+      }
+    },
+    {
+      label: 'PATCH Update Stream Configs',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Stream Configs (JSON array)  —  tip: paste the GET Stream Configs response here, edit, then Execute',
+            id: 'configsJson',
+            type: 'textarea',
+            rows: 6,
+            placeholder: '[\n  {\n    "elementId": "<from GET stream-configs>",\n    "streamSettings": {\n      "sourceMapping": { "<familyId:paramId>": { "path": "temperature", "ts": "ts" } },\n      "thresholds": { "<familyId:paramId>": { "lower": { "warn": 18, "alert": 15 }, "upper": { "warn": 23, "alert": 25 } } },\n      "offlineTimeout": 3600\n    }\n  }\n]'
+          }
+        ],
+        onExecute: (values) =>
+          streamStubs.updateStreamConfigs(currentFacilityURN, currentFacilityRegion, values.configsJson || '[]')
+      }
     }
   ]);
   
@@ -1807,6 +1869,28 @@ function createDropdownMenu(title, items) {
               mainInput = select;
             } else {
               additionalInputs.push(select);
+            }
+          } else if (fieldType === 'textarea') {
+            // Multiline textarea for JSON or long values
+            const label = document.createElement('label');
+            label.textContent = field.label;
+            if (fieldIdx > 0) label.style.marginTop = '0.5rem';
+
+            const textarea = document.createElement('textarea');
+            textarea.id = field.id;
+            textarea.placeholder = field.placeholder || '';
+            textarea.value = typeof field.defaultValue === 'function'
+              ? field.defaultValue()
+              : (field.defaultValue || '');
+            textarea.rows = field.rows || 4;
+
+            inputForm.appendChild(label);
+            inputForm.appendChild(textarea);
+
+            if (fieldIdx === 0) {
+              mainInput = textarea;
+            } else {
+              additionalInputs.push(textarea);
             }
           } else {
             // Text input field (or select for autocomplete)
