@@ -152,7 +152,31 @@
             outline: none;
             border-color: #0696D7;
         }
-        
+
+        .stub-input-form textarea {
+            width: 100%;
+            padding: 0.375rem 0.5rem;
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            border-radius: 0.25rem;
+            color: #e0e0e0;
+            font-size: 0.7rem;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            margin-bottom: 0.375rem;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        .stub-input-form textarea:focus {
+            outline: none;
+            border-color: #0696D7;
+        }
+
+        .stub-input-form textarea::placeholder {
+            color: #555555;
+        }
+
         .stub-input-form button {
             padding: 0.375rem 0.75rem;
             background: #0696D7;

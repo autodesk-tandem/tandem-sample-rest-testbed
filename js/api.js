@@ -58,6 +58,52 @@ export function makeRequestOptionsPOST(bodyPayload, region = null) {
 }
 
 /**
+ * Create request options for PUT requests
+ * @param {string} bodyPayload - JSON string body
+ * @param {string} region - Region header (e.g., 'US', 'EMEA', 'AUS')
+ * @returns {object} Fetch request options
+ */
+export function makeRequestOptionsPUT(bodyPayload, region = null) {
+  const headers = new Headers();
+  headers.append("Authorization", `Bearer ${window.sessionStorage.token}`);
+  headers.append("Content-Type", "application/json");
+
+  if (region) {
+    headers.append("Region", region);
+  }
+
+  return {
+    method: 'PUT',
+    headers: headers,
+    body: bodyPayload,
+    redirect: 'follow'
+  };
+}
+
+/**
+ * Create request options for PATCH requests
+ * @param {string} bodyPayload - JSON string body
+ * @param {string} region - Region header (e.g., 'US', 'EMEA', 'AUS')
+ * @returns {object} Fetch request options
+ */
+export function makeRequestOptionsPATCH(bodyPayload, region = null) {
+  const headers = new Headers();
+  headers.append("Authorization", `Bearer ${window.sessionStorage.token}`);
+  headers.append("Content-Type", "application/json");
+
+  if (region) {
+    headers.append("Region", region);
+  }
+
+  return {
+    method: 'PATCH',
+    headers: headers,
+    body: bodyPayload,
+    redirect: 'follow'
+  };
+}
+
+/**
  * Get user resources (facilities and groups)
  * 
  * PERFORMANCE NOTE: This single API call returns ALL facilities and groups
