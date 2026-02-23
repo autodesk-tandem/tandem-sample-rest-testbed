@@ -1166,6 +1166,30 @@ export async function renderStubs(container, facilityURN, region) {
         onExecute: (modelUrn, additionalValues) => 
           propertyStubs.setPropertySelSetQP(modelUrn, currentFacilityRegion, additionalValues.qualPropStr || '', additionalValues.propVal || '', additionalValues.elemKeys || '')
       }
+    },
+    {
+      label: 'DELETE Property Value(s)',
+      hasInput: true,
+      inputConfig: {
+        type: 'modelSelect',
+        label: 'Model',
+        additionalFields: [
+          {
+            label: 'Element Keys (comma-separated)',
+            id: 'elemKeys',
+            type: 'text',
+            placeholder: 'Keys of elements to update'
+          },
+          {
+            label: 'Qualified Property Name(s) (comma-separated)',
+            id: 'qualPropNames',
+            type: 'text',
+            placeholder: 'e.g., z:4wc  or  z:4wc, z:z:4wc  (to clean up double-prefix corruption)'
+          }
+        ],
+        onExecute: (modelUrn, additionalValues) =>
+          propertyStubs.deletePropertyValue(currentFacilityURN, currentFacilityRegion, modelUrn, additionalValues.elemKeys || '', additionalValues.qualPropNames || '')
+      }
     }
   ]);
   

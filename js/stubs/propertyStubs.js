@@ -862,3 +862,143 @@ export async function setPropertySelSetQP(modelURN, region, qualPropStr, propVal
   console.groupEnd();
 }
 
+
+/**
+ * Delete (clear) a property value from selected elements using MutateActions.Delete ('d').
+ *
+ * IMPORTANT — what "delete" means in Tandem:
+ *   The server NEVER physically removes a cell. MutateActions.Delete ('d') sets the cell
+ *   value to empty and records the deletion in history. After a successful delete, the
+ *   column will still appear in scan results but with an empty value ['']. This is correct
+ *   and expected — the value has been cleared even though the column entry remains.
+ *
+ * IMPORTANT — do NOT delete columns that don't exist:
+ *   If you run a delete mutation against a column that has never been written, the server
+ *   creates a new empty cell for it (to start its history). This is the opposite of what
+ *   you want. This stub guards against that by scanning the elements first and only
+ *   issuing delete mutations for columns that actually contain a non-empty value.
+ *
+ * USE CASE — cleaning up corrupted data (e.g. the "z:z" double-prefix bug):
+ *   The bug stored values in family=z, column=z (displayed as "z:z" in scan output).
+ *   Enter "z:z" as the qualified property name to clear it.
+ *   After the delete, the scan will show z:z: [''] — that is success.
+ *
+ * FULL CLEANUP SEQUENCE for corrupted/orphaned property columns:
+ *   Step 1 — Run this stub to clear the bad values (sets them to empty via MutateActions.Delete).
+ *   Step 2 — In the Tandem UI, run "Cleanup Facility" (Manage > Cleanup Facility or similar).
+ *            This physically purges all empty/null cells via a server-side DeleteCellsInColumn
+ *            operation that is not available through the public REST API.
+ *   After both steps, re-run "Scan for User Props" — the orphaned columns will be gone entirely.
+ *
+ * @param {string} facilityURN   - Facility URN
+ * @param {string} region        - Region header
+ * @param {string} modelURN      - Model URN containing the elements
+ * @param {string} elementKeys   - Comma-separated element keys
+ * @param {string} qualPropNames - Comma-separated qualified property names to delete.
+ *                                 Use exactly the key as it appears in the scan output.
+ *                                 Format: "family:column"  e.g. "z:z" or "z:4wc"
+ *                                 Split always occurs on the FIRST colon, so "z:z:4wc"
+ *                                 → family="z", column="z:4wc" (matching the scan key).
+ */
+export async function deletePropertyValue(facilityURN, region, modelURN, elementKeys, qualPropNames) {
+  console.group("STUB: deletePropertyValue()");
+
+  const elementKeysArray = elementKeys.split(',').map(k => k.trim()).filter(k => k);
+  const qualPropArray = qualPropNames.split(',').map(p => p.trim()).filter(p => p);
+
+  if (!elementKeysArray.length) {
+    console.error("ERROR: at least one element key is required");
+    console.groupEnd();
+    return;
+  }
+
+  if (!qualPropArray.length) {
+    console.error("ERROR: at least one qualified property name is required");
+    console.groupEnd();
+    return;
+  }
+
+  // Parse each qualified property name, splitting on the FIRST colon only.
+  const parsedProps = [];
+  for (const qp of qualPropArray) {
+    const firstColon = qp.indexOf(':');
+    if (firstColon === -1) {
+      console.error(`Invalid qualified property: "${qp}". Expected "family:column" e.g. "z:z" or "z:4wc"`);
+      console.groupEnd();
+      return;
+    }
+    parsedProps.push({ qualName: qp, fam: qp.slice(0, firstColon), col: qp.slice(firstColon + 1) });
+  }
+
+  console.log("Element keys:", elementKeysArray);
+  console.log("Requested columns to delete:", parsedProps.map(p => p.qualName).join(', '));
+
+  // --- SCAN FIRST ---
+  // Only delete columns that actually have a non-empty value on each element.
+  // Deleting a column that doesn't exist would CREATE it as an empty cell (the opposite
+  // of what we want). The scan tells us exactly what to delete.
+  console.log("Scanning elements first to confirm which columns have data...");
+  const scanPath = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
+  const scanPayload = JSON.stringify({
+    keys: elementKeysArray,
+    families: parsedProps.map(p => p.fam).filter((f, i, a) => a.indexOf(f) === i), // unique families
+    includeHistory: false
+  });
+
+  let scanResult;
+  try {
+    const scanResponse = await fetch(scanPath, makeRequestOptionsPOST(scanPayload, region));
+    scanResult = await scanResponse.json();
+    console.log("Scan result:", scanResult);
+  } catch (error) {
+    console.error('Scan failed — aborting to avoid creating unwanted columns:', error);
+    console.groupEnd();
+    return;
+  }
+
+  // Build a set of { elementKey, qualName } pairs that actually have data.
+  const keys = [];
+  const muts = [];
+
+  for (const row of scanResult) {
+    const elementKey = row['k'];
+    if (!elementKey || !elementKeysArray.includes(elementKey)) continue;
+
+    for (const { qualName, fam, col } of parsedProps) {
+      const cellValue = row[qualName];
+      const hasValue = cellValue !== undefined && cellValue !== null &&
+                       !(Array.isArray(cellValue) && (cellValue.length === 0 || cellValue[0] === ''));
+
+      if (hasValue) {
+        console.log(`  ✓ Found "${qualName}" = ${JSON.stringify(cellValue)} on element ${elementKey} — will delete`);
+        keys.push(elementKey);
+        muts.push([MutateActions.Delete, fam, col, '']);
+      } else {
+        console.log(`  — Skipping "${qualName}" on element ${elementKey} — already empty or absent (no mutation needed)`);
+      }
+    }
+  }
+
+  if (!keys.length) {
+    console.log("Nothing to delete — all specified columns are already empty or absent.");
+    console.groupEnd();
+    return;
+  }
+
+  const bodyPayload = JSON.stringify({ keys, muts, desc: "REST TestBed: delete property value(s)" });
+  const requestPath = `${tandemBaseURL}/modeldata/${modelURN}/mutate`;
+  console.log(`Sending ${keys.length} delete mutation(s)...`);
+  console.log("Request:", requestPath);
+  console.log("Payload:", bodyPayload);
+
+  try {
+    const response = await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region));
+    const result = await response.json();
+    console.log("Result from Tandem DB Server -->", result);
+    console.log("Done. Re-run 'Scan for User Props' to confirm — deleted columns will now show [''] (empty), which is the correct deleted state.");
+  } catch (error) {
+    console.error('Error deleting property:', error);
+  }
+
+  console.groupEnd();
+}
