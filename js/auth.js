@@ -67,7 +67,7 @@ async function doRedirection(clientId, scope) {
  * Initiate login flow
  */
 export async function login() {
-  const scope = 'data:read data:write user-profile:read';
+  const scope = 'data:read data:write user-profile:read profapi:img-profile:read';
   await doRedirection(env.apsKey, scope);
 }
 
