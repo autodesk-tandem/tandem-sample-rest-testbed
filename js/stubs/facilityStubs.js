@@ -5,7 +5,7 @@
  * Output goes to the browser console (F12 or Cmd+Option+I).
  */
 
-import { tandemBaseURL, makeRequestOptionsGET } from '../api.js';
+import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST } from '../api.js';
 
 /**
  * Get the information about a given Facility.
@@ -217,6 +217,89 @@ export async function getSavedViewByUUID(facilityURN, region, viewUUID) {
     .then(response => response.json())
     .then((obj) => {
       console.log("Result from Tandem DB Server -->", obj);
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/**
+ * Get the change history for a given Facility (twin).
+ *
+ * This endpoint aggregates changes across all models within the facility, so you
+ * don't need to know individual model URNs.  It is the right place to look for
+ * facility-level events such as template application, classification changes, and
+ * user access updates.
+ *
+ * Uses POST (not GET) because the query carries a body.  Despite being a POST it
+ * is a pure read operation (access level: read).
+ *
+ * Request body shape (btstore.HistoryQuery):
+ *   min            {number}  Start of time range — milliseconds since epoch (required)
+ *   max            {number}  End of time range   — milliseconds since epoch (required)
+ *   includeChanges {boolean} Always sent as true. Without it the server omits the change
+ *                            type (o) and description (d) — the response is nearly useless.
+ *   typeFilter     {string}  Optional — keep only entries whose change type matches exactly.
+ *                            Common values for twins: apply_template, remove_template,
+ *                            update_classification, acl_update, mutate, bulk_import
+ *   limit          {number}  Limits DB rows scanned, not results returned. When typeFilter
+ *                            is also set, fewer results than this number may come back
+ *                            because filtering happens after the DB scan (0 = no cap).
+ *
+ * @param {string} facilityURN - Facility URN
+ * @param {string} region      - Region header
+ * @param {number} daysBack    - How many days back to query (0 = all time)
+ * @param {string} typeFilter  - Optional change-type filter string
+ * @param {number} limit       - Max rows to scan (0 = no limit)
+ * @returns {Promise<void>}
+ */
+export async function getFacilityHistory(facilityURN, region, daysBack, typeFilter, limit) {
+  console.group("STUB: getFacilityHistory()");
+
+  const requestPath = `${tandemBaseURL}/twins/${facilityURN}/history`;
+  console.log(requestPath);
+
+  const now = Date.now();
+  const min = daysBack > 0 ? now - (daysBack * 24 * 60 * 60 * 1000) : 1;
+  const max = now;
+
+  // includeChanges must be true to receive the change type (o) and description (d).
+  // Without it the server omits those fields and the response is nearly useless.
+  const bodyPayload = {
+    min,
+    max,
+    includeChanges: true
+  };
+
+  if (typeFilter && typeFilter.trim() !== '') {
+    bodyPayload.typeFilter = typeFilter.trim();
+  }
+
+  if (limit > 0) {
+    bodyPayload.limit = limit;
+  }
+
+  if (limit > 0 && typeFilter) {
+    console.warn(`limit=${limit} controls DB rows scanned, not results returned. With typeFilter='${typeFilter}', fewer than ${limit} results may come back because the filter is applied after the DB scan.`);
+  }
+
+  console.log("Request body -->", bodyPayload);
+
+  await fetch(requestPath, makeRequestOptionsPOST(JSON.stringify(bodyPayload), region))
+    .then((response) => response.json())
+    .then((entries) => {
+      console.log("Result from Tandem DB Server -->", entries);
+      console.log(`Total entries returned: ${entries.length}`);
+      if (entries.length > 0) {
+        const changeTypes = [...new Set(entries.map(e => e.o).filter(Boolean))];
+        console.log("Distinct change types in response:", changeTypes);
+        console.table(entries.map(e => ({
+          timestamp: new Date(e.t).toISOString(),
+          user: e.n,
+          type: e.o,
+          description: e.d
+        })));
+      }
     })
     .catch(error => console.log('error', error));
 
