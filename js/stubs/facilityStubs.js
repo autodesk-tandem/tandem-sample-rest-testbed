@@ -31,6 +31,54 @@ export async function getFacilityInfo(facilityURN, region) {
 }
 
 /**
+ * Get the classification schema assigned to this Facility.
+ *
+ * A classification is a hierarchical taxonomy (e.g. Uniformat, OmniClass) that
+ * organises elements into categories.  This endpoint returns the raw classification
+ * object, which is different from the two template endpoints:
+ *
+ *   GET /twins/{id}/classification  — the classification schema itself (this call)
+ *   GET /twins/{id}/template        — template skeleton (pset references, no classification rows)
+ *   GET /twins/{id}/inlinetemplate  — full expanded template including psets and parameters
+ *
+ * Response shape:
+ *   uuid  {string}  Unique identifier of the classification
+ *   name  {string}  Display name (e.g. "Uniformat")
+ *   rows  {Array}   Classification entries, each with code, description, and level
+ *
+ * Returns 200 with the classification object, or an empty body if none is assigned.
+ *
+ * @param {string} facilityURN - Facility URN
+ * @param {string} region      - Region header
+ * @returns {Promise<void>}
+ */
+export async function getFacilityClassification(facilityURN, region) {
+  console.group("STUB: getFacilityClassification()");
+
+  const requestPath = `${tandemBaseURL}/twins/${facilityURN}/classification`;
+  console.log(requestPath);
+
+  await fetch(requestPath, makeRequestOptionsGET(region))
+    .then((response) => response.json())
+    .then((obj) => {
+      console.log("Result from Tandem DB Server -->", obj);
+      if (obj && obj.rows) {
+        console.log(`Classification: "${obj.name}" (uuid: ${obj.uuid})`);
+        console.log(`Total rows: ${obj.rows.length}`);
+        console.table(obj.rows.slice(0, 20)); // show first 20 rows — classifications can be large
+        if (obj.rows.length > 20) {
+          console.log(`... and ${obj.rows.length - 20} more rows (see full result above)`);
+        }
+      } else {
+        console.log("No classification assigned to this facility.");
+      }
+    })
+    .catch(error => console.log('error', error));
+
+  console.groupEnd();
+}
+
+/**
  * Get the template info about this Facility.
  * 
  * @param {string} facilityURN - Facility URN

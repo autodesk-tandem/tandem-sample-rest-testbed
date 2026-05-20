@@ -724,6 +724,10 @@ export async function renderStubs(container, facilityURN, region) {
       action: () => facilityStubs.getFacilityInfo(currentFacilityURN, currentFacilityRegion)
     },
     {
+      label: 'GET Facility Classification',
+      action: () => facilityStubs.getFacilityClassification(currentFacilityURN, currentFacilityRegion)
+    },
+    {
       label: 'GET Facility Template',
       action: () => facilityStubs.getFacilityTemplate(currentFacilityURN, currentFacilityRegion)
     },
@@ -1398,6 +1402,130 @@ export async function renderStubs(container, facilityURN, region) {
           const days = parseInt(values.timePeriod, 10);
           return streamStubs.getStreamValues(currentFacilityURN, currentFacilityRegion, values.streamKey || '', days);
         }
+      }
+    },
+    {
+      label: 'GET All Stream Data (bulk)',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Time Period',
+            id: 'daysBack',
+            type: 'select',
+            options: [
+              { value: '1',   label: 'Last 1 day' },
+              { value: '7',   label: 'Last 7 days' },
+              { value: '30',  label: 'Last 30 days' },
+              { value: '0',   label: 'All Time' }
+            ],
+            defaultValue: '1'
+          }
+        ],
+        onExecute: (values) => streamStubs.getAllStreamData(
+          currentFacilityURN,
+          currentFacilityRegion,
+          parseInt(values.daysBack, 10) || 0
+        )
+      }
+    },
+    {
+      label: 'POST Query Streams Data (filtered)',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Time Period',
+            id: 'daysBack',
+            type: 'select',
+            options: [
+              { value: '1',   label: 'Last 1 day' },
+              { value: '7',   label: 'Last 7 days' },
+              { value: '30',  label: 'Last 30 days' },
+              { value: '0',   label: 'All Time' }
+            ],
+            defaultValue: '1'
+          },
+          {
+            label: 'Stream Keys (comma-separated, optional — omit to return all streams)',
+            id: 'streamKeys',
+            type: 'text',
+            placeholder: 'e.g., ABC123,DEF456',
+            defaultValue: ''
+          },
+          {
+            label: 'Attribute IDs (comma-separated, optional — requires keys) — qualified IDs from GET Schema, e.g. z:5mQ',
+            id: 'attrIds',
+            type: 'text',
+            placeholder: 'e.g., z:5mQ,z:abc',
+            defaultValue: ''
+          }
+        ],
+        onExecute: (values) => streamStubs.queryStreamsData(
+          currentFacilityURN,
+          currentFacilityRegion,
+          parseInt(values.daysBack, 10) || 0,
+          values.streamKeys || '',
+          values.attrIds || ''
+        )
+      }
+    },
+    {
+      label: 'POST Delete Streams Data (data points only)',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Stream Keys (comma-separated, required)',
+            id: 'streamKeys',
+            type: 'text',
+            placeholder: 'e.g., ABC123,DEF456',
+            defaultValue: ''
+          },
+          {
+            label: 'Substreams / Attribute IDs (comma-separated, optional — limits deletion to specific attributes)',
+            id: 'substreams',
+            type: 'text',
+            placeholder: 'e.g., z:5mQ,z:abc',
+            defaultValue: ''
+          },
+          {
+            label: 'From Date (YYYY-MM-DD, optional — requires Substreams)',
+            id: 'fromDate',
+            type: 'text',
+            placeholder: 'e.g., 2024-01-01',
+            defaultValue: ''
+          },
+          {
+            label: 'To Date (YYYY-MM-DD, optional — requires Substreams)',
+            id: 'toDate',
+            type: 'text',
+            placeholder: 'e.g., 2024-12-31',
+            defaultValue: ''
+          },
+          {
+            label: 'Delete ALL substreams with no date filter (allSubstreams flag — use with care)',
+            id: 'allSubstreams',
+            type: 'select',
+            options: [
+              { value: '', label: 'No' },
+              { value: 'true', label: 'Yes — wipe all data for these streams' }
+            ],
+            defaultValue: ''
+          }
+        ],
+        onExecute: (values) => streamStubs.deleteStreamsData(
+          currentFacilityURN,
+          currentFacilityRegion,
+          values.streamKeys || '',
+          values.substreams || '',
+          values.fromDate || '',
+          values.toDate || '',
+          values.allSubstreams === 'true'
+        )
       }
     },
     {
