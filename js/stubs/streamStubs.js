@@ -48,6 +48,211 @@ function prettyPrintLastSeenStreamValues(streamDataObj) {
 }
 
 /**
+ * Get timeseries data for ALL streams in the default model at once.
+ *
+ * This is the bulk counterpart to GET /timeseries/models/{modelID}/streams/{elementID},
+ * which fetches data for a single stream.  Use this when you want a snapshot of
+ * all stream values across the entire facility without making one request per stream.
+ *
+ * Query parameters:
+ *   from            Epoch milliseconds — start of time range (omit for all time)
+ *   to              Epoch milliseconds — end of time range (omit for up to now)
+ *   delta           Set to "1" to enable delta encoding (smaller payload, values
+ *                   are stored as differences from the previous reading)
+ *   readPreference  Set to "primary" to force reading from the primary DB replica;
+ *                   omit (or any other value) to allow secondary reads
+ *
+ * Response is an array of entries, each with a stream element key (k) and
+ * associated timeseries values.
+ *
+ * @param {string} facilityURN - Facility URN
+ * @param {string} region      - Region header
+ * @param {number} daysBack    - How many days back to query (0 = all time)
+ * @returns {Promise<void>}
+ */
+export async function getAllStreamData(facilityURN, region, daysBack) {
+  const timeLabel = daysBack === 0 ? 'All Time' : `${daysBack} days`;
+  console.group(`STUB: getAllStreamData(${timeLabel})`);
+
+  const defaultModelURN = getDefaultModelURN(facilityURN);
+  console.log("Default model:", defaultModelURN);
+
+  const params = new URLSearchParams();
+  if (daysBack > 0) {
+    const from = Date.now() - daysBack * 24 * 60 * 60 * 1000;
+    const to = Date.now();
+    params.set('from', from);
+    params.set('to', to);
+    console.log(`Time range: last ${daysBack} day(s)`);
+  } else {
+    console.log("Time range: All Time (no date filter)");
+  }
+
+  const requestPath = `${tandemBaseURL}/timeseries/models/${defaultModelURN}/streams?${params.toString()}`;
+  console.log("NOTE: also supports &delta=1 (delta encoding) and &readPreference=primary");
+  console.log("Request:", requestPath);
+
+  try {
+    const response = await fetch(requestPath, makeRequestOptionsGET(region));
+    const result = await response.json();
+    console.log("Result from Tandem DB Server -->", result);
+    console.groupEnd();
+    return result;
+  } catch (error) {
+    console.error('Error:', error);
+    console.groupEnd();
+    return null;
+  }
+}
+
+/**
+ * Query timeseries data for specific streams and/or attributes (filtered bulk query).
+ *
+ * This is a filtered version of GET /timeseries/models/{modelID}/streams.
+ * Use it when you only want data for a subset of streams or specific attributes
+ * rather than pulling everything.
+ *
+ * Query parameters (on the URL):
+ *   from   Epoch milliseconds — start of time range (omit for all time)
+ *   to     Epoch milliseconds — end of time range (omit for up to now)
+ *   delta  Set to "1" for delta encoding
+ *
+ * Request body (StreamDataQuery):
+ *   keys   {string[]}  Stream element keys to filter by (optional).
+ *                      If omitted, data for all streams is returned.
+ *   attrs  {string[]}  Qualified attribute IDs to filter by, e.g. ["z:5mQ"]
+ *                      (same format as from GET /modeldata/{id}/schema).
+ *                      Can only be used together with keys — server returns
+ *                      400 if attrs are provided without keys.
+ *
+ * @param {string} facilityURN - Facility URN
+ * @param {string} region      - Region header
+ * @param {number} daysBack    - How many days back to query (0 = all time)
+ * @param {string} streamKeys  - Comma-separated stream keys (optional)
+ * @param {string} attrIds     - Comma-separated qualified attribute IDs (optional, requires keys)
+ * @returns {Promise<void>}
+ */
+export async function queryStreamsData(facilityURN, region, daysBack, streamKeys, attrIds) {
+  const timeLabel = daysBack === 0 ? 'All Time' : `${daysBack} days`;
+  console.group(`STUB: queryStreamsData(${timeLabel})`);
+
+  const defaultModelURN = getDefaultModelURN(facilityURN);
+  console.log("Default model:", defaultModelURN);
+
+  const params = new URLSearchParams();
+  if (daysBack > 0) {
+    params.set('from', Date.now() - daysBack * 24 * 60 * 60 * 1000);
+    params.set('to', Date.now());
+    console.log(`Time range: last ${daysBack} day(s)`);
+  } else {
+    console.log("Time range: All Time");
+  }
+
+  const keys = streamKeys ? streamKeys.split(',').map(k => k.trim()).filter(Boolean) : [];
+  const attrs = attrIds ? attrIds.split(',').map(a => a.trim()).filter(Boolean) : [];
+
+  if (attrs.length > 0 && keys.length === 0) {
+    console.error("attrs can only be used together with keys — please provide at least one stream key.");
+    console.groupEnd();
+    return;
+  }
+
+  const bodyPayload = {};
+  if (keys.length > 0) bodyPayload.keys = keys;
+  if (attrs.length > 0) bodyPayload.attrs = attrs;
+
+  const requestPath = `${tandemBaseURL}/timeseries/models/${defaultModelURN}/querystreamsdata?${params.toString()}`;
+  console.log("Request:", requestPath);
+  console.log("Request body -->", bodyPayload);
+
+  try {
+    const response = await fetch(requestPath, makeRequestOptionsPOST(JSON.stringify(bodyPayload), region));
+    const result = await response.json();
+    console.log("Result from Tandem DB Server -->", result);
+    console.groupEnd();
+    return result;
+  } catch (error) {
+    console.error('Error:', error);
+    console.groupEnd();
+    return null;
+  }
+}
+
+/**
+ * Delete timeseries data points for one or more streams.
+ *
+ * IMPORTANT: This deletes the stored data readings only — the stream element
+ * definition in the model is NOT affected. Think of it as clearing the history.
+ *
+ * The server enforces safety guards — the request will be rejected (HTTP 400)
+ * unless at least one narrowing filter is present:
+ *   - a substream (attribute) filter, OR
+ *   - a time range filter (requires substreams too), OR
+ *   - the "allSubstreams" flag to explicitly opt into a full wipe
+ *
+ * Route: POST /timeseries/models/{modelID}/deletestreamsdata
+ *
+ * Query parameters (all optional):
+ *   substreams    Comma-separated attribute/substream IDs to limit deletion
+ *   from          Start of date range, YYYY-MM-DD (requires substreams)
+ *   to            End of date range, YYYY-MM-DD (requires substreams)
+ *   allSubstreams Flag (no value) — required when no substream/date filters
+ *
+ * Request body:
+ *   keys  {string[]}  Stream element keys whose data should be deleted
+ *
+ * @param {string} facilityURN - Facility URN
+ * @param {string} region      - Region header
+ * @param {string} streamKeys  - Comma-separated stream element keys (required)
+ * @param {string} substreams  - Comma-separated substream/attribute IDs (optional)
+ * @param {string} fromDate    - Start date YYYY-MM-DD (optional, requires substreams)
+ * @param {string} toDate      - End date YYYY-MM-DD (optional, requires substreams)
+ * @param {boolean} allSubstreams - Wipe all substreams with no date filter (optional)
+ * @returns {Promise<void>}
+ */
+export async function deleteStreamsData(facilityURN, region, streamKeys, substreams, fromDate, toDate, allSubstreams) {
+  console.group('STUB: deleteStreamsData()');
+
+  const defaultModelURN = getDefaultModelURN(facilityURN);
+  console.log("Default model:", defaultModelURN);
+
+  const keys = streamKeys ? streamKeys.split(',').map(k => k.trim()).filter(Boolean) : [];
+  if (keys.length === 0) {
+    console.error("At least one stream key is required.");
+    console.groupEnd();
+    return;
+  }
+
+  const params = new URLSearchParams();
+  if (substreams) params.set('substreams', substreams.trim());
+  if (fromDate)   params.set('from', fromDate.trim());
+  if (toDate)     params.set('to', toDate.trim());
+  if (allSubstreams) params.set('allSubstreams', '');
+
+  const bodyPayload = { keys };
+  const queryString = params.toString();
+  const requestPath = `${tandemBaseURL}/timeseries/models/${defaultModelURN}/deletestreamsdata${queryString ? '?' + queryString : ''}`;
+
+  console.log("Request:", requestPath);
+  console.log("Request body -->", bodyPayload);
+  console.warn("This will permanently delete timeseries data points for the specified streams.");
+
+  try {
+    const response = await fetch(requestPath, makeRequestOptionsPOST(JSON.stringify(bodyPayload), region));
+    if (response.status === 204) {
+      console.log("Success — data points deleted (HTTP 204 No Content).");
+    } else {
+      const text = await response.text();
+      console.error(`Unexpected response (HTTP ${response.status}):`, text);
+    }
+    console.groupEnd();
+  } catch (error) {
+    console.error('Error:', error);
+    console.groupEnd();
+  }
+}
+
+/**
  * Scan for streams in the default model
  * NOTE: Streams can only exist in the default model
  */

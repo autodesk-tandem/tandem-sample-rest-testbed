@@ -724,6 +724,10 @@ export async function renderStubs(container, facilityURN, region) {
       action: () => facilityStubs.getFacilityInfo(currentFacilityURN, currentFacilityRegion)
     },
     {
+      label: 'GET Facility Classification',
+      action: () => facilityStubs.getFacilityClassification(currentFacilityURN, currentFacilityRegion)
+    },
+    {
       label: 'GET Facility Template',
       action: () => facilityStubs.getFacilityTemplate(currentFacilityURN, currentFacilityRegion)
     },
@@ -778,6 +782,48 @@ export async function renderStubs(container, facilityURN, region) {
         placeholder: 'Enter View UUID (from GET Saved Views)',
         defaultValue: '',
         onExecute: (viewUUID) => facilityStubs.getSavedViewThumbnail(currentFacilityURN, currentFacilityRegion, viewUUID)
+      }
+    },
+    {
+      label: 'POST Facility History',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Time Period',
+            id: 'daysBack',
+            type: 'select',
+            options: [
+              { value: '7',   label: 'Last 7 days' },
+              { value: '30',  label: 'Last 30 days' },
+              { value: '365', label: 'Last 365 days' },
+              { value: '0',   label: 'All Time' }
+            ],
+            defaultValue: '30'
+          },
+          {
+            label: 'Type Filter (optional) — e.g. apply_template, remove_template, update_classification, acl_update, mutate, bulk_import',
+            id: 'typeFilter',
+            type: 'text',
+            placeholder: 'Leave empty to return all change types',
+            defaultValue: ''
+          },
+          {
+            label: 'Max rows to scan (0 = no limit) — Note: when a Type Filter is set, fewer results may be returned than this number.',
+            id: 'limit',
+            type: 'text',
+            placeholder: '0',
+            defaultValue: '0'
+          }
+        ],
+        onExecute: (values) => facilityStubs.getFacilityHistory(
+          currentFacilityURN,
+          currentFacilityRegion,
+          parseInt(values.daysBack, 10) || 0,
+          values.typeFilter || '',
+          parseInt(values.limit, 10) || 0
+        )
       }
     }
   ]);
@@ -847,6 +893,49 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (modelUrn, additionalValues) => modelStubs.getModelDataFragments(modelUrn, currentFacilityRegion, additionalValues.elemKeys || '')
+      }
+    },
+    {
+      label: 'POST Model History',
+      hasInput: true,
+      inputConfig: {
+        type: 'modelSelect',
+        label: 'Model',
+        additionalFields: [
+          {
+            label: 'Time Period',
+            id: 'daysBack',
+            type: 'select',
+            options: [
+              { value: '7',   label: 'Last 7 days' },
+              { value: '30',  label: 'Last 30 days' },
+              { value: '365', label: 'Last 365 days' },
+              { value: '0',   label: 'All Time' }
+            ],
+            defaultValue: '30'
+          },
+          {
+            label: 'Type Filter (optional) — e.g. mutate, apply_pset, delete_pset, apply_template, remove_template, update_classification, bulk_import, acl_update',
+            id: 'typeFilter',
+            type: 'text',
+            placeholder: 'Leave empty to return all change types',
+            defaultValue: ''
+          },
+          {
+            label: 'Max rows to scan (0 = no limit) — Note: this limits DB rows scanned, not results returned. When a Type Filter is set, fewer results may come back than this number.',
+            id: 'limit',
+            type: 'text',
+            placeholder: '0',
+            defaultValue: '0'
+          }
+        ],
+        onExecute: (modelUrn, additionalValues) => modelStubs.getModelHistory(
+          modelUrn,
+          currentFacilityRegion,
+          parseInt(additionalValues.daysBack, 10) || 0,
+          additionalValues.typeFilter || '',
+          parseInt(additionalValues.limit, 10) || 0
+        )
       }
     }
   ]);
@@ -1231,6 +1320,48 @@ export async function renderStubs(container, facilityURN, region) {
         label: 'Group',
         onExecute: (groupUrn) => groupStubs.getFacilitiesForGroup(groupUrn)
       }
+    },
+    {
+      label: 'POST Group History',
+      hasInput: true,
+      inputConfig: {
+        type: 'groupSelect',
+        label: 'Group',
+        additionalFields: [
+          {
+            label: 'Time Period',
+            id: 'daysBack',
+            type: 'select',
+            options: [
+              { value: '7',   label: 'Last 7 days' },
+              { value: '30',  label: 'Last 30 days' },
+              { value: '365', label: 'Last 365 days' },
+              { value: '0',   label: 'All Time' }
+            ],
+            defaultValue: '30'
+          },
+          {
+            label: 'Type Filter (optional) — e.g. update_group_twins',
+            id: 'typeFilter',
+            type: 'text',
+            placeholder: 'Leave empty to return all change types',
+            defaultValue: ''
+          },
+          {
+            label: 'Max rows to scan (0 = no limit) — Note: when a Type Filter is set, fewer results may be returned than this number.',
+            id: 'limit',
+            type: 'text',
+            placeholder: '0',
+            defaultValue: '0'
+          }
+        ],
+        onExecute: (groupUrn, additionalValues) => groupStubs.getGroupHistory(
+          groupUrn,
+          parseInt(additionalValues.daysBack, 10) || 0,
+          additionalValues.typeFilter || '',
+          parseInt(additionalValues.limit, 10) || 0
+        )
+      }
     }
   ]);
   
@@ -1271,6 +1402,130 @@ export async function renderStubs(container, facilityURN, region) {
           const days = parseInt(values.timePeriod, 10);
           return streamStubs.getStreamValues(currentFacilityURN, currentFacilityRegion, values.streamKey || '', days);
         }
+      }
+    },
+    {
+      label: 'GET All Stream Data (bulk)',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Time Period',
+            id: 'daysBack',
+            type: 'select',
+            options: [
+              { value: '1',   label: 'Last 1 day' },
+              { value: '7',   label: 'Last 7 days' },
+              { value: '30',  label: 'Last 30 days' },
+              { value: '0',   label: 'All Time' }
+            ],
+            defaultValue: '1'
+          }
+        ],
+        onExecute: (values) => streamStubs.getAllStreamData(
+          currentFacilityURN,
+          currentFacilityRegion,
+          parseInt(values.daysBack, 10) || 0
+        )
+      }
+    },
+    {
+      label: 'POST Query Streams Data (filtered)',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Time Period',
+            id: 'daysBack',
+            type: 'select',
+            options: [
+              { value: '1',   label: 'Last 1 day' },
+              { value: '7',   label: 'Last 7 days' },
+              { value: '30',  label: 'Last 30 days' },
+              { value: '0',   label: 'All Time' }
+            ],
+            defaultValue: '1'
+          },
+          {
+            label: 'Stream Keys (comma-separated, optional — omit to return all streams)',
+            id: 'streamKeys',
+            type: 'text',
+            placeholder: 'e.g., ABC123,DEF456',
+            defaultValue: ''
+          },
+          {
+            label: 'Attribute IDs (comma-separated, optional — requires keys) — qualified IDs from GET Schema, e.g. z:5mQ',
+            id: 'attrIds',
+            type: 'text',
+            placeholder: 'e.g., z:5mQ,z:abc',
+            defaultValue: ''
+          }
+        ],
+        onExecute: (values) => streamStubs.queryStreamsData(
+          currentFacilityURN,
+          currentFacilityRegion,
+          parseInt(values.daysBack, 10) || 0,
+          values.streamKeys || '',
+          values.attrIds || ''
+        )
+      }
+    },
+    {
+      label: 'POST Delete Streams Data (data points only)',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Stream Keys (comma-separated, required)',
+            id: 'streamKeys',
+            type: 'text',
+            placeholder: 'e.g., ABC123,DEF456',
+            defaultValue: ''
+          },
+          {
+            label: 'Substreams / Attribute IDs (comma-separated, optional — limits deletion to specific attributes)',
+            id: 'substreams',
+            type: 'text',
+            placeholder: 'e.g., z:5mQ,z:abc',
+            defaultValue: ''
+          },
+          {
+            label: 'From Date (YYYY-MM-DD, optional — requires Substreams)',
+            id: 'fromDate',
+            type: 'text',
+            placeholder: 'e.g., 2024-01-01',
+            defaultValue: ''
+          },
+          {
+            label: 'To Date (YYYY-MM-DD, optional — requires Substreams)',
+            id: 'toDate',
+            type: 'text',
+            placeholder: 'e.g., 2024-12-31',
+            defaultValue: ''
+          },
+          {
+            label: 'Delete ALL substreams with no date filter (allSubstreams flag — use with care)',
+            id: 'allSubstreams',
+            type: 'select',
+            options: [
+              { value: '', label: 'No' },
+              { value: 'true', label: 'Yes — wipe all data for these streams' }
+            ],
+            defaultValue: ''
+          }
+        ],
+        onExecute: (values) => streamStubs.deleteStreamsData(
+          currentFacilityURN,
+          currentFacilityRegion,
+          values.streamKeys || '',
+          values.substreams || '',
+          values.fromDate || '',
+          values.toDate || '',
+          values.allSubstreams === 'true'
+        )
       }
     },
     {
@@ -1959,23 +2214,27 @@ function createDropdownMenu(title, items) {
           mainInput = document.createElement('select');
           mainInput.className = 'w-full text-xs';
           
-          // Populate with models (in API order)
+          // Populate with models — default model always last, others in API order
           const defaultModelURN = getDefaultModelURN(currentFacilityURN);
-          currentModels.forEach((model, index) => {
+          const sortedModels = [
+            ...currentModels.filter(m => m.modelId !== defaultModelURN),
+            ...currentModels.filter(m => m.modelId === defaultModelURN)
+          ];
+          sortedModels.forEach((model, index) => {
             const option = document.createElement('option');
             option.value = model.modelId;
-            
+
             const isDefault = model.modelId === defaultModelURN;
             const displayName = model.label || (isDefault ? '** Default Model **' : 'Untitled Model');
-            
+
             // Show both name and URN for developer visibility
             option.textContent = `${displayName} - ${model.modelId}`;
-            
-            // Pre-select the first model in the list
+
+            // Pre-select the first model in the list (never the default model)
             if (index === 0) {
               option.selected = true;
             }
-            
+
             mainInput.appendChild(option);
           });
         } else if (item.inputConfig.type === 'groupSelect') {
@@ -2132,7 +2391,49 @@ function createDropdownMenu(title, items) {
               inputForm.appendChild(typeAwareInput.container);
               // Store the typeAwareInput object for validation and value retrieval
               additionalInputs.push(typeAwareInput);
-              
+
+            } else if (fieldType === 'select') {
+              // Select dropdown with predefined options
+              const label = document.createElement('label');
+              label.textContent = field.label;
+              label.style.marginTop = '0.5rem';
+
+              const select = document.createElement('select');
+              select.id = field.id;
+              select.className = 'w-full text-xs';
+
+              field.options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = opt.label;
+                if (opt.value === String(field.defaultValue)) {
+                  option.selected = true;
+                }
+                select.appendChild(option);
+              });
+
+              inputForm.appendChild(label);
+              inputForm.appendChild(select);
+              additionalInputs.push(select);
+
+            } else if (fieldType === 'textarea') {
+              // Multi-line textarea for JSON or long values
+              const label = document.createElement('label');
+              label.textContent = field.label;
+              label.style.marginTop = '0.5rem';
+
+              const textarea = document.createElement('textarea');
+              textarea.id = field.id;
+              textarea.placeholder = field.placeholder || '';
+              textarea.value = typeof field.defaultValue === 'function'
+                ? field.defaultValue()
+                : (field.defaultValue || '');
+              textarea.rows = field.rows || 4;
+
+              inputForm.appendChild(label);
+              inputForm.appendChild(textarea);
+              additionalInputs.push(textarea);
+
             } else {
               // Text input field (or select for autocomplete)
               const label = document.createElement('label');
