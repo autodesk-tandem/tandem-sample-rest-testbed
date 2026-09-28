@@ -269,9 +269,11 @@ function createTypeAwareSearchInput(inputForm, categoryInputId, propertyInputId)
         </label>
       </div>
     </div>
-    <label style="display: flex; align-items: center; cursor: pointer; font-size: 0.7rem; color: #e0e0e0;">
-      <input type="checkbox" id="searchCaseInsensitive" style="accent-color: #0696D7; margin-right: 0.25rem;"> Case Insensitive
-    </label>
+    <div style="margin-top: 0.25rem;">
+      <label style="display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; font-size: 0.7rem; color: #e0e0e0;">
+        <input type="checkbox" id="searchCaseInsensitive" style="accent-color: #0696D7;"> Case Insensitive
+      </label>
+    </div>
   `;
   container.appendChild(stringOptions);
   
@@ -945,7 +947,7 @@ export async function renderStubs(container, facilityURN, region) {
   // Create Property Stubs Dropdown
   const propertyDropdown = createDropdownMenu('Property Stubs', [
     {
-      label: 'GET Qualified Property',
+      label: 'GET Qualified Property Def',
       hasInput: true,
       inputConfig: {
         type: 'multiText',
@@ -1001,18 +1003,38 @@ export async function renderStubs(container, facilityURN, region) {
             id: 'includeHistory',
             type: 'checkbox',
             defaultValue: false
+          },
+          {
+            label: 'Run in Parallel (see console for timing comparison)',
+            id: 'runInParallel',
+            type: 'checkbox',
+            defaultValue: false
           }
         ],
         onExecute: (values) => {
           saveInputValue('categoryName', values.categoryName);
           saveInputValue('propName', values.propName);
-          return propertyStubs.scanForProperty(currentFacilityURN, currentFacilityRegion, values.categoryName, values.propName, values.includeHistory);
+          return propertyStubs.scanForProperty(currentFacilityURN, currentFacilityRegion, values.categoryName, values.propName, values.includeHistory, values.runInParallel);
         }
       }
     },
     {
-      label: 'SCAN for User Props',
-      action: () => propertyStubs.scanForUserProps(currentFacilityURN, currentFacilityRegion)
+      label: 'SCAN for all User-defined Props',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Run in Parallel (see console for timing comparison)',
+            id: 'runInParallel',
+            type: 'checkbox',
+            defaultValue: false
+          }
+        ],
+        onExecute: (values) => {
+          return propertyStubs.scanForUserProps(currentFacilityURN, currentFacilityRegion, values.runInParallel);
+        }
+      }
     },
     {
       label: 'Find Elements where Property = X',
@@ -1041,17 +1063,24 @@ export async function renderStubs(container, facilityURN, region) {
             type: 'typeAwareSearch',
             categoryInputId: 'categoryName',
             propertyInputId: 'propName'
+          },
+          {
+            label: 'Run in Parallel (see console for timing comparison)',
+            id: 'runInParallel',
+            type: 'checkbox',
+            defaultValue: false
           }
         ],
         onExecute: (values) => {
           saveInputValue('categoryName', values.categoryName);
           saveInputValue('propName', values.propName);
           return propertyStubs.findElementsWherePropValueEquals(
-            currentFacilityURN, 
-            currentFacilityRegion, 
-            values.categoryName, 
-            values.propName, 
-            values.searchOptions
+            currentFacilityURN,
+            currentFacilityRegion,
+            values.categoryName,
+            values.propName,
+            values.searchOptions,
+            values.runInParallel
           );
         }
       }
@@ -2027,7 +2056,9 @@ export async function renderStubs(container, facilityURN, region) {
     • Open Chrome DevTools (F12) to see output<br>
     • Click dropdown menus to see available endpoints<br>
     • All responses logged to console with details<br>
-    • Check Network tab for HTTP requests
+    • Check Network tab for HTTP requests<br>
+    • Many REST endpoints can be called in parallel for significant speed improvements —
+      see <strong class="text-dark-text">Property Stubs &gt; SCAN for Property</strong> for a working example with timing comparison
   `;
   container.appendChild(helpDiv);
 }

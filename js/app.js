@@ -90,7 +90,7 @@ function updateUIForLoginState(loggedIn, profileImg) {
  */
 async function loadUserResourcesCache() {
   try {
-    console.log('Feching available accounts and facilities...');
+    console.log('Fetching available accounts and facilities...');
     const startTime = Date.now();
     
     userResourcesCache = await getUserResources('@me');

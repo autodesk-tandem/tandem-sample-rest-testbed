@@ -11,7 +11,7 @@ import { ColumnFamilies, ColumnNames, MutateActions } from '../../tandem/constan
  * @returns {Promise<void>}
  */
 export async function getQualifiedProperty(facilityURN, region, categoryName, propName) {
-  console.group("STUB: getQualifiedProperty()");
+  console.group("STUB: getQualifiedProperty() — GET Qualified Property Def");
   
   // Get list of models for this facility
   const facilityPath = `${tandemBaseURL}/twins/${facilityURN}`;
@@ -71,170 +71,451 @@ export async function getQualifiedProperty(facilityURN, region, categoryName, pr
 }
 
 /**
- * Scan for elements that have a specific qualified property
- * 
- * @param {string} facilityURN - Facility URN
- * @param {string} region - Region header
- * @param {string} categoryName - Property category name
- * @param {string} propName - Property name
+ * Scan for elements that have a specific qualified property.
+ *
+ * This stub demonstrates TWO approaches to iterating over multiple models:
+ *
+ *   SEQUENTIAL (runInParallel = false, the default)
+ *   ────────────────────────────────────────────────
+ *   Models are processed one at a time. Each model's schema fetch and scan
+ *   must complete before the next model starts.
+ *
+ *     Total time = (schema_1 + scan_1) + (schema_2 + scan_2) + ...
+ *
+ *   This is the simplest approach and easy to follow in the console — you can
+ *   watch each model's group appear as it finishes.
+ *
+ *   PARALLEL (runInParallel = true)
+ *   ────────────────────────────────
+ *   All model requests are fired at the same time using Promise.all().
+ *   JavaScript's event loop manages multiple in-flight network requests
+ *   concurrently; each model's schema fetch and scan run independently.
+ *
+ *     Total time ≈ max(schema_N + scan_N) across all models
+ *
+ *   Results are collected and then printed in model order after ALL fetches
+ *   complete, so the console output looks the same as the sequential version.
+ *
+ *   When to prefer PARALLEL:
+ *     • Multiple models with no dependencies between them (this case)
+ *     • You want total time ≈ slowest single model rather than sum of all
+ *
+ *   Caveats to understand before using Promise.all() in production:
+ *     1. FAIL-FAST: If ANY promise rejects, Promise.all() immediately rejects
+ *        and the remaining results are discarded. Use Promise.allSettled()
+ *        when you want to process all results even if some fail.
+ *     2. RATE LIMITS: Firing dozens of requests simultaneously may hit API
+ *        rate limits. Consider batching (e.g., 5 at a time) for large model sets.
+ *     3. ORDER: Promise.all() guarantees result order matches input order,
+ *        even if requests complete in a different order.
+ *
+ * Open the browser console (F12) and watch for the ⏱️ timing line at the
+ * end of each run. Toggle "Run in Parallel" and run again to compare.
+ *
+ * @param {string}  facilityURN    - Facility URN
+ * @param {string}  region         - Region header
+ * @param {string}  categoryName   - Property category name (e.g., "Identity Data")
+ * @param {string}  propName       - Property name (e.g., "Mark")
  * @param {boolean} includeHistory - Whether to include property history
+ * @param {boolean} runInParallel  - If true, use Promise.all(); if false, use sequential loop
  * @returns {Promise<void>}
  */
-export async function scanForProperty(facilityURN, region, categoryName, propName, includeHistory) {
+export async function scanForProperty(facilityURN, region, categoryName, propName, includeHistory, runInParallel = false) {
   console.group("STUB: scanForProperty()");
-  
+  console.log(`▶ Mode: ${runInParallel ? 'PARALLEL (Promise.all)' : 'SEQUENTIAL (for loop)'}`);
+  console.log(`  Property: [${categoryName} | ${propName}]`);
+
   const facilityPath = `${tandemBaseURL}/twins/${facilityURN}`;
   console.log(facilityPath);
-  
+
   try {
+    // ── Step 1: Fetch the facility to get the list of models ─────────────
+    // This step is identical in both approaches — we always need the model
+    // list before we can decide how to process them.
     const facilityResponse = await fetch(facilityPath, makeRequestOptionsGET(region));
     const facilityData = await facilityResponse.json();
     const models = facilityData.links || [];
-    
-    // Loop through each model
-    for (let i = 0; i < models.length; i++) {
-      const model = models[i];
-      const modelLabel = model.label || `Model ${i}`;
-      const modelURN = model.modelId;
-      
-      console.group(`Model[${i}] --> ${modelLabel}`);
-      console.log(`Model URN: ${modelURN}`);
-      
-      // First, get the qualified property ID from the schema
-      const schemaPath = `${tandemBaseURL}/modeldata/${modelURN}/schema`;
-      console.log(schemaPath);
-      
-      const schemaResponse = await fetch(schemaPath, makeRequestOptionsGET(region));
-      const schema = await schemaResponse.json();
-      
-      // Search for the qualified property
-      const qualProps = [];
-      const attrs = schema.attributes || [];
-      
-      for (let j = 0; j < attrs.length; j++) {
-        if (attrs[j].category === categoryName && attrs[j].name === propName) {
-          qualProps.push(attrs[j]);
-        }
-      }
-      
-      if (qualProps.length > 0) {
-        // Build qualified columns array
-        const qualifiedColumns = qualProps.map(prop => prop.id);
-        
-        // Now scan for elements with this property
-        const bodyPayload = JSON.stringify({
-          qualifiedColumns: qualifiedColumns,
-          includeHistory: includeHistory
-        });
-        
-        const scanPath = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
-        console.log(scanPath);
-        console.log(`Include History: ${includeHistory}`);
-        
-        const scanResponse = await fetch(scanPath, makeRequestOptionsPOST(bodyPayload, region));
-        const scanData = await scanResponse.json();
-        console.log("Result from Tandem DB Server -->", scanData);
-        
-        // Also show a nice table of the property values
-        const propValues = [];
-        for (let k = 1; k < scanData.length; k++) {
-          const rowObj = scanData[k];
-          if (rowObj) {
-            const key = rowObj.k;
-            for (let m = 0; m < qualProps.length; m++) {
-              const prop = rowObj[qualProps[m].id];
-              if (prop) {
-                if (includeHistory) {
-                  propValues.push({ key: key, prop: qualProps[m].id, value: prop });
-                } else {
-                  propValues.push({ key: key, prop: qualProps[m].id, value: prop[0] });
+
+    console.log(`Found ${models.length} model(s). Starting timer...`);
+
+    // Start timing AFTER the facility fetch so we measure only the
+    // per-model work — the part that differs between the two approaches.
+    const t0 = performance.now();
+
+    // ════════════════════════════════════════════════════════════════════
+    // PARALLEL APPROACH
+    // ════════════════════════════════════════════════════════════════════
+    if (runInParallel) {
+
+      // Promise.all() takes an array of Promises and returns a new Promise
+      // that resolves when ALL of them have resolved, or rejects as soon
+      // as any one of them rejects.
+      //
+      // models.map(async (model, i) => { ... }) creates one async function
+      // call per model. Each call runs independently — they don't wait for
+      // each other. The browser can have all of them in-flight at once.
+      //
+      // The result is an array of the resolved values, in the SAME ORDER
+      // as the input array (not the order they happened to finish).
+      const allResults = await Promise.all(
+        models.map(async (model, i) => {
+          const modelLabel = model.label || `Model ${i}`;
+          const modelURN   = model.modelId;
+
+          // Fetch schema for this model (runs concurrently with other models)
+          const schemaPath     = `${tandemBaseURL}/modeldata/${modelURN}/schema`;
+          const schemaResponse = await fetch(schemaPath, makeRequestOptionsGET(region));
+          const schema         = await schemaResponse.json();
+
+          // Find the qualified property in this model's schema
+          const qualProps = (schema.attributes || []).filter(
+            attr => attr.category === categoryName && attr.name === propName
+          );
+
+          // If the property doesn't exist in this model, return early with
+          // an empty result — other models still continue running in parallel.
+          if (qualProps.length === 0) {
+            return { i, modelLabel, modelURN, qualProps: [], scanData: null, propValues: [] };
+          }
+
+          // Fetch the scan for elements that have this property
+          const qualifiedColumns = qualProps.map(prop => prop.id);
+          const bodyPayload      = JSON.stringify({ qualifiedColumns, includeHistory });
+          const scanPath         = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
+          const scanResponse     = await fetch(scanPath, makeRequestOptionsPOST(bodyPayload, region));
+          const scanData         = await scanResponse.json();
+
+          // Extract property values (same logic as sequential path below)
+          const propValues = [];
+          for (let k = 1; k < scanData.length; k++) {
+            const rowObj = scanData[k];
+            if (rowObj) {
+              const key = rowObj.k;
+              for (let m = 0; m < qualProps.length; m++) {
+                const prop = rowObj[qualProps[m].id];
+                if (prop) {
+                  propValues.push({
+                    key,
+                    prop:  qualProps[m].id,
+                    value: includeHistory ? prop : prop[0]
+                  });
                 }
               }
             }
           }
+
+          // Return a plain result object — no console output yet.
+          // All models run simultaneously, so we log AFTER all are done
+          // (otherwise console groups would interleave unpredictably).
+          return { i, modelLabel, modelURN, qualProps, scanData, propValues };
+        })
+      );
+
+      // All fetches are complete. Now log results in model order.
+      // The output format is identical to the sequential version.
+      for (const { i, modelLabel, modelURN, qualProps, scanData, propValues } of allResults) {
+        console.group(`Model[${i}] --> ${modelLabel}`);
+        console.log(`Model URN: ${modelURN}`);
+
+        if (qualProps.length === 0) {
+          console.log(`Could not find [${categoryName} | ${propName}] in this model`);
+        } else {
+          console.log(`${tandemBaseURL}/modeldata/${modelURN}/scan`);
+          console.log(`Include History: ${includeHistory}`);
+          console.log("Result from Tandem DB Server -->", scanData);
+          if (propValues.length > 0) {
+            console.table(propValues);
+          }
         }
-        
-        if (propValues.length > 0) {
-          console.table(propValues);
-        }
-      } else {
-        console.log(`Could not find [${categoryName} | ${propName}] in this model`);
+
+        console.groupEnd();
       }
-      
-      console.groupEnd();
+
+    // ════════════════════════════════════════════════════════════════════
+    // SEQUENTIAL APPROACH  (original implementation — unchanged)
+    // ════════════════════════════════════════════════════════════════════
+    } else {
+
+      // A standard for loop with await inside. Each iteration waits for the
+      // previous one to finish before starting the next. This means:
+      //   model[1] cannot start until model[0]'s schema AND scan are done.
+      //   model[2] cannot start until model[1]'s schema AND scan are done.
+      //   ...and so on.
+      //
+      // You can watch each model's console group appear one by one as it
+      // completes — a useful property for debugging and learning.
+      for (let i = 0; i < models.length; i++) {
+        const model      = models[i];
+        const modelLabel = model.label || `Model ${i}`;
+        const modelURN   = model.modelId;
+
+        console.group(`Model[${i}] --> ${modelLabel}`);
+        console.log(`Model URN: ${modelURN}`);
+
+        // Fetch schema for this model, then wait before moving on
+        const schemaPath     = `${tandemBaseURL}/modeldata/${modelURN}/schema`;
+        console.log(schemaPath);
+        const schemaResponse = await fetch(schemaPath, makeRequestOptionsGET(region));
+        const schema         = await schemaResponse.json();
+
+        // Search for the qualified property in this model's schema
+        const qualProps = [];
+        const attrs     = schema.attributes || [];
+        for (let j = 0; j < attrs.length; j++) {
+          if (attrs[j].category === categoryName && attrs[j].name === propName) {
+            qualProps.push(attrs[j]);
+          }
+        }
+
+        if (qualProps.length > 0) {
+          // Fetch the scan for elements that have this property
+          const qualifiedColumns = qualProps.map(prop => prop.id);
+          const bodyPayload      = JSON.stringify({ qualifiedColumns, includeHistory });
+          const scanPath         = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
+          console.log(scanPath);
+          console.log(`Include History: ${includeHistory}`);
+
+          const scanResponse = await fetch(scanPath, makeRequestOptionsPOST(bodyPayload, region));
+          const scanData     = await scanResponse.json();
+          console.log("Result from Tandem DB Server -->", scanData);
+
+          // Extract and display property values as a table
+          const propValues = [];
+          for (let k = 1; k < scanData.length; k++) {
+            const rowObj = scanData[k];
+            if (rowObj) {
+              const key = rowObj.k;
+              for (let m = 0; m < qualProps.length; m++) {
+                const prop = rowObj[qualProps[m].id];
+                if (prop) {
+                  if (includeHistory) {
+                    propValues.push({ key, prop: qualProps[m].id, value: prop });
+                  } else {
+                    propValues.push({ key, prop: qualProps[m].id, value: prop[0] });
+                  }
+                }
+              }
+            }
+          }
+
+          if (propValues.length > 0) {
+            console.table(propValues);
+          }
+        } else {
+          console.log(`Could not find [${categoryName} | ${propName}] in this model`);
+        }
+
+        console.groupEnd();
+      } // end for loop
     }
+
+    // ── Timing summary ────────────────────────────────────────────────────
+    // Wall-clock time for all per-model work (schema fetches + scans).
+    // Run both modes and compare — the speedup is most noticeable when
+    // the facility has several models and each model has many elements.
+    const elapsed = (performance.now() - t0).toFixed(0);
+    const mode    = runInParallel ? 'PARALLEL' : 'SEQUENTIAL';
+    console.log(`⏱️  Total time [${mode}]: ${elapsed}ms across ${models.length} model(s)`);
+    console.log(`💡 TIP: Toggle "Run in Parallel" and run again to compare the two approaches.`);
+
   } catch (error) {
     console.error('Error scanning for property:', error);
   }
-  
+
   console.groupEnd();
 }
 
 /**
- * Scan for all user-defined properties (DtProperties family = "z")
- * 
- * @param {string} facilityURN - Facility URN
- * @param {string} region - Region header
+ * Scan for all user-defined properties (DtProperties family = "z") across every model
+ * in the facility.
+ *
+ * This stub demonstrates TWO approaches to iterating over multiple models:
+ *
+ *   SEQUENTIAL (runInParallel = false, the default)
+ *   ────────────────────────────────────────────────
+ *   Models are processed one at a time. Each model's scan must complete before
+ *   the next model starts.
+ *
+ *     Total time = scan_1 + scan_2 + scan_3 + ...
+ *
+ *   This is the simplest approach and easy to follow in the console — you can
+ *   watch each model's group appear as it finishes.
+ *
+ *   PARALLEL (runInParallel = true)
+ *   ────────────────────────────────
+ *   All model scan requests are fired at the same time using Promise.all().
+ *   JavaScript's event loop manages multiple in-flight network requests
+ *   concurrently; each model's scan runs independently.
+ *
+ *     Total time ≈ max(scan_N) across all models
+ *
+ *   Results are collected and then printed in model order after ALL fetches
+ *   complete, so the console output looks the same as the sequential version.
+ *
+ *   Caveats to understand before using Promise.all() in production:
+ *     1. FAIL-FAST: If ANY promise rejects, Promise.all() immediately rejects
+ *        and the remaining results are discarded. Use Promise.allSettled()
+ *        when you want to process all results even if some fail.
+ *     2. RATE LIMITS: Firing dozens of requests simultaneously may hit API
+ *        rate limits. Consider batching (e.g., 5 at a time) for large model sets.
+ *     3. ORDER: Promise.all() guarantees result order matches input order,
+ *        even if requests complete in a different order.
+ *
+ * Open the browser console (F12) and watch for the ⏱️ timing line at the
+ * end of each run. Toggle "Run in Parallel" and run again to compare.
+ *
+ * @param {string}  facilityURN   - Facility URN
+ * @param {string}  region        - Region header
+ * @param {boolean} runInParallel - If true, use Promise.all(); if false, use sequential loop
  * @returns {Promise<void>}
  */
-export async function scanForUserProps(facilityURN, region) {
-  console.group("STUB: scanForUserProps()");
-  
+export async function scanForUserProps(facilityURN, region, runInParallel = false) {
+  console.group("STUB: scanForUserProps() — SCAN for all User-defined Props");
+  console.log(`▶ Mode: ${runInParallel ? 'PARALLEL (Promise.all)' : 'SEQUENTIAL (for loop)'}`);
+
   try {
-    // Get list of models for this facility
+    // ── Step 1: Fetch the facility to get the list of models ─────────────
+    // This step is identical in both approaches — we always need the model
+    // list before we can decide how to process them.
     const facilityPath = `${tandemBaseURL}/twins/${facilityURN}`;
     console.log(facilityPath);
-    
+
     const facilityResponse = await fetch(facilityPath, makeRequestOptionsGET(region));
     const facilityData = await facilityResponse.json();
     const models = facilityData.links || [];
-    
-    for (let i = 0; i < models.length; i++) {
-      const model = models[i];
-      const modelLabel = model.label || `Model ${i}`;
-      const modelURN = model.modelId;
-      
-      console.group(`Model[${i}] --> ${modelLabel}`);
-      console.log(`Model URN: ${modelURN}`);
-      
-      const bodyPayload = JSON.stringify({
-        families: [ColumnFamilies.DtProperties],
-        includeHistory: false
-      });
-      
-      const requestPath = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
-      console.log(requestPath);
-      
-      const response = await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region));
-      const obj = await response.json();
-      console.log("Result from Tandem DB Server -->", obj);
-      
-      console.groupEnd();
+
+    console.log(`Found ${models.length} model(s). Starting timer...`);
+
+    // Start timing AFTER the facility fetch so we measure only the
+    // per-model work — the part that differs between the two approaches.
+    const t0 = performance.now();
+
+    // ════════════════════════════════════════════════════════════════════
+    // PARALLEL APPROACH
+    // ════════════════════════════════════════════════════════════════════
+    if (runInParallel) {
+
+      // models.map(async (model, i) => { ... }) creates one async function
+      // call per model. Each call runs independently — they don't wait for
+      // each other. The browser can have all of them in-flight at once.
+      //
+      // Promise.all() waits for every model's scan to complete, then returns
+      // an array of results in the SAME ORDER as the input array.
+      const allResults = await Promise.all(
+        models.map(async (model, i) => {
+          const modelLabel = model.label || `Model ${i}`;
+          const modelURN   = model.modelId;
+
+          // Build the scan request — requesting only the DtProperties family
+          const bodyPayload = JSON.stringify({
+            families: [ColumnFamilies.DtProperties],
+            includeHistory: false
+          });
+
+          // Fetch this model's scan (runs concurrently with other models)
+          const requestPath = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
+          const response    = await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region));
+          const scanData    = await response.json();
+
+          // Return a plain result object — no console output yet.
+          // All models run simultaneously, so we log AFTER all are done
+          // (otherwise console groups would interleave unpredictably).
+          return { i, modelLabel, modelURN, requestPath, scanData };
+        })
+      );
+
+      // All fetches are complete. Now log results in model order.
+      // The output format is identical to the sequential version.
+      for (const { i, modelLabel, modelURN, requestPath, scanData } of allResults) {
+        console.group(`Model[${i}] --> ${modelLabel}`);
+        console.log(`Model URN: ${modelURN}`);
+        console.log(requestPath);
+        console.log("Result from Tandem DB Server -->", scanData);
+        console.groupEnd();
+      }
+
+    // ════════════════════════════════════════════════════════════════════
+    // SEQUENTIAL APPROACH  (original implementation — unchanged)
+    // ════════════════════════════════════════════════════════════════════
+    } else {
+
+      // A standard for loop with await inside. Each iteration waits for the
+      // previous one to finish before starting the next. This means:
+      //   model[1] cannot start until model[0]'s scan is done.
+      //   model[2] cannot start until model[1]'s scan is done.
+      //   ...and so on.
+      //
+      // You can watch each model's console group appear one by one as it
+      // completes — a useful property for debugging and learning.
+      for (let i = 0; i < models.length; i++) {
+        const model      = models[i];
+        const modelLabel = model.label || `Model ${i}`;
+        const modelURN   = model.modelId;
+
+        console.group(`Model[${i}] --> ${modelLabel}`);
+        console.log(`Model URN: ${modelURN}`);
+
+        const bodyPayload = JSON.stringify({
+          families: [ColumnFamilies.DtProperties],
+          includeHistory: false
+        });
+
+        const requestPath = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
+        console.log(requestPath);
+
+        const response = await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region));
+        const scanData = await response.json();
+        console.log("Result from Tandem DB Server -->", scanData);
+
+        console.groupEnd();
+      } // end for loop
     }
+
+    // ── Timing summary ────────────────────────────────────────────────────
+    // Wall-clock time for all per-model scan work.
+    // Run both modes and compare — the speedup is most noticeable when
+    // the facility has several models.
+    const elapsed = (performance.now() - t0).toFixed(0);
+    const mode    = runInParallel ? 'PARALLEL' : 'SEQUENTIAL';
+    console.log(`⏱️  Total time [${mode}]: ${elapsed}ms across ${models.length} model(s)`);
+    console.log(`💡 TIP: Toggle "Run in Parallel" and run again to compare the two approaches.`);
+
   } catch (error) {
     console.error('Error scanning for user props:', error);
   }
-  
+
   console.groupEnd();
 }
 
 /**
- * Find elements where a property value matches based on type-aware criteria
+ * Find elements where a property value matches based on type-aware criteria.
  * Supports: string (partial/exact/regex), numeric (=,!=,>,>=,<,<=), boolean
- * 
- * @param {string} facilityURN - Facility URN
- * @param {string} region - Region header
- * @param {string} categoryName - Property category name
- * @param {string} propName - Property name
- * @param {Object} searchOptions - Search options object
- * @param {string} searchOptions.dataType - 'string', 'numeric', or 'boolean'
- * For string: { matchType: 'partial'|'exact'|'regex', caseInsensitive: boolean, value: string }
- * For numeric: { operator: '='|'!='|'>'|'>='|'<'|'<=', value: number }
- * For boolean: { value: boolean }
+ *
+ * Like scanForProperty(), this stub offers both SEQUENTIAL and PARALLEL modes
+ * so you can observe the performance difference directly in the console.
+ *
+ * The matcher function (built from searchOptions) is the same in both modes —
+ * it's pure CPU work applied after each model's scan results arrive.
+ * Only the network fetches (schema + scan per model) are parallelized.
+ *
+ * See scanForProperty() for a full explanation of the SEQUENTIAL vs PARALLEL
+ * trade-offs and Promise.all() caveats.
+ *
+ * @param {string}  facilityURN    - Facility URN
+ * @param {string}  region         - Region header
+ * @param {string}  categoryName   - Property category name
+ * @param {string}  propName       - Property name
+ * @param {Object}  searchOptions  - Search options object
+ *   @param {string}  searchOptions.dataType        - 'string', 'numeric', or 'boolean'
+ *   For string:  { matchType: 'partial'|'exact'|'regex', caseInsensitive: boolean, value: string }
+ *   For numeric: { operator: '='|'!='|'>'|'>='|'<'|'<=', value: number }
+ *   For boolean: { value: boolean }
+ * @param {boolean} runInParallel  - If true, use Promise.all(); if false, use sequential loop
  * @returns {Promise<void>}
  */
-export async function findElementsWherePropValueEquals(facilityURN, region, categoryName, propName, searchOptions) {
+export async function findElementsWherePropValueEquals(facilityURN, region, categoryName, propName, searchOptions, runInParallel = false) {
   console.group("STUB: findElementsWherePropValueEquals()");
+  console.log(`▶ Mode: ${runInParallel ? 'PARALLEL (Promise.all)' : 'SEQUENTIAL (for loop)'}`);
   console.log("Search options:", searchOptions);
   
   const facilityPath = `${tandemBaseURL}/twins/${facilityURN}`;
@@ -312,98 +593,174 @@ export async function findElementsWherePropValueEquals(facilityURN, region, cate
   }
   
   try {
+    // ── Step 1: Fetch the facility to get the list of models ─────────────
+    // Same in both approaches — we need the model list before we can proceed.
     const facilityResponse = await fetch(facilityPath, makeRequestOptionsGET(region));
     const facilityData = await facilityResponse.json();
     const models = facilityData.links || [];
-    
-    // Loop through each model
-    for (let i = 0; i < models.length; i++) {
-      const model = models[i];
-      const modelLabel = model.label || `Model ${i}`;
-      const modelURN = model.modelId;
-      
-      console.group(`Model[${i}] --> ${modelLabel}`);
-      console.log(`Model URN: ${modelURN}`);
-      
-      // First, get the qualified property ID from the schema
-      const schemaPath = `${tandemBaseURL}/modeldata/${modelURN}/schema`;
-      console.log(schemaPath);
-      
-      const schemaResponse = await fetch(schemaPath, makeRequestOptionsGET(region));
-      const schema = await schemaResponse.json();
-      
-      // Search for the qualified property
-      const qualProps = [];
-      const attrs = schema.attributes || [];
-      
-      for (let j = 0; j < attrs.length; j++) {
-        if (attrs[j].category === categoryName && attrs[j].name === propName) {
-          qualProps.push(attrs[j]);
-        }
-      }
-      
-      if (qualProps.length > 0) {
-        // Build qualified columns array
-        const qualifiedColumns = qualProps.map(prop => prop.id);
-        
-        // Scan for elements with this property
-        const bodyPayload = JSON.stringify({
-          qualifiedColumns: qualifiedColumns,
-          includeHistory: false
-        });
-        
-        const scanPath = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
-        console.log(scanPath);
-        
-        const scanResponse = await fetch(scanPath, makeRequestOptionsPOST(bodyPayload, region));
-        const rawProps = await scanResponse.json();
-        
-        // Extract property values
-        const propValues = [];
-        for (let k = 1; k < rawProps.length; k++) {
-          const rowObj = rawProps[k];
-          if (rowObj) {
-            const key = rowObj.k;
-            for (let m = 0; m < qualProps.length; m++) {
-              const prop = rowObj[qualProps[m].id];
-              if (prop) {
-                propValues.push({ 
-                  modelURN: modelURN, 
-                  key: key, 
-                  prop: qualProps[m].id, 
-                  value: prop[0] 
-                });
-              }
+
+    console.log(`Found ${models.length} model(s). Starting timer...`);
+
+    // Start timing AFTER the facility fetch — we only want to measure the
+    // per-model work (schema + scan) that differs between the two approaches.
+    const t0 = performance.now();
+
+    // ── Helper: extract & filter property values from a raw scan result ───
+    // Extracted here so both code paths share exactly the same logic.
+    function extractMatchingProps(modelURN, qualProps, rawProps) {
+      const propValues = [];
+      for (let k = 1; k < rawProps.length; k++) {
+        const rowObj = rawProps[k];
+        if (rowObj) {
+          const key = rowObj.k;
+          for (let m = 0; m < qualProps.length; m++) {
+            const prop = rowObj[qualProps[m].id];
+            if (prop) {
+              propValues.push({ modelURN, key, prop: qualProps[m].id, value: prop[0] });
             }
           }
         }
-        
-        if (propValues.length > 0) {
+      }
+      return propValues;
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // PARALLEL APPROACH
+    // ════════════════════════════════════════════════════════════════════
+    if (runInParallel) {
+
+      // All model schema + scan requests fire simultaneously.
+      // Each async function returns a plain result object; the matcher is
+      // applied after all fetches complete (pure CPU — no ordering concerns).
+      const allResults = await Promise.all(
+        models.map(async (model, i) => {
+          const modelLabel = model.label || `Model ${i}`;
+          const modelURN   = model.modelId;
+
+          // Fetch schema
+          const schemaPath     = `${tandemBaseURL}/modeldata/${modelURN}/schema`;
+          const schemaResponse = await fetch(schemaPath, makeRequestOptionsGET(region));
+          const schema         = await schemaResponse.json();
+
+          // Find the qualified property
+          const qualProps = (schema.attributes || []).filter(
+            attr => attr.category === categoryName && attr.name === propName
+          );
+
+          if (qualProps.length === 0) {
+            return { i, modelLabel, modelURN, qualProps: [], rawProps: null, propValues: [] };
+          }
+
+          // Fetch scan
+          const qualifiedColumns = qualProps.map(prop => prop.id);
+          const bodyPayload      = JSON.stringify({ qualifiedColumns, includeHistory: false });
+          const scanPath         = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
+          const scanResponse     = await fetch(scanPath, makeRequestOptionsPOST(bodyPayload, region));
+          const rawProps         = await scanResponse.json();
+
+          const propValues = extractMatchingProps(modelURN, qualProps, rawProps);
+          return { i, modelLabel, modelURN, qualProps, rawProps, propValues };
+        })
+      );
+
+      // All fetches done — log results in model order and apply matcher
+      for (const { i, modelLabel, modelURN, qualProps, rawProps, propValues } of allResults) {
+        console.group(`Model[${i}] --> ${modelLabel}`);
+        console.log(`Model URN: ${modelURN}`);
+
+        if (qualProps.length === 0) {
+          console.log(`Could not find [${categoryName} | ${propName}] in this model`);
+        } else if (propValues.length === 0) {
+          console.log("Could not find any elements with that property: ", propName);
+        } else {
           console.log("Raw properties returned-->", rawProps);
           console.log("Extracted properties-->", propValues);
-          
-          // Filter using the type-aware matcher
+
           const matchingProps = propValues.filter(prop => matcher(prop.value));
-          
           if (matchingProps.length > 0) {
             console.log("Matching property values-->");
             console.table(matchingProps);
           } else {
             console.log("No elements found matching criteria");
           }
-        } else {
-          console.log("Could not find any elements with that property: ", propName);
         }
-      } else {
-        console.log(`Could not find [${categoryName} | ${propName}] in this model`);
+
+        console.groupEnd();
       }
-      
-      console.groupEnd();
+
+    // ════════════════════════════════════════════════════════════════════
+    // SEQUENTIAL APPROACH  (original implementation — unchanged)
+    // ════════════════════════════════════════════════════════════════════
+    } else {
+
+      for (let i = 0; i < models.length; i++) {
+        const model      = models[i];
+        const modelLabel = model.label || `Model ${i}`;
+        const modelURN   = model.modelId;
+
+        console.group(`Model[${i}] --> ${modelLabel}`);
+        console.log(`Model URN: ${modelURN}`);
+
+        // Fetch schema for this model, then wait before moving on
+        const schemaPath     = `${tandemBaseURL}/modeldata/${modelURN}/schema`;
+        console.log(schemaPath);
+        const schemaResponse = await fetch(schemaPath, makeRequestOptionsGET(region));
+        const schema         = await schemaResponse.json();
+
+        // Search for the qualified property
+        const qualProps = [];
+        const attrs     = schema.attributes || [];
+        for (let j = 0; j < attrs.length; j++) {
+          if (attrs[j].category === categoryName && attrs[j].name === propName) {
+            qualProps.push(attrs[j]);
+          }
+        }
+
+        if (qualProps.length > 0) {
+          // Scan for elements with this property
+          const qualifiedColumns = qualProps.map(prop => prop.id);
+          const bodyPayload      = JSON.stringify({ qualifiedColumns, includeHistory: false });
+          const scanPath         = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
+          console.log(scanPath);
+
+          const scanResponse = await fetch(scanPath, makeRequestOptionsPOST(bodyPayload, region));
+          const rawProps     = await scanResponse.json();
+
+          const propValues = extractMatchingProps(modelURN, qualProps, rawProps);
+
+          if (propValues.length > 0) {
+            console.log("Raw properties returned-->", rawProps);
+            console.log("Extracted properties-->", propValues);
+
+            // Filter using the type-aware matcher
+            const matchingProps = propValues.filter(prop => matcher(prop.value));
+            if (matchingProps.length > 0) {
+              console.log("Matching property values-->");
+              console.table(matchingProps);
+            } else {
+              console.log("No elements found matching criteria");
+            }
+          } else {
+            console.log("Could not find any elements with that property: ", propName);
+          }
+        } else {
+          console.log(`Could not find [${categoryName} | ${propName}] in this model`);
+        }
+
+        console.groupEnd();
+      } // end for loop
     }
+
+    // ── Timing summary ────────────────────────────────────────────────────
+    const elapsed = (performance.now() - t0).toFixed(0);
+    const mode    = runInParallel ? 'PARALLEL' : 'SEQUENTIAL';
+    console.log(`⏱️  Total time [${mode}]: ${elapsed}ms across ${models.length} model(s)`);
+    console.log(`💡 TIP: Toggle "Run in Parallel" and run again to compare the two approaches.`);
+
   } catch (error) {
     console.error('Error finding elements:', error);
   }
-  
+
   console.groupEnd();
 }
 

@@ -224,6 +224,94 @@ Properties are organized into families:
 
 See `tandem/constants.js` for the complete list.
 
+## Parallel API Calls — Speed Up Multi-Model Operations
+
+When a Tandem facility has multiple models, many operations require fetching data from each one independently. By default, stubs process models **sequentially** — one at a time — which is easy to read and debug. However, most per-model fetches are completely independent and can be fired simultaneously using `Promise.all()`.
+
+### Sequential vs. Parallel
+
+**Sequential** — simple, step-by-step, easy to follow in the console:
+
+```javascript
+for (const model of models) {
+  const data = await fetch(/* model scan URL */);
+  // Each fetch waits for the previous one to finish
+}
+// Total time = time(model₁) + time(model₂) + time(model₃) + ...
+```
+
+**Parallel** — all fetches fire at once, total time ≈ the slowest single model:
+
+```javascript
+const results = await Promise.all(
+  models.map(async (model) => {
+    const data = await fetch(/* model scan URL */);
+    return data; // collect into results array, don't log yet
+  })
+);
+// Total time ≈ max(time(model₁), time(model₂), time(model₃), ...)
+// Then log results in order once all are done
+```
+
+> **Why buffer results before logging?**  
+> When requests run concurrently, they finish in unpredictable order. If each
+> async lambda logs to the console directly, the `console.group()` blocks from
+> different models will interleave. Instead, return a plain result object from
+> each lambda, then loop over the results array after `await Promise.all()`
+> resolves — this produces the same clean, ordered output as the sequential version.
+
+### Promise.all() vs. Promise.allSettled()
+
+Both functions accept an array of Promises and return a single Promise, but they handle failures very differently:
+
+| | `Promise.all()` | `Promise.allSettled()` |
+|---|---|---|
+| **Resolves when** | ALL promises resolve | ALL promises settle (resolve or reject) |
+| **On failure** | Rejects immediately ("fail-fast") — remaining results discarded | Waits for everyone; returns both successes and failures |
+| **Result shape** | Array of resolved values | Array of `{ status, value }` or `{ status, reason }` objects |
+| **Best for** | All-or-nothing operations | Showing partial results when some models fail |
+
+**Example — `Promise.allSettled()` for resilient multi-model queries:**
+
+```javascript
+const results = await Promise.allSettled(
+  models.map(async (model) => {
+    const data = await fetch(/* model scan URL */);
+    return data;
+  })
+);
+
+for (const result of results) {
+  if (result.status === 'fulfilled') {
+    console.log('Success:', result.value);
+  } else {
+    console.warn('Model failed:', result.reason);
+  }
+}
+```
+
+### When to Parallelize
+
+Parallelism pays off when:
+
+- The facility has **multiple models** (2+ is already a win, 4+ is significant)
+- The per-model operations are **independent** (no model's result feeds into another)
+- Network latency is the bottleneck (typical for scan/schema fetches)
+
+Parallelism is **not** needed when:
+
+- Only a single model is involved (many stubs already focus on one model at a time)
+- Operations are genuinely sequential (e.g., you need schema results before building the scan request for that model)
+
+### Live Examples in This Testbed
+
+Two stubs demonstrate this pattern side-by-side with a **"Run in Parallel" toggle** and a `⏱️ Total time` line in the console so you can measure the difference yourself:
+
+- **Property Stubs → SCAN for Property** — Scans all models for a specific property (schema fetch + scan per model)
+- **Property Stubs → SCAN for all User-defined Props** — Scans all models for user-defined (DtProperties) data
+
+Toggle the checkbox, run the stub, note the time, toggle it off, run again, and compare. The speedup is most visible with 3+ models.
+
 ## Troubleshooting
 
 ### "No facilities found"

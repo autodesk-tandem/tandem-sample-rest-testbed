@@ -65,10 +65,6 @@ export async function getFacilityClassification(facilityURN, region) {
       if (obj && obj.rows) {
         console.log(`Classification: "${obj.name}" (uuid: ${obj.uuid})`);
         console.log(`Total rows: ${obj.rows.length}`);
-        console.table(obj.rows.slice(0, 20)); // show first 20 rows — classifications can be large
-        if (obj.rows.length > 20) {
-          console.log(`... and ${obj.rows.length - 20} more rows (see full result above)`);
-        }
       } else {
         console.log("No classification assigned to this facility.");
       }
