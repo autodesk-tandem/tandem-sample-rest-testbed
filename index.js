@@ -545,8 +545,10 @@ async function main() {
   $("#btn_getFacilityStructure").click(sdk_stubs.getFacilityStructure);
     // Diagnostic Stubs
   $("#btn_checkForDuplicateProperties").click(diagnostic_stubs.checkForDuplicateProperties);
-
-
+  $("#btn_lookupElement").click(() => {
+    $('#stubInput_getKeys').modal('show');
+    modalFuncCallbackNum = 11;
+  });
 
     // this gets called from above via modal dialog (#btn_getGroup, and others)
   $('#stubInput_getURN_OK').click(function() {
@@ -791,6 +793,8 @@ async function main() {
       stream_stubs.removeHostFromStream(keys);
     else if (modalFuncCallbackNum == 10)
       stream_stubs.deleteStreams(keys);
+    else if (modalFuncCallbackNum == 11)
+      diagnostic_stubs.lookupElements(keys);
     else {
       alert("ASSERT: modalFuncCallbackNum not expected.");
     }

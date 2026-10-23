@@ -1,4 +1,6 @@
 import * as utils from './utils.js';
+import { QC} from '../tandem/constants.js';
+import { isLogicalElement, toFullKey, makeXrefKey } from '../tandem/keys.js';
 
 /**
  * See if we've already processed this set of duplicates so it doesn't end up in the report twice or more
@@ -99,5 +101,60 @@ export async function checkForDuplicateProperties() {
     console.groupEnd();
   }
 
+  console.groupEnd();
+}
+
+async function lookupModelElements(modelId, keys) {
+  const payload = JSON.stringify({
+    includeHistory: false,
+    keys: keys,
+    families: ["n"],
+    skipArrays: true,
+  });
+  const reqOpts = utils.makeReqOptsPOST(payload, utils.facilityRegion);
+  const requestPath = `${utils.td_baseURL}/modeldata/${modelId}/scan`;
+  
+  const response = await fetch(requestPath, reqOpts);
+  const obj = await response.json();
+
+  if (!Array.isArray(obj)) {
+    console.error("Unexpected response format:", obj);
+    return;
+  }
+  for (const item of obj) {
+    const key = item?.[QC.Key];
+    
+    if (!key) {
+      continue;
+    }
+    const name = item[QC.OName] ?? item[QC.Name];
+    const flags = item[QC.Flags];
+    const fullKey = toFullKey(key, isLogicalElement(flags));
+    const xrefKey = makeXrefKey(modelId, fullKey);
+    const link = `https://tandem.autodesk.com/pages/facilities/${utils.facilityURN}?selection=${xrefKey}`;
+
+    console.table({
+      key,
+      name,
+      fullKey
+    });
+    console.log(link);
+  }
+}
+
+export async function lookupElements(ids) {
+  console.group("STUB: lookupElements()");
+  const elementIds = ids.split(",");
+
+  if (!elementIds.length) {
+    console.log("No Element IDs provided.");
+    console.groupEnd();
+    return;
+  }
+  const models = await utils.getListOfModels();
+  
+  for (const model of models) {
+    await lookupModelElements(model.modelId, elementIds);
+  }
   console.groupEnd();
 }
