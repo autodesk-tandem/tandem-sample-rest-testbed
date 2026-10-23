@@ -101,7 +101,7 @@ async function lookupModelElements(modelId, region, keys) {
  * Lookup elements by their keys
  */
 export async function lookupElements(facilityURN, region, keys) {
-  const ids = keys?.split(',');
+  const ids = keys?.split(',')?.filter(id => id?.trim()?.length);
 
   if (!ids?.length) {
     console.log("No Element IDs provided.");
