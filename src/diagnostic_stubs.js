@@ -154,7 +154,9 @@ export async function lookupElements(ids) {
   const models = await utils.getListOfModels();
   
   for (const model of models) {
+    console.group(`Model: ${model.label.length > 0 ? model.label : 'Default'}`);
     await lookupModelElements(model.modelId, elementIds);
+    console.groupEnd();
   }
   console.groupEnd();
 }
