@@ -108,16 +108,20 @@ export async function lookupElements(facilityURN, region, keys) {
     return;
   }
   console.group("STUB: lookupElements()");
-  const requestPath = `${tandemBaseURL}/twins/${facilityURN}`;
-  
+  const knownIds = [];
+
   try {
+    const requestPath = `${tandemBaseURL}/twins/${facilityURN}`;
     const response = await fetch(requestPath, makeRequestOptionsGET(region));
     const facility = await response.json();
     
     for (const link of facility.links) {
-      console.group(`Model: ${link.label.length > 0 ? link.label : 'Default'}`);
       const items = await lookupModelElements(link.modelId, region, ids);
 
+      if (!items?.length) {
+        continue;
+      }
+      console.group(`Model: ${link.label.length > 0 ? link.label : 'Default'}`);
       for (const item of items) {
         console.table({
           key: item.key,
@@ -127,8 +131,15 @@ export async function lookupElements(facilityURN, region, keys) {
         const link = `https://tandem.autodesk.com/pages/facilities/${facilityURN}?selection=${item.xrefKey}`;
         
         console.log(link);
+        knownIds.push(item.key);
       }
       console.groupEnd();
+    }
+    // find unknown IDs
+    for (const id of ids) {
+      if (!knownIds.includes(id)) {
+        console.log(`Unknown ID: ${id}`);
+      }
     }
   } catch (error) {
     console.error('Error:', error);
