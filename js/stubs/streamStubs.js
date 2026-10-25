@@ -10,6 +10,7 @@
 import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST, makeRequestOptionsPUT, makeRequestOptionsPATCH, getDefaultModelURN } from '../api.js';
 import { ColumnFamilies, ColumnNames, QC, ElementFlags, MutateActions } from '../../tandem/constants.js';
 import { makeXrefKey } from '../../tandem/keys.js';
+import { parseCommaList } from '../utils.js';
 
 /**
  * Helper: Pretty print stream timeseries values
@@ -148,8 +149,8 @@ export async function queryStreamsData(facilityURN, region, daysBack, streamKeys
     console.log("Time range: All Time");
   }
 
-  const keys = streamKeys ? streamKeys.split(',').map(k => k.trim()).filter(Boolean) : [];
-  const attrs = attrIds ? attrIds.split(',').map(a => a.trim()).filter(Boolean) : [];
+  const keys = parseCommaList(streamKeys);
+  const attrs = parseCommaList(attrIds);
 
   if (attrs.length > 0 && keys.length === 0) {
     console.error("attrs can only be used together with keys — please provide at least one stream key.");
@@ -216,7 +217,7 @@ export async function deleteStreamsData(facilityURN, region, streamKeys, substre
   const defaultModelURN = getDefaultModelURN(facilityURN);
   console.log("Default model:", defaultModelURN);
 
-  const keys = streamKeys ? streamKeys.split(',').map(k => k.trim()).filter(Boolean) : [];
+  const keys = parseCommaList(streamKeys);
   if (keys.length === 0) {
     console.error("At least one stream key is required.");
     console.groupEnd();
@@ -299,7 +300,7 @@ export async function getStreamSecrets(facilityURN, region, streamKeys) {
   const defaultModelURN = getDefaultModelURN(facilityURN);
   console.log("Default model:", defaultModelURN);
 
-  const streamKeysArray = streamKeys.split(',').map(k => k.trim()).filter(k => k);
+  const streamKeysArray = parseCommaList(streamKeys);
   console.log("Stream keys:", streamKeysArray);
 
   const bodyPayload = JSON.stringify({ keys: streamKeysArray });
@@ -328,7 +329,7 @@ export async function resetStreamSecrets(facilityURN, region, streamKeys) {
   const defaultModelURN = getDefaultModelURN(facilityURN);
   console.log("Default model:", defaultModelURN);
 
-  const streamKeysArray = streamKeys.split(',').map(k => k.trim()).filter(k => k);
+  const streamKeysArray = parseCommaList(streamKeys);
   console.log("Stream keys:", streamKeysArray);
 
   const bodyPayload = JSON.stringify({ keys: streamKeysArray, hardReset: true });
@@ -404,7 +405,7 @@ export async function getLastSeenStreamValues(facilityURN, region, streamKeys) {
   const defaultModelURN = getDefaultModelURN(facilityURN);
   console.log("Default model:", defaultModelURN);
 
-  const streamKeysArray = streamKeys.split(',').map(k => k.trim()).filter(k => k);
+  const streamKeysArray = parseCommaList(streamKeys);
   console.log("Stream keys:", streamKeysArray);
 
   const bodyPayload = JSON.stringify({ keys: streamKeysArray });
@@ -595,7 +596,7 @@ export async function removeHostFromStream(facilityURN, region, streamKeys) {
   const defaultModelURN = getDefaultModelURN(facilityURN);
   console.log("Default model:", defaultModelURN);
 
-  const streamKeysArray = streamKeys.split(',').map(k => k.trim()).filter(k => k);
+  const streamKeysArray = parseCommaList(streamKeys);
   console.log("Stream keys:", streamKeysArray);
 
   // Create mutations - one per stream
@@ -955,7 +956,7 @@ export async function deleteStreams(facilityURN, region, streamKeys) {
   const defaultModelURN = getDefaultModelURN(facilityURN);
   console.log("Default model:", defaultModelURN);
 
-  const streamKeysArray = streamKeys.split(',').map(k => k.trim()).filter(k => k);
+  const streamKeysArray = parseCommaList(streamKeys);
   console.log("Stream keys:", streamKeysArray);
 
   // Create mutations - MutateActions.DeleteRow = soft delete

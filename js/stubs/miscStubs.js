@@ -10,6 +10,7 @@
 import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST } from '../api.js';
 import { QC } from '../../tandem/constants.js';
 import { toFullKey, isLogicalElement, isValidElementKey, makeXrefKey } from '../../tandem/keys.js';
+import { parseCommaList } from '../utils.js';
 
 /**
  * Get the health stats of the systems
@@ -106,7 +107,7 @@ async function lookupModelElements(modelId, region, keys) {
  * Lookup elements by their keys
  */
 export async function lookupElements(facilityURN, region, keys) {
-  const allIds = (keys ?? '').split(',').map(id => id.trim()).filter(id => id.length);
+  const allIds = parseCommaList(keys);
 
   if (!allIds.length) {
     console.log("No Element IDs provided.");

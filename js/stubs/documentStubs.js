@@ -8,6 +8,7 @@
  */
 
 import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST } from '../api.js';
+import { parseCommaList } from '../utils.js';
 
 /**
  * Get all documents linked to a facility
@@ -117,7 +118,7 @@ export async function getDocumentDownloadLink(facilityURN, region, documentId) {
 export async function deleteDocuments(facilityURN, region, documentIds) {
   console.group("STUB: deleteDocuments()");
 
-  const docIdsArray = documentIds.split(',').map(id => id.trim()).filter(id => id);
+  const docIdsArray = parseCommaList(documentIds);
   
   if (docIdsArray.length === 0) {
     console.error("ERROR: No document IDs provided.");
