@@ -1903,7 +1903,23 @@ export async function renderStubs(container, facilityURN, region) {
         ],
         onExecute: (values) => miscStubs.getFacilitiesForUser(values.userID || '@me')
       }
-    }
+    },
+    {
+      label: 'Lookup Elements',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Element Keys (comma-separated)',
+            id: 'elementKeys',
+            placeholder: 'e.g., pqoTLczXQI-y-e1nNQyMOgADtko,DEF456'
+          }
+        ],
+        onExecute: (values) => 
+          miscStubs.lookupElements(currentFacilityURN, currentFacilityRegion, values.elementKeys || '')
+      }
+    },
   ]);
   
   container.appendChild(miscDropdown);

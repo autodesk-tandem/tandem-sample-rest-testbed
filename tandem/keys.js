@@ -8,6 +8,7 @@ import {
   kElementIdWithFlagsSize,
   kModelIdSize,
   kSystemIdSize,
+  ElementFlags,
   KeyFlags
 } from './constants.js';
 
@@ -295,3 +296,12 @@ export function toSystemId(fullKey) {
   }
 }
 
+/**
+ * Returns true if the element is a logical element.
+ * 
+ * @param {number} elementFlags 
+ * @returns {boolean}
+ */
+export function isLogicalElement(elementFlags) {
+  return (elementFlags & ElementFlags.AllLogicalMask) !== 0;
+}
