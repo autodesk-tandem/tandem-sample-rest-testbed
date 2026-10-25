@@ -6,6 +6,7 @@
  */
 
 import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST } from '../api.js';
+import { parseCommaList } from '../utils.js';
 
 /**
  * Get the properties of a given model.
@@ -231,11 +232,10 @@ export async function getModelHistory(modelURN, region, daysBack, typeFilter, li
 export async function getModelDataFragments(modelURN, region, elemKeys) {
   console.group("STUB: getModelDataFragments()");
 
-  let elementKeysArray = [];
-  if (elemKeys == '') {
+  const elementKeysArray = parseCommaList(elemKeys);
+  if (elementKeysArray.length === 0) {
     console.log("No elementKeys specified, getting entire model...");
   } else {
-    elementKeysArray = elemKeys.split(',');
     console.log("Element keys", elementKeysArray);
   }
 

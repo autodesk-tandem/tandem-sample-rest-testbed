@@ -1,5 +1,6 @@
 import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST } from '../api.js';
 import { ColumnFamilies, ColumnNames, MutateActions } from '../../tandem/constants.js';
+import { parseCommaList } from '../utils.js';
 
 /**
  * Get the schema for a specific model, then search for a qualified property by category and name
@@ -800,19 +801,17 @@ export async function getScanBruteForce(modelURN, region) {
 export async function getScanElementsOptions(modelURN, region, elemKeys, includeHistory, colFamilies) {
   console.group("STUB: getScanElementsOptions()");
   
-  let elemKeysArray = [];
-  if (elemKeys === "") {
+  const elemKeysArray = parseCommaList(elemKeys);
+  if (elemKeysArray.length === 0) {
     console.log("No element keys specified, scanning entire model...");
   } else {
-    elemKeysArray = elemKeys.split(',').map(k => k.trim());
     console.log("Scanning for specific element keys", elemKeysArray);
   }
   
-  let familiesArray = [];
-  if (colFamilies === "") {
+  const familiesArray = parseCommaList(colFamilies);
+  if (familiesArray.length === 0) {
     console.log("No column families specified, returning all...");
   } else {
-    familiesArray = colFamilies.split(',').map(f => f.trim());
     console.log("Scanning for column families", familiesArray);
   }
   
@@ -849,19 +848,17 @@ export async function getScanElementsOptions(modelURN, region, elemKeys, include
 export async function getScanElementsQualProps(modelURN, region, elemKeys, includeHistory, qualProps) {
   console.group("STUB: getScanElementsQualProps()");
   
-  let elemKeysArray = [];
-  if (elemKeys === "") {
+  const elemKeysArray = parseCommaList(elemKeys);
+  if (elemKeysArray.length === 0) {
     console.log("No element keys specified, scanning entire model...");
   } else {
-    elemKeysArray = elemKeys.split(',').map(k => k.trim());
     console.log("Scanning for specific element keys", elemKeysArray);
   }
   
-  let qualPropsArray = [];
-  if (qualProps === "") {
+  const qualPropsArray = parseCommaList(qualProps);
+  if (qualPropsArray.length === 0) {
     console.log("No qualified properties specified, returning all...");
   } else {
-    qualPropsArray = qualProps.split(',').map(p => p.trim());
     console.log("Scanning for specific qualified properties", qualPropsArray);
   }
   
@@ -896,13 +893,13 @@ export async function getScanElementsQualProps(modelURN, region, elemKeys, inclu
 export async function getScanElementsFullChangeHistory(modelURN, region, elemKeys) {
   console.group("STUB: getScanElementsFullChangeHistory()");
   
-  if (elemKeys === "") {
+  const elemKeysArray = parseCommaList(elemKeys);
+  if (elemKeysArray.length === 0) {
     console.error("ERROR: Element keys are required for this operation");
     console.groupEnd();
     return;
   }
   
-  const elemKeysArray = elemKeys.split(',').map(k => k.trim());
   console.log("Element keys", elemKeysArray);
   
   const bodyPayload = JSON.stringify({
@@ -976,8 +973,8 @@ export async function assignClassification(facilityURN, region, classificationSt
     console.log("Classification node found:", classificationNode);
     
     // Parse element keys
-    const elementKeysArray = elementKeys.split(',').map(k => k.trim());
-    if (elementKeysArray.length === 0 || elementKeysArray[0] === "") {
+    const elementKeysArray = parseCommaList(elementKeys);
+    if (elementKeysArray.length === 0) {
       console.error("ERROR: No element keys specified.");
       console.groupEnd();
       return;
@@ -1062,8 +1059,8 @@ export async function setPropertySelSet(modelURN, region, propCategory, propName
     console.log("Qualified property found:", qualProp);
     
     // Parse element keys
-    const elementKeysArray = elementKeys.split(',').map(k => k.trim());
-    if (elementKeysArray.length === 0 || elementKeysArray[0] === "") {
+    const elementKeysArray = parseCommaList(elementKeys);
+    if (elementKeysArray.length === 0) {
       console.error("ERROR: No element keys specified.");
       console.groupEnd();
       return;
@@ -1156,8 +1153,8 @@ export async function setPropertySelSetQP(modelURN, region, qualPropStr, propVal
     }
     
     // Parse element keys
-    const elementKeysArray = elementKeys.split(',').map(k => k.trim());
-    if (elementKeysArray.length === 0 || elementKeysArray[0] === "") {
+    const elementKeysArray = parseCommaList(elementKeys);
+    if (elementKeysArray.length === 0) {
       console.error("ERROR: No element keys specified.");
       console.groupEnd();
       return;
@@ -1260,8 +1257,8 @@ export async function setPropertySelSetQP(modelURN, region, qualPropStr, propVal
 export async function deletePropertyValue(facilityURN, region, modelURN, elementKeys, qualPropNames) {
   console.group("STUB: deletePropertyValue()");
 
-  const elementKeysArray = elementKeys.split(',').map(k => k.trim()).filter(k => k);
-  const qualPropArray = qualPropNames.split(',').map(p => p.trim()).filter(p => p);
+  const elementKeysArray = parseCommaList(elementKeys);
+  const qualPropArray = parseCommaList(qualPropNames);
 
   if (!elementKeysArray.length) {
     console.error("ERROR: at least one element key is required");
