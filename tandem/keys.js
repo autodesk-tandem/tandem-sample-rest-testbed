@@ -305,3 +305,19 @@ export function toSystemId(fullKey) {
 export function isLogicalElement(elementFlags) {
   return (elementFlags & ElementFlags.AllLogicalMask) !== 0;
 }
+
+/**
+ * Returns true if the text is a well-formed element key: unpadded websafe base64
+ * that decodes to a short key (20 bytes) or a full key with flags (24 bytes).
+ * The server rejects the whole request if any key in it is malformed.
+ *
+ * @param {string} key
+ * @returns {boolean}
+ */
+export function isValidElementKey(key) {
+  if (!/^[A-Za-z0-9_-]+$/.test(key) || key.length % 4 === 1) {
+    return false;
+  }
+  const byteLength = Math.floor(key.length * 3 / 4);
+  return byteLength === kElementIdSize || byteLength === kElementIdWithFlagsSize;
+}

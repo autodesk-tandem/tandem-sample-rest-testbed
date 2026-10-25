@@ -9,7 +9,7 @@
 
 import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST } from '../api.js';
 import { QC } from '../../tandem/constants.js';
-import { toFullKey, isLogicalElement, makeXrefKey } from '../../tandem/keys.js';
+import { toFullKey, isLogicalElement, isValidElementKey, makeXrefKey } from '../../tandem/keys.js';
 
 /**
  * Get the health stats of the systems
@@ -73,11 +73,16 @@ async function lookupModelElements(modelId, region, keys) {
   const requestPath = `${tandemBaseURL}/modeldata/${modelId}/scan`;
   
   const response = await fetch(requestPath, reqOpts);
+
+  if (!response.ok) {
+    console.error(`Scan of model ${modelId} failed - HTTP ${response.status}: ${response.statusText}`);
+    return null;
+  }
   const obj = await response.json();
 
   if (!Array.isArray(obj)) {
     console.error("Unexpected response format:", obj);
-    return;
+    return null;
   }
   const results = [];
 
@@ -101,43 +106,63 @@ async function lookupModelElements(modelId, region, keys) {
  * Lookup elements by their keys
  */
 export async function lookupElements(facilityURN, region, keys) {
-  const ids = keys?.split(',')?.filter(id => id?.trim()?.length);
+  const allIds = (keys ?? '').split(',').map(id => id.trim()).filter(id => id.length);
 
-  if (!ids?.length) {
+  if (!allIds.length) {
     console.log("No Element IDs provided.");
     return;
   }
   console.group("STUB: lookupElements()");
-  const knownIds = [];
+
+  const ids = allIds.filter(isValidElementKey);
+  for (const id of allIds.filter(id => !isValidElementKey(id))) {
+    console.warn(`Invalid key format (skipped): ${id}`);
+  }
+  if (!ids.length) {
+    console.groupEnd();
+    return;
+  }
+  const knownIds = new Set();
 
   try {
     const requestPath = `${tandemBaseURL}/twins/${facilityURN}`;
     const response = await fetch(requestPath, makeRequestOptionsGET(region));
+
+    if (!response.ok) {
+      console.error(`HTTP ${response.status}: ${response.statusText}`);
+      console.groupEnd();
+      return;
+    }
     const facility = await response.json();
-    
-    for (const link of facility.links) {
-      const items = await lookupModelElements(link.modelId, region, ids);
+    const links = facility.links ?? [];
+
+    // Scan all models in parallel, then print in the facility's model order
+    const modelResults = await Promise.all(
+      links.map(link => lookupModelElements(link.modelId, region, ids))
+    );
+
+    links.forEach((link, i) => {
+      const items = modelResults[i];
 
       if (!items?.length) {
-        continue;
+        return;
       }
-      console.group(`Model: ${link.label.length > 0 ? link.label : 'Default'}`);
+      console.group(`Model: ${link.label || 'Default'}`);
+      console.table(items.map(item => ({
+        key: item.key,
+        name: item.name,
+        fullKey: item.fullKey
+      })));
       for (const item of items) {
-        console.table({
-          key: item.key,
-          name: item.name,
-          fullKey: item.fullKey
-        });
-        const link = `https://tandem.autodesk.com/pages/facilities/${facilityURN}?selection=${item.xrefKey}`;
-        
-        console.log(link);
-        knownIds.push(item.key);
+        console.log(`${item.name}: https://tandem.autodesk.com/pages/facilities/${facilityURN}?selection=${item.xrefKey}`);
+        knownIds.add(item.key);
+        knownIds.add(item.fullKey);
       }
       console.groupEnd();
-    }
-    // find unknown IDs
+    });
+
     for (const id of ids) {
-      if (!knownIds.includes(id)) {
+      if (!knownIds.has(id)) {
         console.log(`Unknown ID: ${id}`);
       }
     }
