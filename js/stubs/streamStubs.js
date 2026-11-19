@@ -8,8 +8,6 @@
  */
 
 import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST, makeRequestOptionsPUT, makeRequestOptionsPATCH, getDefaultModelURN } from '../api.js';
-import { ColumnFamilies, ColumnNames, QC, ElementFlags, MutateActions } from '../../tandem/constants.js';
-import { makeXrefKey } from '../../tandem/keys.js';
 import { parseCommaList } from '../utils.js';
 
 /**
@@ -254,44 +252,6 @@ export async function deleteStreamsData(facilityURN, region, streamKeys, substre
 }
 
 /**
- * Scan for streams in the default model
- * NOTE: Streams can only exist in the default model
- */
-export async function getStreamsFromDefaultModel(facilityURN, region) {
-  console.group("STUB: getStreamsFromDefaultModel()");
-
-  const defaultModelURN = getDefaultModelURN(facilityURN);
-  console.log("Default model:", defaultModelURN);
-
-  const requestPath = `${tandemBaseURL}/modeldata/${defaultModelURN}/scan`;
-  console.log("Request:", requestPath);
-
-  const bodyPayload = JSON.stringify({
-  families: [ColumnFamilies.Standard],
-    includeHistory: false
-  });
-
-  try {
-    console.log("Body payload:", bodyPayload);
-    const response = await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region));
-    const result = await response.json();
-    console.log("Result from Tandem DB Server -->", result);
-
-    // Filter for Stream type
-    console.log("Filtering for type Stream...");
-    const streams = result.filter(row => row[QC.ElementFlags]?.[0] === ElementFlags.Stream);
-    console.log(`Found ${streams.length} streams:`, streams);
-    
-    console.groupEnd();
-    return streams;
-  } catch (error) {
-    console.error('Error:', error);
-    console.groupEnd();
-    return [];
-  }
-}
-
-/**
  * Get secrets for the given streams
  */
 export async function getStreamSecrets(facilityURN, region, streamKeys) {
@@ -302,6 +262,12 @@ export async function getStreamSecrets(facilityURN, region, streamKeys) {
 
   const streamKeysArray = parseCommaList(streamKeys);
   console.log("Stream keys:", streamKeysArray);
+
+  if (streamKeysArray.length === 0) {
+    console.warn("Please enter at least one stream key (comma-separated).");
+    console.groupEnd();
+    return null;
+  }
 
   const bodyPayload = JSON.stringify({ keys: streamKeysArray });
   const requestPath = `${tandemBaseURL}/models/${defaultModelURN}/getstreamssecrets`;
@@ -331,6 +297,12 @@ export async function resetStreamSecrets(facilityURN, region, streamKeys) {
 
   const streamKeysArray = parseCommaList(streamKeys);
   console.log("Stream keys:", streamKeysArray);
+
+  if (streamKeysArray.length === 0) {
+    console.warn("Please enter at least one stream key (comma-separated).");
+    console.groupEnd();
+    return null;
+  }
 
   const bodyPayload = JSON.stringify({ keys: streamKeysArray, hardReset: true });
   const requestPath = `${tandemBaseURL}/models/${defaultModelURN}/resetstreamssecrets`;
@@ -408,6 +380,12 @@ export async function getLastSeenStreamValues(facilityURN, region, streamKeys) {
   const streamKeysArray = parseCommaList(streamKeys);
   console.log("Stream keys:", streamKeysArray);
 
+  if (streamKeysArray.length === 0) {
+    console.warn("Please enter at least one stream key (comma-separated). Use 'GET Streams from Default Model' to find them.");
+    console.groupEnd();
+    return null;
+  }
+
   const bodyPayload = JSON.stringify({ keys: streamKeysArray });
   const requestPath = `${tandemBaseURL}/timeseries/models/${defaultModelURN}/streams`;
   console.log("Request:", requestPath);
@@ -416,7 +394,9 @@ export async function getLastSeenStreamValues(facilityURN, region, streamKeys) {
     const response = await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region));
     const result = await response.json();
     console.log("Result from Tandem DB Server -->", result);
-    prettyPrintLastSeenStreamValues(result);
+    if (response.ok) {
+      prettyPrintLastSeenStreamValues(result);
+    }
     console.groupEnd();
     return result;
   } catch (error) {
@@ -474,159 +454,6 @@ export async function postStreamValues(facilityURN, region, streamKey, valuesJso
 }
 
 /**
- * Create a new stream
- */
-export async function createStream(facilityURN, region, streamName, hostModelURN, hostKey, classification) {
-  console.group("STUB: createStream()");
-
-  const defaultModelURN = getDefaultModelURN(facilityURN);
-  console.log("Default model:", defaultModelURN);
-  console.log("Stream name:", streamName);
-
-  if (!streamName) {
-    console.error("ERROR: Stream name is required");
-    console.groupEnd();
-    return null;
-  }
-
-  // Build mutations array
-  const mutsArray = [
-    [MutateActions.Insert, ColumnFamilies.Standard, ColumnNames.Name, streamName],
-    [MutateActions.Insert, ColumnFamilies.Standard, ColumnNames.ElementFlags, ElementFlags.Stream],
-    [MutateActions.Insert, ColumnFamilies.Standard, ColumnNames.UniformatClass, "D7070"],
-    [MutateActions.Insert, ColumnFamilies.Standard, ColumnNames.CategoryId, 5031], // Category for Streams
-  ];
-
-  // Add classification if provided
-  if (classification) {
-    console.log("Classification:", classification);
-    mutsArray.push([MutateActions.Insert, ColumnFamilies.Standard, ColumnNames.Classification, classification]);
-  }
-
-  // Add host if provided
-  if (hostModelURN && hostKey) {
-    console.log("Host model:", hostModelURN);
-    console.log("Host key:", hostKey);
-    const hostXref = makeXrefKey(hostModelURN, hostKey);
-    mutsArray.push([MutateActions.Insert, ColumnFamilies.Xrefs, ColumnNames.Parent, hostXref]);
-  }
-
-  const bodyPayload = JSON.stringify({
-    muts: mutsArray,
-    desc: "REST TestBed: created stream"
-  });
-
-  console.log("Mutations:", mutsArray);
-
-  const requestPath = `${tandemBaseURL}/modeldata/${defaultModelURN}/create`;
-  console.log("Request:", requestPath);
-
-  try {
-    const response = await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region));
-    const result = await response.json();
-    console.log("Result from Tandem DB Server -->", result);
-
-    // Reset stream secrets to make it functional
-    if (result.key) {
-      console.log("Resetting stream secret for new stream...");
-      const resetPayload = JSON.stringify({ keys: [result.key], hardReset: true });
-      const resetPath = `${tandemBaseURL}/models/${defaultModelURN}/resetstreamssecrets`;
-      const resetResponse = await fetch(resetPath, makeRequestOptionsPOST(resetPayload, region));
-      if (resetResponse.ok) {
-        console.log(`✓ Stream secret generated for ${result.key}`);
-      }
-    }
-
-    console.groupEnd();
-    return result;
-  } catch (error) {
-    console.error('Error:', error);
-    console.groupEnd();
-    return null;
-  }
-}
-
-/**
- * Assign a host to a stream
- */
-export async function assignHostToStream(facilityURN, region, streamKey, hostModelURN, hostKey) {
-  console.group("STUB: assignHostToStream()");
-
-  const defaultModelURN = getDefaultModelURN(facilityURN);
-  console.log("Default model:", defaultModelURN);
-  console.log("Stream key:", streamKey);
-  console.log("Host model:", hostModelURN);
-  console.log("Host key:", hostKey);
-
-  const hostXref = makeXrefKey(hostModelURN, hostKey);
-  const mutsArray = [
-    [MutateActions.Insert, ColumnFamilies.Xrefs, ColumnNames.Parent, hostXref]
-  ];
-
-  const bodyPayload = JSON.stringify({
-    keys: [streamKey],
-    muts: mutsArray,
-    desc: "REST TestBed: modified stream host"
-  });
-
-  console.log("Payload:", bodyPayload);
-
-  const requestPath = `${tandemBaseURL}/modeldata/${defaultModelURN}/mutate`;
-  console.log("Request:", requestPath);
-
-  try {
-    const response = await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region));
-    const result = await response.json();
-    console.log("Result from Tandem DB Server -->", result);
-    console.groupEnd();
-    return result;
-  } catch (error) {
-    console.error('Error:', error);
-    console.groupEnd();
-    return null;
-  }
-}
-
-/**
- * Remove host from streams
- */
-export async function removeHostFromStream(facilityURN, region, streamKeys) {
-  console.group("STUB: removeHostFromStream()");
-
-  const defaultModelURN = getDefaultModelURN(facilityURN);
-  console.log("Default model:", defaultModelURN);
-
-  const streamKeysArray = parseCommaList(streamKeys);
-  console.log("Stream keys:", streamKeysArray);
-
-  // Create mutations - one per stream
-  const mutsArray = streamKeysArray.map(() => 
-    [MutateActions.Insert, ColumnFamilies.Xrefs, ColumnNames.Parent, ""]
-  );
-
-  const bodyPayload = JSON.stringify({
-    keys: streamKeysArray,
-    muts: mutsArray,
-    desc: "REST TestBed: removed stream host"
-  });
-
-  const requestPath = `${tandemBaseURL}/modeldata/${defaultModelURN}/mutate`;
-  console.log("Request:", requestPath);
-
-  try {
-    const response = await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region));
-    const result = await response.json();
-    console.log("Result from Tandem DB Server -->", result);
-    console.groupEnd();
-    return result;
-  } catch (error) {
-    console.error('Error:', error);
-    console.groupEnd();
-    return null;
-  }
-}
-
-/**
  * Get stream configurations for all streams in the default model
  *
  * A "stream configuration" is separate from the stream element itself. It lives in a
@@ -664,6 +491,7 @@ export async function removeHostFromStream(facilityURN, region, streamKeys) {
  * NOTE: "elementId" uses the full (long) base64 key encoding, not the short key used
  * elsewhere in the API. When passing a stream key to PUT /stream-configs/{elementID}
  * the server will accept either the short or long form.
+ * In V3 there is only one form: the 24-byte key (flags + element id), used as it comes.
  */
 export async function getStreamConfigs(facilityURN, region) {
   console.group("STUB: getStreamConfigs()");
@@ -695,8 +523,8 @@ export async function getStreamConfigs(facilityURN, region) {
  * Get stream configuration for a single stream
  *
  * Returns the same StreamConfig shape as getStreamConfigs() but for one stream only.
- * The stream key can be either the short key (as returned by getStreamsFromDefaultModel)
- * or the full base64 key — the server normalizes it.
+ * The stream key can be either the short key (V2 scan rows) or the full base64 key — the
+ * server normalizes it. In V3 there is only the 24-byte key, as returned by getStreamsFromDefaultModel.
  *
  * Returns HTTP 404 if the stream exists but has never been configured.
  */
@@ -946,41 +774,3 @@ export async function updateStreamConfigs(facilityURN, region, configsJson) {
     return false;
   }
 }
-
-/**
- * Delete streams (soft delete)
- */
-export async function deleteStreams(facilityURN, region, streamKeys) {
-  console.group("STUB: deleteStreams()");
-
-  const defaultModelURN = getDefaultModelURN(facilityURN);
-  console.log("Default model:", defaultModelURN);
-
-  const streamKeysArray = parseCommaList(streamKeys);
-  console.log("Stream keys:", streamKeysArray);
-
-  // Create mutations - MutateActions.DeleteRow = soft delete
-  const mutsArray = streamKeysArray.map(() => [MutateActions.DeleteRow, "", "", ""]);
-
-  const bodyPayload = JSON.stringify({
-    keys: streamKeysArray,
-    muts: mutsArray,
-    desc: "REST TestBed: deleted stream(s)"
-  });
-
-  const requestPath = `${tandemBaseURL}/modeldata/${defaultModelURN}/mutate`;
-  console.log("Request:", requestPath);
-
-  try {
-    const response = await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region));
-    const result = await response.json();
-    console.log("Result from Tandem DB Server -->", result);
-    console.groupEnd();
-    return result;
-  } catch (error) {
-    console.error('Error:', error);
-    console.groupEnd();
-    return null;
-  }
-}
-

@@ -13,6 +13,7 @@ const env = getEnv();
 // Base URLs for Tandem API endpoints
 export const tandemBaseURL = env.tandemDbBaseURL;
 export const tandemAppBaseURL = env.tandemAppBaseURL;
+export const tandemWebURL = env.tandemWebURL;
 
 /**
  * Create request options for GET requests
@@ -153,7 +154,7 @@ export async function getGroups() {
  * @returns {Promise<object>} Facilities object keyed by URN
  */
 export async function getFacilitiesForGroup(groupId) {
-  const regions = ['US', 'EMEA', 'AUS'];
+  const regions = env.regions;
   const facilities = {};
   
   // Determine the endpoint based on groupId

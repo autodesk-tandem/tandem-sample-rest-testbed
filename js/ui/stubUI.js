@@ -12,16 +12,24 @@
 
 import * as facilityStubs from '../stubs/facilityStubs.js';
 import * as modelStubs from '../stubs/modelStubs.js';
-import * as propertyStubs from '../stubs/propertyStubs.js';
+import * as scanStubs from '../stubs/scanStubs.js';
 import * as groupStubs from '../stubs/groupStubs.js';
 import * as streamStubs from '../stubs/streamStubs.js';
 import * as documentStubs from '../stubs/documentStubs.js';
 import * as miscStubs from '../stubs/miscStubs.js';
 import * as appStubs from '../stubs/appStubs.js';
-import * as sdkStubs from '../stubs/sdkStubs.js';
 import { getDefaultModelURN, getModels } from '../api.js';
+import { getActiveVersion } from '../version.js';
 import { getCachedGroups, getCurrentGroupURN } from '../app.js';
 import { getUniqueCategoryNames, getUniquePropertyNames, areSchemasLoaded, getPropertyInfo, getPropertyInfoByQualifiedId, DataTypes } from '../state/schemaCache.js';
+
+/**
+ * STUB functions that depend on the facility's schema version live in js/stubs/v2 and js/stubs/v3.
+ * @returns {object} Name -> function map of the active version module
+ */
+function versionStubs() {
+  return getActiveVersion().stubs;
+}
 
 // Store current facility context for STUB functions
 let currentFacilityURN = null;
@@ -948,6 +956,7 @@ export async function renderStubs(container, facilityURN, region) {
   const propertyDropdown = createDropdownMenu('Property Stubs', [
     {
       label: 'GET Qualified Property Def',
+      requires: 'getQualifiedProperty',
       hasInput: true,
       inputConfig: {
         type: 'multiText',
@@ -972,12 +981,13 @@ export async function renderStubs(container, facilityURN, region) {
         onExecute: (values) => {
           saveInputValue('categoryName', values.categoryName);
           saveInputValue('propName', values.propName);
-          return propertyStubs.getQualifiedProperty(currentFacilityURN, currentFacilityRegion, values.categoryName, values.propName);
+          return versionStubs().getQualifiedProperty(currentFacilityURN, currentFacilityRegion, values.categoryName, values.propName);
         }
       }
     },
     {
       label: 'SCAN for Property',
+      requires: 'scanForProperty',
       hasInput: true,
       inputConfig: {
         type: 'multiText',
@@ -1014,12 +1024,13 @@ export async function renderStubs(container, facilityURN, region) {
         onExecute: (values) => {
           saveInputValue('categoryName', values.categoryName);
           saveInputValue('propName', values.propName);
-          return propertyStubs.scanForProperty(currentFacilityURN, currentFacilityRegion, values.categoryName, values.propName, values.includeHistory, values.runInParallel);
+          return versionStubs().scanForProperty(currentFacilityURN, currentFacilityRegion, values.categoryName, values.propName, values.includeHistory, values.runInParallel);
         }
       }
     },
     {
       label: 'SCAN for all User-defined Props',
+      requires: 'scanForUserProps',
       hasInput: true,
       inputConfig: {
         type: 'multiText',
@@ -1028,16 +1039,18 @@ export async function renderStubs(container, facilityURN, region) {
             label: 'Run in Parallel (see console for timing comparison)',
             id: 'runInParallel',
             type: 'checkbox',
-            defaultValue: false
+            defaultValue: false,
+            versions: [2] // V3 scans the default model only, there is nothing to run in parallel
           }
         ],
         onExecute: (values) => {
-          return propertyStubs.scanForUserProps(currentFacilityURN, currentFacilityRegion, values.runInParallel);
+          return versionStubs().scanForUserProps(currentFacilityURN, currentFacilityRegion, values.runInParallel);
         }
       }
     },
     {
       label: 'Find Elements where Property = X',
+      requires: 'findElementsWherePropValueEquals',
       hasInput: true,
       inputConfig: {
         type: 'multiText',
@@ -1074,7 +1087,7 @@ export async function renderStubs(container, facilityURN, region) {
         onExecute: (values) => {
           saveInputValue('categoryName', values.categoryName);
           saveInputValue('propName', values.propName);
-          return propertyStubs.findElementsWherePropValueEquals(
+          return versionStubs().findElementsWherePropValueEquals(
             currentFacilityURN,
             currentFacilityRegion,
             values.categoryName,
@@ -1091,7 +1104,7 @@ export async function renderStubs(container, facilityURN, region) {
       inputConfig: {
         type: 'modelSelect',
         label: 'Model',
-        onExecute: (modelUrn) => propertyStubs.getScanBruteForce(modelUrn, currentFacilityRegion)
+        onExecute: (modelUrn) => scanStubs.getScanBruteForce(modelUrn, currentFacilityRegion)
       }
     },
     {
@@ -1117,8 +1130,9 @@ export async function renderStubs(container, facilityURN, region) {
               { value: 'z', label: 'z - DtProperties (user-defined)' },
               { value: 'l', label: 'l - Refs (same-model references)' },
               { value: 'x', label: 'x - XRefs (cross-model references)' },
-              { value: 'm', label: 'm - Source (original model data)' },
-              { value: 's', label: 's - Systems' }
+              { value: 'r', label: 'r - Source (read-only properties from the model file)' },
+              { value: 'm', label: 'm - Systems' },
+              { value: 's', label: 's - Status (deleted flag, state)' }
             ],
             defaultValue: ['n']
           },
@@ -1133,7 +1147,7 @@ export async function renderStubs(container, facilityURN, region) {
           const elemKeys = additionalValues.elemKeys || '';
           const colFamilies = additionalValues.colFamilies || '';
           const includeHistory = additionalValues.includeHistory || false;
-          return propertyStubs.getScanElementsOptions(modelUrn, currentFacilityRegion, elemKeys, includeHistory, colFamilies);
+          return scanStubs.getScanElementsOptions(modelUrn, currentFacilityRegion, elemKeys, includeHistory, colFamilies);
         }
       }
     },
@@ -1166,7 +1180,7 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (modelUrn, additionalValues) => 
-          propertyStubs.getScanElementsQualProps(modelUrn, currentFacilityRegion, additionalValues.elemKeys || '', additionalValues.includeHistory || false, additionalValues.qualProps || '')
+          scanStubs.getScanElementsQualProps(modelUrn, currentFacilityRegion, additionalValues.elemKeys || '', additionalValues.includeHistory || false, additionalValues.qualProps || '')
       }
     },
     {
@@ -1184,11 +1198,12 @@ export async function renderStubs(container, facilityURN, region) {
             defaultValue: ''
           }
         ],
-        onExecute: (modelUrn, additionalValues) => propertyStubs.getScanElementsFullChangeHistory(modelUrn, currentFacilityRegion, additionalValues.elemKeys || '')
+        onExecute: (modelUrn, additionalValues) => scanStubs.getScanElementsFullChangeHistory(modelUrn, currentFacilityRegion, additionalValues.elemKeys || '')
       }
     },
     {
       label: 'Assign Classification',
+      requires: 'assignClassification',
       hasInput: true,
       inputConfig: {
         type: 'modelSelect',
@@ -1210,11 +1225,12 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (modelUrn, additionalValues) => 
-          propertyStubs.assignClassification(currentFacilityURN, currentFacilityRegion, additionalValues.classificationStr || '', modelUrn, additionalValues.elemKeys || '')
+          versionStubs().assignClassification(currentFacilityURN, currentFacilityRegion, additionalValues.classificationStr || '', modelUrn, additionalValues.elemKeys || '')
       }
     },
     {
       label: 'SET Property (by Category/Name)',
+      requires: 'setPropertySelSet',
       hasInput: true,
       inputConfig: {
         type: 'modelSelect',
@@ -1251,11 +1267,12 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (modelUrn, additionalValues) => 
-          propertyStubs.setPropertySelSet(modelUrn, currentFacilityRegion, additionalValues.propCategory || '', additionalValues.propName || '', additionalValues.propVal || '', additionalValues.elemKeys || '')
+          versionStubs().setPropertySelSet(modelUrn, currentFacilityRegion, additionalValues.propCategory || '', additionalValues.propName || '', additionalValues.propVal || '', additionalValues.elemKeys || '')
       }
     },
     {
       label: 'SET Property (by Qualified Prop)',
+      requires: 'setPropertySelSetQP',
       hasInput: true,
       inputConfig: {
         type: 'modelSelect',
@@ -1282,11 +1299,12 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (modelUrn, additionalValues) => 
-          propertyStubs.setPropertySelSetQP(modelUrn, currentFacilityRegion, additionalValues.qualPropStr || '', additionalValues.propVal || '', additionalValues.elemKeys || '')
+          versionStubs().setPropertySelSetQP(modelUrn, currentFacilityRegion, additionalValues.qualPropStr || '', additionalValues.propVal || '', additionalValues.elemKeys || '')
       }
     },
     {
       label: 'DELETE Property Value(s)',
+      requires: 'deletePropertyValue',
       hasInput: true,
       inputConfig: {
         type: 'modelSelect',
@@ -1306,7 +1324,7 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (modelUrn, additionalValues) =>
-          propertyStubs.deletePropertyValue(currentFacilityURN, currentFacilityRegion, modelUrn, additionalValues.elemKeys || '', additionalValues.qualPropNames || '')
+          versionStubs().deletePropertyValue(currentFacilityURN, currentFacilityRegion, modelUrn, additionalValues.elemKeys || '', additionalValues.qualPropNames || '')
       }
     }
   ]);
@@ -1400,8 +1418,9 @@ export async function renderStubs(container, facilityURN, region) {
   const streamDropdown = createDropdownMenu('Stream Stubs', [
     {
       label: 'GET Streams (from Default Model)',
+      requires: 'getStreamsFromDefaultModel',
       hasInput: false,
-      action: () => streamStubs.getStreamsFromDefaultModel(currentFacilityURN, currentFacilityRegion)
+      action: () => versionStubs().getStreamsFromDefaultModel(currentFacilityURN, currentFacilityRegion)
     },
     {
       label: 'GET Stream Values',
@@ -1597,6 +1616,7 @@ export async function renderStubs(container, facilityURN, region) {
     },
     {
       label: 'Create Stream',
+      requires: 'createStream',
       hasInput: true,
       inputConfig: {
         type: 'multiText',
@@ -1623,7 +1643,7 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (values) => 
-          streamStubs.createStream(
+          versionStubs().createStream(
             currentFacilityURN, 
             currentFacilityRegion, 
             values.streamName || '',
@@ -1635,6 +1655,7 @@ export async function renderStubs(container, facilityURN, region) {
     },
     {
       label: 'Delete Streams',
+      requires: 'deleteStreams',
       hasInput: true,
       inputConfig: {
         type: 'multiText',
@@ -1646,11 +1667,12 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (values) => 
-          streamStubs.deleteStreams(currentFacilityURN, currentFacilityRegion, values.streamKeys || '')
+          versionStubs().deleteStreams(currentFacilityURN, currentFacilityRegion, values.streamKeys || '')
       }
     },
     {
       label: 'Assign Host to Stream',
+      requires: 'assignHostToStream',
       hasInput: true,
       inputConfig: {
         type: 'multiText',
@@ -1672,7 +1694,7 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (values) => 
-          streamStubs.assignHostToStream(
+          versionStubs().assignHostToStream(
             currentFacilityURN,
             currentFacilityRegion,
             values.streamKey || '',
@@ -1683,6 +1705,7 @@ export async function renderStubs(container, facilityURN, region) {
     },
     {
       label: 'Remove Host from Stream',
+      requires: 'removeHostFromStream',
       hasInput: true,
       inputConfig: {
         type: 'multiText',
@@ -1694,7 +1717,7 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (values) => 
-          streamStubs.removeHostFromStream(currentFacilityURN, currentFacilityRegion, values.streamKeys || '')
+          versionStubs().removeHostFromStream(currentFacilityURN, currentFacilityRegion, values.streamKeys || '')
       }
     },
     {
@@ -1906,6 +1929,7 @@ export async function renderStubs(container, facilityURN, region) {
     },
     {
       label: 'Lookup Elements',
+      requires: 'lookupElements',
       hasInput: true,
       inputConfig: {
         type: 'multiText',
@@ -1913,11 +1937,13 @@ export async function renderStubs(container, facilityURN, region) {
           {
             label: 'Element Keys (comma-separated)',
             id: 'elementKeys',
-            placeholder: 'e.g., pqoTLczXQI-y-e1nNQyMOgADtko,DEF456'
+            placeholder: getActiveVersion().schemaVersion === 3
+              ? 'e.g., 24-byte keys (32 characters) from a scan result'
+              : 'e.g., pqoTLczXQI-y-e1nNQyMOgADtko,DEF456'
           }
         ],
         onExecute: (values) => 
-          miscStubs.lookupElements(currentFacilityURN, currentFacilityRegion, values.elementKeys || '')
+          versionStubs().lookupElements(currentFacilityURN, currentFacilityRegion, values.elementKeys || '')
       }
     },
   ]);
@@ -2023,16 +2049,19 @@ export async function renderStubs(container, facilityURN, region) {
   const sdkDropdown = createDropdownMenu('SDK Stubs (Higher Level)', [
     {
       label: 'GET Rooms and Spaces',
+      requires: 'getRoomsAndSpaces',
       hasInput: false,
-      action: () => sdkStubs.getRoomsAndSpaces(currentFacilityURN, currentFacilityRegion)
+      action: () => versionStubs().getRoomsAndSpaces(currentFacilityURN, currentFacilityRegion)
     },
     {
       label: 'GET Levels',
+      requires: 'getLevels',
       hasInput: false,
-      action: () => sdkStubs.getLevels(currentFacilityURN, currentFacilityRegion)
+      action: () => versionStubs().getLevels(currentFacilityURN, currentFacilityRegion)
     },
     {
       label: 'GET Element & Type Properties',
+      requires: 'getElementAndTypeProperties',
       hasInput: true,
       inputConfig: {
         type: 'modelSelect',
@@ -2047,18 +2076,20 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (modelUrn, additionalValues) =>
-          sdkStubs.getElementAndTypeProperties(modelUrn, currentFacilityRegion, additionalValues.elemKey || '')
+          versionStubs().getElementAndTypeProperties(modelUrn, currentFacilityRegion, additionalValues.elemKey || '')
       }
     },
     {
       label: 'GET Facility Structure',
+      requires: 'getFacilityStructure',
       hasInput: false,
-      action: () => sdkStubs.getFacilityStructure(currentFacilityURN, currentFacilityRegion)
+      action: () => versionStubs().getFacilityStructure(currentFacilityURN, currentFacilityRegion)
     },
     {
       label: 'Find Elements with Empty Parameters',
+      requires: 'findElementsWithEmptyParameters',
       hasInput: false,
-      action: () => sdkStubs.findElementsWithEmptyParameters(currentFacilityURN, currentFacilityRegion)
+      action: () => versionStubs().findElementsWithEmptyParameters(currentFacilityURN, currentFacilityRegion)
     }
   ]);
   
@@ -2080,15 +2111,47 @@ export async function renderStubs(container, facilityURN, region) {
 }
 
 /**
+ * Drop the input fields that only apply to other schema versions (field.versions = [2] means V2 only).
+ * An item that is left without fields becomes a plain button.
+ */
+function forSchemaVersion(item, schemaVersion) {
+  const fields = item.inputConfig?.fields;
+
+  if (!fields) {
+    return item;
+  }
+  const visibleFields = fields.filter(field => !field.versions || field.versions.includes(schemaVersion));
+
+  if (visibleFields.length === fields.length) {
+    return item;
+  }
+  if (visibleFields.length === 0) {
+    return { ...item, hasInput: false, inputConfig: undefined, action: () => item.inputConfig.onExecute({}) };
+  }
+  return { ...item, inputConfig: { ...item.inputConfig, fields: visibleFields } };
+}
+
+/**
  * Create a dropdown menu with STUB functions
  * 
  * @param {string} title - Dropdown title
- * @param {Array} items - Array of {label, action, hasInput, inputConfig} objects
+ * @param {Array} allItems - Array of {label, requires?, action, hasInput, inputConfig} objects.
+ *   `requires` names a version-specific STUB; the item is only shown when the active schema version has it
  * @returns {HTMLElement} Dropdown menu element
  */
-function createDropdownMenu(title, items) {
+function createDropdownMenu(title, allItems) {
+  // Items with `requires` only exist for the schema versions that implement that STUB
+  const stubs = versionStubs();
+  const schemaVersion = getActiveVersion().schemaVersion;
+  const items = allItems
+    .filter(item => !item.requires || typeof stubs[item.requires] === 'function')
+    .map(item => forSchemaVersion(item, schemaVersion));
+
   const dropdown = document.createElement('div');
   dropdown.className = 'dropdown-menu';
+  if (items.length === 0) {
+    dropdown.classList.add('hidden');
+  }
   
   // Create toggle button
   const toggle = document.createElement('button');

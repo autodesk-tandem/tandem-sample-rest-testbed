@@ -3,12 +3,12 @@
  */
 
 import {
+  ElementFlags,
   kElementFlagsSize,
   kElementIdSize,
   kElementIdWithFlagsSize,
   kModelIdSize,
   kSystemIdSize,
-  ElementFlags,
   KeyFlags
 } from './constants.js';
 
@@ -45,6 +45,33 @@ export function toShortKey(fullKey) {
   // Skip first 4 bytes (flags) and copy the remaining 20 bytes (element ID)
   shortKey.set(binData.subarray(kElementFlagsSize));
   return makeWebsafe(btoa(String.fromCharCode.apply(null, shortKey)));
+}
+
+/**
+ * Read the element flags stored in the first 4 bytes of a full key (24 bytes).
+ * In schema V3 these are the element's real ElementFlags value, so a scan row's type can be
+ * determined from its key alone.
+ * @param {string} fullKey - Full element key with flags (URL-safe base64)
+ * @returns {number} Element flags, or ElementFlags.Unknown if the key is missing or not a full key (same as Encoding.getElementFlags in tutorial-rest)
+ */
+export function getElementFlags(fullKey) {
+  if (!fullKey) {
+    return ElementFlags.Unknown;
+  }
+  try {
+    let standardB64 = fullKey.replace(/-/g, '+').replace(/_/g, '/');
+    while (standardB64.length % 4) {
+      standardB64 += '=';
+    }
+    const bytes = atob(standardB64);
+
+    if (bytes.length !== kElementIdWithFlagsSize) {
+      return ElementFlags.Unknown;
+    }
+    return ((bytes.charCodeAt(0) << 24) | (bytes.charCodeAt(1) << 16) | (bytes.charCodeAt(2) << 8) | bytes.charCodeAt(3)) >>> 0;
+  } catch {
+    return ElementFlags.Unknown;
+  }
 }
 
 export function toFullKey(shortKey, isLogical) {
@@ -231,7 +258,7 @@ function writeInt32BE(array, value, offset = 0) {
   array[offset] = (value >> 24) & 0xff;
   array[offset + 1] = (value >> 16) & 0xff;
   array[offset + 2] = (value >> 8) & 0xff;
-  array[offset + 3] = (value >> 8) & 0xff;
+  array[offset + 3] = value & 0xff;
 }
 
 /**
@@ -295,6 +322,7 @@ export function toSystemId(fullKey) {
     return fullKey; // Fallback to original key
   }
 }
+
 
 /**
  * Returns true if the element is a logical element.

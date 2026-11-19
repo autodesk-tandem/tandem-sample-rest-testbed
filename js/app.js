@@ -14,9 +14,22 @@ import {
   registerThumbnailURL,
   cleanupThumbnailURLs
 } from './api.js';
-import { normalizeRegion, SchemaVersion } from '../tandem/constants.js';
+import { getEnv } from './config.js';
+import { normalizeRegion } from '../tandem/constants.js';
 import { renderStubs } from './ui/stubUI.js';
 import { loadSchemasForFacility, clearSchemaCache } from './state/schemaCache.js';
+import { setActiveVersion, getActiveVersion } from './version.js';
+
+/**
+ * Schema version modules. Each folder implements the same interface (see version.js);
+ * only the selected one is downloaded. Add a new version here and nowhere else in the shell.
+ */
+const versionLoaders = {
+  2: () => import('./stubs/v2/index.js'),
+  3: () => import('./stubs/v3/index.js')
+};
+const DEFAULT_SCHEMA_VERSION = 2;
+const VERSION_STORAGE_KEY = 'tandem-sample-testbed-schema-version';
 
 // DOM Elements
 const loginBtn = document.getElementById('loginBtn');
@@ -31,6 +44,9 @@ const loadingOverlay = document.getElementById('loadingOverlay');
 const stubsContainer = document.getElementById('stubsContainer');
 const facilityThumbnail = document.getElementById('facilityThumbnail');
 const thumbnailPlaceholder = document.getElementById('thumbnailPlaceholder');
+const envBadge = document.getElementById('envBadge');
+const versionSwitchWrap = document.getElementById('versionSwitchWrap');
+const versionRadios = document.querySelectorAll('#versionSwitch input[name="schemaVersion"]');
 
 // State
 let accounts = [];
@@ -39,6 +55,8 @@ let currentFacilityRegion = null;
 let userResourcesCache = null;
 let facilityRegionMap = new Map();
 let lastLoadedFacilityURN = null;
+let currentVersion = DEFAULT_SCHEMA_VERSION; // schema version selected in the header switch
+let versionSwitchSeq = 0; // guards against overlapping version switches
 
 /**
  * Toggle loading overlay
@@ -50,6 +68,52 @@ function toggleLoading(show) {
   } else {
     loadingOverlay.classList.add('hidden');
   }
+}
+
+/**
+ * Pick the version module that displays a facility with the given schema version:
+ * the highest registered version that is not newer than the facility.
+ * Facilities that do not report a schema version are treated as the default version.
+ * @param {number} [schemaVersion]
+ * @returns {number} Key of versionLoaders
+ */
+function versionForSchema(schemaVersion = DEFAULT_SCHEMA_VERSION) {
+  const registered = Object.keys(versionLoaders).map(Number).sort((a, b) => a - b);
+  return registered.filter(v => v <= schemaVersion).pop() ?? registered[0];
+}
+
+/**
+ * Load the module for a schema version and make it the active one for the UI.
+ * @param {number} version
+ */
+async function activateVersion(version) {
+  const versionModule = (await versionLoaders[version]()).default;
+  setActiveVersion(versionModule);
+}
+
+/**
+ * Reflect the current version in the header switch.
+ */
+function syncVersionSwitch() {
+  versionRadios.forEach(radio => {
+    radio.checked = Number(radio.value) === currentVersion;
+  });
+}
+
+/**
+ * Clear everything that belongs to the facility currently on screen.
+ * Used when the schema version changes, because the loaded facility may not exist in it.
+ * @param {string} message - Hint shown in the STUB panel
+ */
+function clearFacilityDisplay(message = '') {
+  currentFacilityURN = null;
+  currentFacilityRegion = null;
+  lastLoadedFacilityURN = null;
+  clearSchemaCache();
+
+  stubsContainer.innerHTML = message ? `<p class="text-dark-text-secondary text-sm p-4">${message}</p>` : '';
+  facilityThumbnail.classList.add('hidden');
+  thumbnailPlaceholder.classList.remove('hidden');
 }
 
 /**
@@ -71,6 +135,7 @@ function updateUIForLoginState(loggedIn, profileImg) {
     
     accountSelect.classList.remove('hidden');
     facilitySelect.classList.remove('hidden');
+    versionSwitchWrap.classList.remove('hidden');
   } else {
     loginBtn.classList.remove('hidden');
     logoutBtn.classList.add('hidden');
@@ -79,6 +144,7 @@ function updateUIForLoginState(loggedIn, profileImg) {
     dashboardContent.classList.add('hidden');
     accountSelect.classList.add('hidden');
     facilitySelect.classList.add('hidden');
+    versionSwitchWrap.classList.add('hidden');
   }
 }
 
@@ -213,12 +279,13 @@ async function populateAccountsDropdown(accounts) {
  * Get the last used facility for a specific account
  */
 function getLastFacilityForAccount(accountName) {
+  const mapKey = `${accountName}#v${currentVersion}`;
   try {
     const facilitiesJson = window.localStorage.getItem('tandem-testbed-ai-last-facilities');
     if (!facilitiesJson) return null;
     
     const facilitiesMap = JSON.parse(facilitiesJson);
-    return facilitiesMap[accountName] || null;
+    return facilitiesMap[mapKey] || null;
   } catch (error) {
     console.error('Error reading last facilities from localStorage:', error);
     return null;
@@ -229,11 +296,12 @@ function getLastFacilityForAccount(accountName) {
  * Set the last used facility for a specific account
  */
 function setLastFacilityForAccount(accountName, facilityURN) {
+  const mapKey = `${accountName}#v${currentVersion}`;
   try {
     const facilitiesJson = window.localStorage.getItem('tandem-testbed-ai-last-facilities');
     const facilitiesMap = facilitiesJson ? JSON.parse(facilitiesJson) : {};
     
-    facilitiesMap[accountName] = facilityURN;
+    facilitiesMap[mapKey] = facilityURN;
     window.localStorage.setItem('tandem-testbed-ai-last-facilities', JSON.stringify(facilitiesMap));
   } catch (error) {
     console.error('Error saving last facilities to localStorage:', error);
@@ -241,7 +309,49 @@ function setLastFacilityForAccount(accountName, facilityURN) {
 }
 
 /**
- * Populate facilities dropdown based on selected account
+ * Convert the facilities object returned by the twins endpoints into dropdown entries.
+ * @param {object|null} facilitiesObj - Map of facility URN -> twin settings
+ * @returns {Array<{urn: string, name: string, region: string, schemaVersion: number}>}
+ */
+function toFacilityEntries(facilitiesObj) {
+  if (!facilitiesObj) {
+    return [];
+  }
+  return Object.entries(facilitiesObj).map(([urn, settings]) => ({
+    urn,
+    name: settings?.props?.["Identity Data"]?.["Building Name"] || 'Unnamed Facility',
+    region: settings?.region || 'us',
+    schemaVersion: settings?.schemaVersion ?? DEFAULT_SCHEMA_VERSION
+  }));
+}
+
+/**
+ * Load the facility list (with names and schema versions) for an account, once per session.
+ * @param {object} account
+ * @returns {Promise<Array>} All facilities of the account, whatever their schema version
+ */
+async function ensureFacilitiesLoaded(account) {
+  if (account.facilities) {
+    return account.facilities;
+  }
+  // Facility URNs for this account come from the cache (no API call)
+  const { twins = [] } = userResourcesCache;
+  const accountFacilities = account.id === '@me'
+    ? twins.filter(t => !t.grantedViaGroup)
+    : twins.filter(t => t.grantedViaGroup === account.id);
+
+  if (accountFacilities.length === 0) {
+    account.facilities = [];
+  } else {
+    console.log(`Fetching facilities for ${account.name}...`);
+    account.facilities = toFacilityEntries(await getFacilitiesForGroup(account.id));
+  }
+  return account.facilities;
+}
+
+/**
+ * Populate facilities dropdown based on selected account.
+ * Only facilities that the selected schema version (V2 | V3) can display are listed.
  */
 async function populateFacilitiesDropdown(accounts, accountName) {
   facilitySelect.innerHTML = '<option value="">Select Facility...</option>';
@@ -249,43 +359,23 @@ async function populateFacilitiesDropdown(accounts, accountName) {
   const account = accounts.find(a => a.name === accountName);
   if (!account) return;
 
-  // If facilities are not loaded, load them now with names
-  if (!account.facilities) {
-    const { twins = [] } = userResourcesCache;
-    const accountFacilities = account.id === '@me' 
-      ? twins.filter(t => !t.grantedViaGroup)
-      : twins.filter(t => t.grantedViaGroup === account.id);
-    
-    if (accountFacilities.length === 0) {
-      account.facilities = [];
-    } else {
-      console.log(`Fetching facilities for ${accountName}...`);
-      
-      const facilitiesObj = await getFacilitiesForGroup(account.id);
-      
-      // Extract facility names from API response
-      const facilities = facilitiesObj ? Object.entries(facilitiesObj).map(([urn, settings]) => ({
-          urn,
-          name: settings?.props?.["Identity Data"]?.["Building Name"] || 'Unnamed Facility',
-          region: settings?.region || 'us'
-        })) : [];
-
-      // Cache for future use
-      account.facilities = facilities;
-    }
-  }
+  const allFacilities = await ensureFacilitiesLoaded(account);
+  const versionFacilities = allFacilities.filter(f => versionForSchema(f.schemaVersion) === currentVersion);
   
-  if (account.facilities.length === 0) {
+  if (versionFacilities.length === 0) {
     const option = document.createElement('option');
     option.value = '';
-    option.textContent = 'No facilities available';
+    option.textContent = allFacilities.length === 0
+      ? 'No facilities available'
+      : `No ${getActiveVersion().label} facilities`;
     option.disabled = true;
     facilitySelect.appendChild(option);
+    clearFacilityDisplay();
     return;
   }
   
   // Sort facilities alphabetically by name
-  const sortedFacilities = [...account.facilities].sort((a, b) => 
+  const sortedFacilities = [...versionFacilities].sort((a, b) => 
     a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
   );
   
@@ -296,11 +386,11 @@ async function populateFacilitiesDropdown(accounts, accountName) {
     facilitySelect.appendChild(option);
   });
 
-  // Try to restore last selected facility for THIS account, or select the first one
+  // Try to restore last selected facility for THIS account and version, or select the first one
   const lastFacility = getLastFacilityForAccount(accountName);
   let selectedFacilityURN = null;
   
-  if (lastFacility && account.facilities.some(f => f.urn === lastFacility)) {
+  if (lastFacility && versionFacilities.some(f => f.urn === lastFacility)) {
     selectedFacilityURN = lastFacility;
   } else if (sortedFacilities.length > 0) {
     selectedFacilityURN = sortedFacilities[0].urn;
@@ -313,6 +403,38 @@ async function populateFacilitiesDropdown(accounts, accountName) {
     // Remove placeholder after selection
     const placeholder = facilitySelect.querySelector('option[value=""]');
     if (placeholder) placeholder.remove();
+  }
+}
+
+/**
+ * Switch the schema version shown by the app.
+ * Loads the version's module, refreshes the Facility dropdown so it only lists facilities of
+ * that version, and replaces the facility that was on screen.
+ * @param {number} version - Key of versionLoaders
+ */
+async function switchVersion(version) {
+  const seq = ++versionSwitchSeq;
+
+  currentVersion = version;
+  window.localStorage.setItem(VERSION_STORAGE_KEY, String(version));
+  syncVersionSwitch();
+  toggleLoading(true);
+
+  try {
+    await activateVersion(version);
+    if (seq !== versionSwitchSeq) return; // a newer switch took over
+
+    clearFacilityDisplay();
+    if (accountSelect.value) {
+      await populateFacilitiesDropdown(accounts, accountSelect.value);
+    } else {
+      facilitySelect.innerHTML = '<option value="">Select Facility...</option>';
+    }
+  } catch (error) {
+    console.error(`Error switching to schema version ${version}:`, error);
+    stubsContainer.innerHTML = `<p class="text-red-600 text-sm p-4">Error loading schema version ${version} support</p>`;
+  } finally {
+    if (seq === versionSwitchSeq) toggleLoading(false);
   }
 }
 
@@ -338,10 +460,10 @@ function showSchemaWarningModal(facilityName, schemaVersion) {
         <h3 class="text-lg font-semibold text-dark-text mb-2">Incompatible Schema Version</h3>
         <p class="text-dark-text-secondary text-sm mb-4">
           The facility "<span class="text-dark-text font-medium">${facilityName}</span>" uses schema version ${schemaVersion}, 
-          but this application requires version ${SchemaVersion} or higher.
+          but the ${getActiveVersion().label} view requires version ${getActiveVersion().minSchemaVersion} or higher.
         </p>
         <p class="text-dark-text-secondary text-sm mb-4">
-          Please open this facility in <a href="https://tandem.autodesk.com" target="_blank" class="text-tandem-blue hover:underline">Autodesk Tandem</a> to upgrade it.
+          Please open this facility in <a href="${getEnv().tandemWebURL}" target="_blank" class="text-tandem-blue hover:underline">Autodesk Tandem</a> to upgrade it.
         </p>
         <button id="schema-warning-ok-btn" class="w-full bg-tandem-blue hover:bg-tandem-blue-dark text-white py-2 px-4 rounded text-sm font-medium transition-colors">
           OK
@@ -406,6 +528,7 @@ async function loadFacility(facilityURN) {
   // Region is already normalized to 'US', 'EMEA', or 'AUS' during caching
   const region = facilityRegionMap.get(facilityURN) || 'US';
   
+  const loadSeq = versionSwitchSeq;
   toggleLoading(true);
   
   try {
@@ -414,9 +537,25 @@ async function loadFacility(facilityURN) {
     const facilityName = info?.props?.['Identity Data']?.['Building Name'] || 'Unnamed Facility';
     const schemaVersion = info?.schemaVersion;
     
+    // The user may have switched schema version while we were waiting
+    if (versionSwitchSeq !== loadSeq) {
+      return;
+    }
+
+    // The facility must be displayable by the active version module
+    const versionModule = getActiveVersion();
+    if (schemaVersion !== undefined && versionForSchema(schemaVersion) !== currentVersion) {
+      toggleLoading(false);
+      clearFacilityDisplay(
+        `Facility "${facilityName}" uses schema version ${schemaVersion}, but ${versionModule.label} is selected. ` +
+        `Switch the Schema selector at the top to V${versionForSchema(schemaVersion)} to use it.`
+      );
+      return;
+    }
+
     // Check schema version BEFORE proceeding
-    if (schemaVersion !== undefined && schemaVersion < SchemaVersion) {
-      console.warn(`Facility "${facilityName}" has incompatible schema version ${schemaVersion} (required: ${SchemaVersion})`);
+    if (schemaVersion !== undefined && schemaVersion < versionModule.minSchemaVersion) {
+      console.warn(`Facility "${facilityName}" has incompatible schema version ${schemaVersion} (required: ${versionModule.minSchemaVersion})`);
       
       toggleLoading(false);
       
@@ -461,6 +600,11 @@ async function loadFacility(facilityURN) {
       await loadSchemasForFacility(models, region);
     }
     
+    // The user may have switched schema version while schemas were loading
+    if (versionSwitchSeq !== loadSeq) {
+      return;
+    }
+
     // Track successfully loaded facility
     lastLoadedFacilityURN = facilityURN;
     
@@ -484,6 +628,25 @@ async function loadFacility(facilityURN) {
  * Initialize the application
  */
 async function initialize() {
+  // Make it obvious when we are not talking to production
+  const envName = getEnv().name;
+  if (envName !== 'prod') {
+    envBadge.textContent = envName.toUpperCase();
+    envBadge.classList.remove('hidden');
+  }
+
+  // Restore the schema version chosen last time
+  const savedVersion = Number(window.localStorage.getItem(VERSION_STORAGE_KEY));
+  currentVersion = Object.hasOwn(versionLoaders, savedVersion) ? savedVersion : DEFAULT_SCHEMA_VERSION;
+  syncVersionSwitch();
+  versionRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      if (radio.checked && Number(radio.value) !== currentVersion) {
+        switchVersion(Number(radio.value));
+      }
+    });
+  });
+
   // Set up event listeners
   loginBtn.addEventListener('click', login);
   logoutBtn.addEventListener('click', logout);
@@ -521,6 +684,9 @@ async function initialize() {
   if (loggedIn) {
     updateUIForLoginState(true, profileImg);
     
+    // The UI needs an active version module before any facility can load
+    await activateVersion(currentVersion);
+
     // Load user resources cache first (single API call for all data)
     await loadUserResourcesCache();
     

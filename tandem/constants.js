@@ -42,21 +42,26 @@ export const kElementIdWithFlagsSize = kElementIdSize + kElementFlagsSize;
 export const kRecordSize = 28;
 export const kSystemIdSize = 9;
 
-// current version of classification schema
-export const SchemaVersion = 2;
+// current version of database schema
+export const SchemaVersion = 3;
 
 export const ElementFlags = {
     SimpleElement:  0x00000000,
     Room:           0x00000005,
-    FamilyType:     0x01000000,
+    Location:       0x00000006,
+    FamilyTypeV2:   0x01000000,
+    FamilyTypeV3:   0x01000008,
     Level:          0x01000001,
-    Stream:         0x01000003,
+    DocumentRoot:   0x01000002,
+    StreamV2:       0x01000003,
+    StreamV3:       0x01000000,
     System:         0x01000004,
     GenericAsset:   0x01000005,
     Collection:     0x01000006,
     Ticket:         0x01000007,
     AllLogicalMask: 0xff000000,
-    Deleted:        0xfffffffe
+    Deleted:        0xfffffffe,
+    Unknown:        0xffffffff
 };
 
 export const KeyFlags = {
@@ -69,21 +74,31 @@ export const ColumnFamilies = {
     LMV:            '0',
     Source:         'r',
     Standard:       'n',
+    Status:         's',
     Systems:        'm',
     Refs:           'l',
     Xrefs:          'x'
 };
 
 export const ColumnNames = {
+    BimElmOfAsset:      'be',
     BoundingBox:        '0',
     CategoryId:         'c',
     Classification:     'v',
     OClassification:    '!v',
+    Config:             'cfg',
+    Deleted:            'e',
+    ODeleted:           '!e',
     ElementFlags:       'a',
     Elevation:          'el',
+    OElevation:         '!el',
     FamilyType:         't',
+    HostOfAsset:        'ha',
+    IsAsset:            'ia',
     Level:              'l',
     OLevel:             '!l',
+    Location:           'loc',
+    OLocation:          '!loc',
     Name:               'n',
     OName:              '!n',
     Parent:             'p',
@@ -92,6 +107,7 @@ export const ColumnNames = {
     CloseDate:          'cd',
     Rooms:              'r',
     ORooms:             '!r',
+    State:              's',
     Settings:           's',
     SystemClass:        'b',
     OSystemClass:       '!b',
@@ -101,22 +117,34 @@ export const ColumnNames = {
 };
 
 export const QC = {
+    BimElmOfAsset:      `${ColumnFamilies.Xrefs}:${ColumnNames.BimElmOfAsset}`,
     BoundingBox:        `${ColumnFamilies.LMV}:${ColumnNames.BoundingBox}`,
     CategoryId:         `${ColumnFamilies.Standard}:${ColumnNames.CategoryId}`,
     Classification:     `${ColumnFamilies.Standard}:${ColumnNames.Classification}`,
     OClassification:    `${ColumnFamilies.Standard}:${ColumnNames.OClassification}`,
+    Config:             `${ColumnFamilies.Standard}:${ColumnNames.Config}`,
+    Deleted:            `${ColumnFamilies.Status}:${ColumnNames.Deleted}`,
+    ODeleted:           `${ColumnFamilies.Status}:${ColumnNames.ODeleted}`,
     TandemCategory:     `${ColumnFamilies.Standard}:${ColumnNames.TandemCategory}`,
     OTandemCategory:    `${ColumnFamilies.Standard}:${ColumnNames.OTandemCategory}`,
     ElementFlags:       `${ColumnFamilies.Standard}:${ColumnNames.ElementFlags}`,
     Elevation:          `${ColumnFamilies.Standard}:${ColumnNames.Elevation}`,
+    OElevation:         `${ColumnFamilies.Standard}:${ColumnNames.OElevation}`,
     FamilyType:         `${ColumnFamilies.Refs}:${ColumnNames.FamilyType}`,
+    HostOfAsset:        `${ColumnFamilies.Xrefs}:${ColumnNames.HostOfAsset}`,
+    IsAsset:            `${ColumnFamilies.Standard}:${ColumnNames.IsAsset}`,
     Level:              `${ColumnFamilies.Refs}:${ColumnNames.Level}`,
     OLevel:             `${ColumnFamilies.Refs}:${ColumnNames.OLevel}`,
+    Location:           `${ColumnFamilies.Xrefs}:${ColumnNames.Location}`,
+    OLocation:          `${ColumnFamilies.Xrefs}:${ColumnNames.OLocation}`,
     Name:               `${ColumnFamilies.Standard}:${ColumnNames.Name}`,
     OName:              `${ColumnFamilies.Standard}:${ColumnNames.OName}`,
     Parent:             `${ColumnFamilies.Refs}:${ColumnNames.Parent}`,
     Priority:           `${ColumnFamilies.Standard}:${ColumnNames.Priority}`,
+    OpenDate:           `${ColumnFamilies.Standard}:${ColumnNames.OpenDate}`,
+    CloseDate:          `${ColumnFamilies.Standard}:${ColumnNames.CloseDate}`,
     Rooms:              `${ColumnFamilies.Refs}:${ColumnNames.Rooms}`,
+    State:              `${ColumnFamilies.Status}:${ColumnNames.State}`,
     Settings:           `${ColumnFamilies.Standard}:${ColumnNames.Settings}`,
     SystemClass:        `${ColumnFamilies.Standard}:${ColumnNames.SystemClass}`,
     OSystemClass:       `${ColumnFamilies.Standard}:${ColumnNames.OSystemClass}`,
@@ -124,6 +152,15 @@ export const QC = {
     OXRooms:            `${ColumnFamilies.Xrefs}:${ColumnNames.ORooms}`,
     XParent:            `${ColumnFamilies.Xrefs}:${ColumnNames.Parent}`,
     Key:                `k`
+};
+
+// Tandem Categories
+export const TC = {
+    Facility: 'L.Fa',
+    Levels: 'L.Lv',
+    Rooms: 'L.Rm',
+    Sensors: 'Q.Se',
+    Ticket: 'I.Ti'
 };
 
 export const ModelState = {
@@ -147,6 +184,7 @@ export const MutateActions = {
 export const AttributeContext = {
     Element: 'e',
     Type: 't',
+    Facility: 'f',
 };
 
 export const AttributeType = {
@@ -207,4 +245,8 @@ export const HC = {
    Operation: 'o',
    Timestamp: 't',
    Username: 'n'
+};
+
+export const RC = {
+  Levels: 240
 };

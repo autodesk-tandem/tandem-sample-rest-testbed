@@ -1,6 +1,9 @@
 /**
- * SDK STUB Functions
- * 
+ * SDK STUB Functions - V2 schema
+ *
+ * In V2 levels and rooms exist once PER BIM MODEL (ElementFlags.Level / ElementFlags.Room), assets are
+ * the BIM elements that carry user-defined properties, and a type is a separate element of the same model.
+ *
  * These are higher-level functions that combine multiple API calls
  * to perform common operations. They demonstrate how to use the
  * Tandem API for typical workflows.
@@ -20,9 +23,9 @@ import {
   getFacilityInlineTemplate,
   scanModelElements,
   matchClassification
-} from '../api.js';
-import { QC, ColumnFamilies } from '../../tandem/constants.js';
-import { toFullKey, fromShortKeyArray, fromXrefKeyArray, toShortKey } from '../../tandem/keys.js';
+} from '../../api.js';
+import { QC, ColumnFamilies } from '../../../tandem/constants.js';
+import { toFullKey, fromShortKeyArray, fromXrefKeyArray, toShortKey } from '../../../tandem/keys.js';
 
 /**
  * Pretty print elements with key and name

@@ -50,7 +50,7 @@ async function doRedirection(clientId, scope) {
   console.log('Scope:', scope);
 
   window.localStorage.setItem('codeVerifier', codeVerifier);
-  const url = new URL('https://developer.api.autodesk.com/authentication/v2/authorize');
+  const url = new URL(`${env.apsHost}/authentication/v2/authorize`);
     
   url.searchParams.append('response_type', 'code');
   url.searchParams.append('client_id', clientId);
@@ -92,11 +92,27 @@ export function logout() {
  * @returns {Promise<string>} User profile image URL
  */
 async function loadUserProfile() {
-  const res = await fetch('https://api.userprofile.autodesk.com/userinfo', {
-    headers: { "Authorization": `Bearer ${window.sessionStorage.token}` }
-  });
-  const user = await res.json();
-  return user.picture;
+  const url = env.userProfileUrl;
+
+  // The profile picture is cosmetic: never let it block login (e.g. staging tokens are not accepted by the production profile service)
+  if (!url) {
+    return null;
+  }
+  try {
+    const res = await fetch(url, {
+      headers: { "Authorization": `Bearer ${window.sessionStorage.token}` }
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+    const user = await res.json();
+
+    return user.picture ?? null;
+  } catch (err) {
+    console.warn('Could not load user profile:', err);
+    return null;
+  }
 }
 
 /**
@@ -118,7 +134,7 @@ async function refreshToken() {
       'refresh_token': token,
     };
 
-    const resp = await fetch('https://developer.api.autodesk.com/authentication/v2/token', {
+    const resp = await fetch(`${env.apsHost}/authentication/v2/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -171,7 +187,7 @@ export async function checkLogin() {
           'redirect_uri': env.loginRedirect
         };
 
-        const resp = await fetch('https://developer.api.autodesk.com/authentication/v2/token', {
+        const resp = await fetch(`${env.apsHost}/authentication/v2/token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'

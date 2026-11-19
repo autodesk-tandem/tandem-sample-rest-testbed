@@ -1,6 +1,16 @@
-import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST } from '../api.js';
-import { ColumnFamilies, ColumnNames, MutateActions } from '../../tandem/constants.js';
-import { parseCommaList } from '../utils.js';
+/**
+ * Property STUB Functions - V2 schema
+ *
+ * In V2 an element and its user-defined properties live in the SAME model, so every function
+ * here walks the facility's models: the properties of an element are found in the model that
+ * contains the element, never in the default model.
+ *
+ * Output goes to browser console - open DevTools to see results.
+ */
+
+import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST } from '../../api.js';
+import { ColumnFamilies, ColumnNames, MutateActions } from '../../../tandem/constants.js';
+import { parseCommaList, buildValueMatcher } from '../../utils.js';
 
 /**
  * Get the schema for a specific model, then search for a qualified property by category and name
@@ -522,76 +532,8 @@ export async function findElementsWherePropValueEquals(facilityURN, region, cate
   const facilityPath = `${tandemBaseURL}/twins/${facilityURN}`;
   console.log(facilityPath);
   
-  // Build the matcher function based on data type
-  let matcher;
-  const dataType = searchOptions?.dataType || 'string';
-  
-  if (dataType === 'boolean') {
-    const targetValue = searchOptions.value;
-    console.log(`Matching boolean value: ${targetValue}`);
-    matcher = (val) => {
-      if (typeof val === 'boolean') return val === targetValue;
-      const valStr = String(val).toLowerCase();
-      return valStr === (targetValue ? 'true' : 'false') || 
-             valStr === (targetValue ? '1' : '0');
-    };
-  } else if (dataType === 'numeric') {
-    const targetValue = searchOptions.value;
-    const operator = searchOptions.operator || '=';
-    console.log(`Matching numeric value: ${operator} ${targetValue}`);
-    matcher = (val) => {
-      const numVal = typeof val === 'number' ? val : parseFloat(val);
-      if (isNaN(numVal)) return false;
-      switch (operator) {
-        case '=': return numVal === targetValue;
-        case '!=': return numVal !== targetValue;
-        case '>': return numVal > targetValue;
-        case '>=': return numVal >= targetValue;
-        case '<': return numVal < targetValue;
-        case '<=': return numVal <= targetValue;
-        default: return numVal === targetValue;
-      }
-    };
-  } else {
-    // String matching
-    const value = searchOptions?.value || '';
-    const matchType = searchOptions?.matchType || 'partial';
-    const caseInsensitive = searchOptions?.caseInsensitive || false;
-    
-    if (matchType === 'regex') {
-      try {
-        const regex = new RegExp(value, caseInsensitive ? 'i' : '');
-        console.log(`Matching regex: ${regex}`);
-        matcher = (val) => regex.test(String(val));
-      } catch (e) {
-        console.error('Invalid regex:', e.message);
-        console.log("TIP: Use 'Partial' or 'Exact' match type for literal string matching.");
-        matcher = (val) => {
-          const valStr = String(val);
-          return caseInsensitive 
-            ? valStr.toLowerCase().includes(value.toLowerCase())
-            : valStr.includes(value);
-        };
-      }
-    } else if (matchType === 'exact') {
-      console.log(`Matching exact: "${value}" (case insensitive: ${caseInsensitive})`);
-      matcher = (val) => {
-        const valStr = String(val);
-        return caseInsensitive 
-          ? valStr.toLowerCase() === value.toLowerCase()
-          : valStr === value;
-      };
-    } else {
-      // Partial match (default)
-      console.log(`Matching partial: "${value}" (case insensitive: ${caseInsensitive})`);
-      matcher = (val) => {
-        const valStr = String(val);
-        return caseInsensitive 
-          ? valStr.toLowerCase().includes(value.toLowerCase())
-          : valStr.includes(value);
-      };
-    }
-  }
+  // Build the matcher function based on the search options (see buildValueMatcher in utils.js)
+  const matcher = buildValueMatcher(searchOptions);
   
   try {
     // ── Step 1: Fetch the facility to get the list of models ─────────────
@@ -762,162 +704,6 @@ export async function findElementsWherePropValueEquals(facilityURN, region, cate
     console.error('Error finding elements:', error);
   }
 
-  console.groupEnd();
-}
-
-/**
- * Scan all elements in a model with no filters (brute force)
- * 
- * @param {string} modelURN - Model URN
- * @param {string} region - Region header
- * @returns {Promise<void>}
- */
-export async function getScanBruteForce(modelURN, region) {
-  console.group("STUB: getScanBruteForce()");
-  
-  const requestPath = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
-  console.log(requestPath);
-  
-  await fetch(requestPath, makeRequestOptionsGET(region))
-    .then((response) => response.json())
-    .then((obj) => {
-      console.log("Result from Tandem DB Server -->", obj);
-    })
-    .catch(error => console.log('error', error));
-  
-  console.groupEnd();
-}
-
-/**
- * Scan for elements with specific options (element keys, history, column families)
- * 
- * @param {string} modelURN - Model URN
- * @param {string} region - Region header
- * @param {string} elemKeys - Comma-separated element keys (optional)
- * @param {boolean} includeHistory - Whether to include history
- * @param {string} colFamilies - Comma-separated column families (e.g., "n,z,l")
- * @returns {Promise<void>}
- */
-export async function getScanElementsOptions(modelURN, region, elemKeys, includeHistory, colFamilies) {
-  console.group("STUB: getScanElementsOptions()");
-  
-  const elemKeysArray = parseCommaList(elemKeys);
-  if (elemKeysArray.length === 0) {
-    console.log("No element keys specified, scanning entire model...");
-  } else {
-    console.log("Scanning for specific element keys", elemKeysArray);
-  }
-  
-  const familiesArray = parseCommaList(colFamilies);
-  if (familiesArray.length === 0) {
-    console.log("No column families specified, returning all...");
-  } else {
-    console.log("Scanning for column families", familiesArray);
-  }
-  
-  const bodyPayload = JSON.stringify({
-    families: familiesArray.length > 0 ? familiesArray : undefined,
-    includeHistory: includeHistory,
-    keys: elemKeysArray.length > 0 ? elemKeysArray : undefined
-  });
-  
-  const requestPath = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
-  console.log(requestPath);
-  console.log("Payload:", bodyPayload);
-  
-  await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region))
-    .then((response) => response.json())
-    .then((obj) => {
-      console.log("Result from Tandem DB Server -->", obj);
-    })
-    .catch(error => console.log('error', error));
-  
-  console.groupEnd();
-}
-
-/**
- * Scan for elements with specific qualified property columns
- * 
- * @param {string} modelURN - Model URN
- * @param {string} region - Region header
- * @param {string} elemKeys - Comma-separated element keys (optional)
- * @param {boolean} includeHistory - Whether to include history
- * @param {string} qualProps - Comma-separated qualified properties (e.g., "z:5mQ,n:n")
- * @returns {Promise<void>}
- */
-export async function getScanElementsQualProps(modelURN, region, elemKeys, includeHistory, qualProps) {
-  console.group("STUB: getScanElementsQualProps()");
-  
-  const elemKeysArray = parseCommaList(elemKeys);
-  if (elemKeysArray.length === 0) {
-    console.log("No element keys specified, scanning entire model...");
-  } else {
-    console.log("Scanning for specific element keys", elemKeysArray);
-  }
-  
-  const qualPropsArray = parseCommaList(qualProps);
-  if (qualPropsArray.length === 0) {
-    console.log("No qualified properties specified, returning all...");
-  } else {
-    console.log("Scanning for specific qualified properties", qualPropsArray);
-  }
-  
-  const bodyPayload = JSON.stringify({
-    qualifiedColumns: qualPropsArray.length > 0 ? qualPropsArray : undefined,
-    includeHistory: includeHistory,
-    keys: elemKeysArray.length > 0 ? elemKeysArray : undefined
-  });
-  
-  const requestPath = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
-  console.log(requestPath);
-  console.log("Payload:", bodyPayload);
-  
-  await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region))
-    .then((response) => response.json())
-    .then((obj) => {
-      console.log("Result from Tandem DB Server -->", obj);
-    })
-    .catch(error => console.log('error', error));
-  
-  console.groupEnd();
-}
-
-/**
- * Get the full change history of all properties for the given elements
- * 
- * @param {string} modelURN - Model URN
- * @param {string} region - Region header
- * @param {string} elemKeys - Comma-separated element keys
- * @returns {Promise<void>}
- */
-export async function getScanElementsFullChangeHistory(modelURN, region, elemKeys) {
-  console.group("STUB: getScanElementsFullChangeHistory()");
-  
-  const elemKeysArray = parseCommaList(elemKeys);
-  if (elemKeysArray.length === 0) {
-    console.error("ERROR: Element keys are required for this operation");
-    console.groupEnd();
-    return;
-  }
-  
-  console.log("Element keys", elemKeysArray);
-  
-  const bodyPayload = JSON.stringify({
-    includeHistory: true,
-    keys: elemKeysArray
-  });
-  
-  const requestPath = `${tandemBaseURL}/modeldata/${modelURN}/scan`;
-  console.log(requestPath);
-  console.log("Payload:", bodyPayload);
-  
-  await fetch(requestPath, makeRequestOptionsPOST(bodyPayload, region))
-    .then((response) => response.json())
-    .then((obj) => {
-      console.log("Result from Tandem DB Server -->", obj);
-    })
-    .catch(error => console.log('error', error));
-  
   console.groupEnd();
 }
 
@@ -1215,7 +1001,6 @@ export async function setPropertySelSetQP(modelURN, region, qualPropStr, propVal
   
   console.groupEnd();
 }
-
 
 /**
  * Delete (clear) a property value from selected elements using MutateActions.Delete ('d').
