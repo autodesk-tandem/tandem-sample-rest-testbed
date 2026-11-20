@@ -19,6 +19,7 @@ import * as ticketStubs from './ticketStubs.js';
 import * as sdkStubs from './sdkStubs.js';
 import * as miscStubs from './miscStubs.js';
 import * as propertyWriteStubs from './propertyWriteStubs.js';
+import * as edgeCaseStubs from './edgeCaseStubs.js';
 
 export default {
   schemaVersion: 3,
@@ -45,7 +46,12 @@ export default {
     createTicket: ticketStubs.createTicket,
     updateTicket: ticketStubs.updateTicket,
 
+    writeTicketColumnOnNonTicket: edgeCaseStubs.writeTicketColumnOnNonTicket,
+    writeUserPropertyWithoutAssetCheck: edgeCaseStubs.writeUserPropertyWithoutAssetCheck,
+    writeReadOnlyColumn: edgeCaseStubs.writeReadOnlyColumn,
+
     lookupElements: miscStubs.lookupElements,
+    getKeyFromXref: miscStubs.getKeyFromXref,
 
     getRoomsAndSpaces: sdkStubs.getRoomsAndSpaces,
     getLevels: sdkStubs.getLevels,

@@ -21,7 +21,8 @@ import * as appStubs from '../stubs/appStubs.js';
 import { getDefaultModelURN, getModels } from '../api.js';
 import { getActiveVersion } from '../version.js';
 import { CloseActions } from '../stubs/ticketCommon.js';
-import { AttributeType, QC, TicketPriorities } from '../../tandem/constants.js';
+import { MutateEndpoints, ReadOnlyColumns } from '../stubs/v3/edgeCaseStubs.js';
+import { AttributeType, ColumnNames, QC, TicketPriorities } from '../../tandem/constants.js';
 import { getCachedGroups, getCurrentGroupURN } from '../app.js';
 import { getUniqueCategoryNames, getUniquePropertyNames, areSchemasLoaded, getPropertyInfo, getPropertyInfoByQualifiedId, DataTypes } from '../state/schemaCache.js';
 
@@ -2025,7 +2026,208 @@ export async function renderStubs(container, facilityURN, region) {
   ]);
 
   container.appendChild(ticketDropdown);
-  
+
+  // API Edge Cases (V3 only): requests the guarded STUBs refuse, sent as typed, with a report of what the server did
+  const edgeCaseDropdown = createDropdownMenu('API Edge Cases (V3)', [
+    {
+      label: 'Ticket columns on a non-ticket element',
+      requires: 'writeTicketColumnOnNonTicket',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Element Key of the default model (sent as typed, not validated)',
+            id: 'elementKey',
+            placeholder: 'Key of an asset, stream, room, ... (not a ticket)'
+          },
+          {
+            label: 'Ticket column',
+            id: 'ticketColumn',
+            type: 'select',
+            options: [
+              { value: ColumnNames.Priority, label: `Priority (${QC.Priority})` },
+              { value: ColumnNames.OpenDate, label: `Open Date (${QC.OpenDate})` },
+              { value: ColumnNames.CloseDate, label: `Close Date (${QC.CloseDate})` }
+            ],
+            defaultValue: ColumnNames.Priority
+          },
+          {
+            label: 'Value (sent as typed, as a string)',
+            id: 'ticketValue',
+            placeholder: 'e.g., High, or 2026-11-01'
+          },
+          {
+            label: 'Restore the previous value afterwards',
+            id: 'restore',
+            type: 'checkbox',
+            defaultValue: false
+          }
+        ],
+        onExecute: (values) =>
+          versionStubs().writeTicketColumnOnNonTicket(
+            currentFacilityURN,
+            currentFacilityRegion,
+            values.elementKey ?? '',
+            values.ticketColumn,
+            values.ticketValue ?? '',
+            Boolean(values.restore)
+          )
+      }
+    },
+    {
+      label: 'User-defined property without asset check',
+      requires: 'writeUserPropertyWithoutAssetCheck',
+      hasInput: true,
+      inputConfig: {
+        type: 'modelSelect',
+        label: 'Model the request is sent to (BIM models are listed first)',
+        additionalFields: [
+          {
+            label: 'Category Name',
+            id: 'propCategory',
+            type: 'text',
+            placeholder: 'e.g., Identity Data',
+            defaultValue: () => getLastInputValue('categoryName', 'Identity Data'),
+            autocomplete: 'category',
+            writableOnly: true
+          },
+          {
+            label: 'Property Name',
+            id: 'propName',
+            type: 'text',
+            placeholder: 'e.g., Mark',
+            defaultValue: () => getLastInputValue('propName', 'Mark'),
+            autocomplete: 'property',
+            writableOnly: true
+          },
+          {
+            id: 'propVal',
+            type: 'typeAwareValue',
+            writableOnly: true,
+            categoryInputId: 'propCategory',
+            propertyInputId: 'propName'
+          },
+          {
+            label: 'Element Key (sent as typed, not validated, not checked for being an asset)',
+            id: 'elemKey',
+            type: 'text',
+            placeholder: 'Key of a BIM element, or any element',
+            defaultValue: ''
+          },
+          {
+            label: 'Endpoint',
+            id: 'endpoint',
+            type: 'select',
+            options: [
+              { value: MutateEndpoints.V3, label: 'POST /v3/.../mutate (Tandem host, the V3 endpoint)' },
+              { value: MutateEndpoints.V1, label: 'POST /v1/.../mutate (gateway, compatibility path)' }
+            ],
+            defaultValue: MutateEndpoints.V3
+          },
+          {
+            label: 'Use the asset instead: swap a BIM key for the key of the asset it hosts; an asset key is sent to the default model',
+            id: 'followToAsset',
+            type: 'checkbox',
+            defaultValue: false
+          },
+          {
+            label: 'Restore the changed cells afterwards',
+            id: 'restore',
+            type: 'checkbox',
+            defaultValue: false
+          }
+        ],
+        onExecute: (modelUrn, values) =>
+          versionStubs().writeUserPropertyWithoutAssetCheck(
+            modelUrn,
+            currentFacilityRegion,
+            values.propCategory || '',
+            values.propName || '',
+            values.propVal || '',
+            values.elemKey ?? '',
+            currentFacilityURN,
+            values.endpoint,
+            Boolean(values.restore),
+            Boolean(values.followToAsset)
+          )
+      }
+    },
+    {
+      label: 'Read-only column (e.g. Name), with or without ! override',
+      requires: 'writeReadOnlyColumn',
+      hasInput: true,
+      inputConfig: {
+        type: 'modelSelect',
+        label: 'Model the request is sent to (BIM models are listed first)',
+        additionalFields: [
+          {
+            label: 'Read-only column',
+            id: 'readOnlyColumn',
+            type: 'select',
+            options: ReadOnlyColumns.map(({ qualifiedColumn, label }) => ({ value: qualifiedColumn, label: `${label} (${qualifiedColumn})` })),
+            defaultValue: QC.Name
+          },
+          {
+            label: 'Use ! override: write the override column (for example n:!n instead of n:n)',
+            id: 'useOverride',
+            type: 'checkbox',
+            defaultValue: false
+          },
+          {
+            label: 'New value (sent as typed, as a string)',
+            id: 'readOnlyValue',
+            type: 'text',
+            placeholder: 'e.g., Renamed by the REST TestBed',
+            defaultValue: ''
+          },
+          {
+            label: 'Element Key (sent as typed, not validated)',
+            id: 'elemKey',
+            type: 'text',
+            placeholder: 'Key of a BIM element in the selected BIM model, or of an element of the default model',
+            defaultValue: ''
+          },
+          {
+            label: 'Endpoint',
+            id: 'endpoint',
+            type: 'select',
+            options: [
+              { value: MutateEndpoints.V3, label: 'POST /v3/.../mutate (Tandem host, the V3 endpoint)' },
+              { value: MutateEndpoints.V1, label: 'POST /v1/.../mutate (gateway, compatibility path)' }
+            ],
+            defaultValue: MutateEndpoints.V3
+          },
+          {
+            label: 'Send to the default model: swap a BIM key for the key of the asset it hosts; an asset key is sent to the default model',
+            id: 'followToAsset',
+            type: 'checkbox',
+            defaultValue: false
+          },
+          {
+            label: 'Restore the changed cells afterwards',
+            id: 'restore',
+            type: 'checkbox',
+            defaultValue: false
+          }
+        ],
+        onExecute: (modelUrn, values) =>
+          versionStubs().writeReadOnlyColumn(
+            modelUrn,
+            currentFacilityRegion,
+            currentFacilityURN,
+            values.readOnlyColumn,
+            values.elemKey ?? '',
+            values.readOnlyValue ?? '',
+            Boolean(values.useOverride),
+            values.endpoint,
+            Boolean(values.restore),
+            Boolean(values.followToAsset)
+          )
+      }
+    }
+  ]);
+
   // Create Document Stubs Dropdown
   const documentDropdown = createDropdownMenu('Document Stubs', [
     {
@@ -2167,7 +2369,7 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (values) =>
-          miscStubs.getKeyFromXref(currentFacilityURN, currentFacilityRegion, values.xref || '')
+          versionStubs().getKeyFromXref(currentFacilityURN, currentFacilityRegion, values.xref || '')
       }
     },
   ]);
@@ -2318,6 +2520,9 @@ export async function renderStubs(container, facilityURN, region) {
   ]);
   
   container.appendChild(sdkDropdown);
+
+  // Last in the panel: the edge cases are for exploring, not for everyday use
+  container.appendChild(edgeCaseDropdown);
   
   // Add a help message at the bottom
   const helpDiv = document.createElement('div');

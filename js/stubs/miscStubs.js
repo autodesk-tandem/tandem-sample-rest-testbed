@@ -62,6 +62,36 @@ export async function getFacilitiesForUser(userID) {
   }
 }
 
+/**
+ * Print, for each row, the key of the BIM element and the key of the asset made from it (V3), or the reason there is none.
+ * Plain lines at the end of the output (no group, so nothing is collapsed): each key is at the end of its line, after its label.
+ */
+async function printLinkedKeys(rows, modelNames, findLinkedKeys) {
+  try {
+    const links = await findLinkedKeys(rows);
+    const nameOfModel = modelURN => modelNames.get(modelURN) ?? modelURN;
+
+    console.log('KEYS FOR THE NEXT TEST (V3: an asset is its own element in the default model, linked to the BIM element it was made from)');
+    rows.forEach((row, i) => {
+      const { kind, bim, asset, note } = links[i];
+
+      console.log(`The key you pasted is: ${kind}`);
+      if (kind === 'BIM element' || kind === 'Asset') {
+        const bimKey = bim ?? (kind === 'BIM element' ? { key: row.key, modelURN: row.modelURN } : null);
+        const assetKey = asset ?? (kind === 'Asset' ? { key: row.key, modelURN: row.modelURN } : null);
+
+        console.log(`BIM element key (${bimKey ? nameOfModel(bimKey.modelURN) : 'none'}): ${bimKey ? bimKey.key : '(not found)'}`);
+        console.log(`Asset key (${assetKey ? nameOfModel(assetKey.modelURN) : 'none'}): ${assetKey ? assetKey.key : '(none: no asset was made from this element yet)'}`);
+      }
+      if (note) {
+        console.log(note);
+      }
+    });
+  } catch (error) {
+    console.warn(`Could not look up the linked keys: ${error.message}`);
+  }
+}
+
 const BASE64_PATTERN = /^[A-Za-z0-9_\-+/]+={0,2}$/;
 
 /**
@@ -74,8 +104,13 @@ const BASE64_PATTERN = /^[A-Za-z0-9_\-+/]+={0,2}$/;
  *
  * The key is the 24-byte key (4 bytes of flags + 20 bytes of element id). V3 uses it everywhere.
  * V2 scans use the 20-byte short key, so that is printed too.
+ *
+ * @param {Function} [findLinkedKeys] - optional, supplied by a schema version that links BIM elements to assets
+ *   (V3): `async (rows) => Array<{ kind, bim, asset }>`, one entry per row, `bim` and `asset` being
+ *   `{ modelURN, key }` or null. The keys are then printed under the table, so the one needed for the next test
+ *   can be copied.
  */
-export async function getKeyFromXref(facilityURN, region, text) {
+export async function getKeyFromXref(facilityURN, region, text, findLinkedKeys = null) {
   console.group("STUB: getKeyFromXref()");
 
   const tokens = (text || '').split(/[\s,]+/).filter(Boolean);
@@ -147,5 +182,9 @@ export async function getKeyFromXref(facilityURN, region, text) {
     console.log(`Key: ${row.key}`);
   }
   console.log("Result", rows);
+
+  if (findLinkedKeys) {
+    await printLinkedKeys(rows, modelNames, findLinkedKeys);
+  }
   console.groupEnd();
 }
