@@ -10,7 +10,8 @@
 
 import { tandemBaseURL, makeRequestOptionsGET, makeRequestOptionsPOST } from '../../api.js';
 import { ColumnFamilies, ColumnNames, MutateActions } from '../../../tandem/constants.js';
-import { parseCommaList, buildValueMatcher } from '../../utils.js';
+import { parseCommaList, buildValueMatcher, typedValueFor } from '../../utils.js';
+import { findWritableAttribute, getNotWritableHint, isWritableAttribute } from '../../state/schemaCache.js';
 
 /**
  * Get the schema for a specific model, then search for a qualified property by category and name
@@ -824,24 +825,9 @@ export async function setPropertySelSet(modelURN, region, propCategory, propName
     const schemaResponse = await fetch(schemaPath, makeRequestOptionsGET(region));
     const schema = await schemaResponse.json();
     
-    // Search for the qualified property
-    let qualProp = null;
-    const attrs = schema.attributes || [];
-    
-    for (let j = 0; j < attrs.length; j++) {
-      if (attrs[j].category === propCategory && attrs[j].name === propName) {
-        qualProp = attrs[j];
-        break;
-      }
-    }
-    
-    if (!qualProp) {
-      console.error(`Could not find property "${propCategory} | ${propName}" in model schema.`);
-      console.log("TIP: Use GET Model Data Schema to see available properties.");
-      console.groupEnd();
-      return;
-    }
-    
+    // Search for the qualified property. Only writable ones count (see isWritableAttribute)
+    const qualProp = findWritableAttribute(schema.attributes || [], propCategory, propName);
+
     console.log("Qualified property found:", qualProp);
     
     // Parse element keys
@@ -852,15 +838,8 @@ export async function setPropertySelSet(modelURN, region, propCategory, propName
       return;
     }
     
-    // Parse the value based on data type
-    let typedValue = propVal;
-    if (qualProp.dataType === 1 || qualProp.dataType === 2) {
-      // Integer or Float
-      typedValue = parseFloat(propVal);
-    } else if (qualProp.dataType === 3) {
-      // Boolean
-      typedValue = propVal.toLowerCase() === 'true';
-    }
+    // Convert the value to the data type of the property (AttributeType)
+    const typedValue = typedValueFor(qualProp, propVal);
     
     console.log("Element keys:", elementKeysArray);
     console.log(`Setting value for "${propCategory} | ${propName}" =`, typedValue);
@@ -932,7 +911,9 @@ export async function setPropertySelSetQP(modelURN, region, qualPropStr, propVal
       }
     }
     
-    if (!qualProp) {
+    if (qualProp && !isWritableAttribute(qualProp)) {
+      throw new Error(`"${qualPropStr}" is read-only. Only user-defined properties (z:) and the override columns of built-in properties (e.g. n:!n) can be written.${getNotWritableHint([qualPropStr])}`);
+    } else if (!qualProp) {
       console.warn(`Property "${qualPropStr}" not found in schema. Proceeding with string value.`);
     } else {
       console.log("Qualified property found:", qualProp);
@@ -946,17 +927,8 @@ export async function setPropertySelSetQP(modelURN, region, qualPropStr, propVal
       return;
     }
     
-    // Parse the value based on data type if we found the property
-    let typedValue = propVal;
-    if (qualProp) {
-      if (qualProp.dataType === 1 || qualProp.dataType === 2) {
-        // Integer or Float
-        typedValue = parseFloat(propVal);
-      } else if (qualProp.dataType === 3) {
-        // Boolean
-        typedValue = propVal.toLowerCase() === 'true';
-      }
-    }
+    // Convert the value to the data type of the property when we found it (AttributeType)
+    const typedValue = typedValueFor(qualProp, propVal);
     
     // Parse family and column from qualified property string
     const parts = qualPropStr.split(':');

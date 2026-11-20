@@ -20,6 +20,8 @@ import * as miscStubs from '../stubs/miscStubs.js';
 import * as appStubs from '../stubs/appStubs.js';
 import { getDefaultModelURN, getModels } from '../api.js';
 import { getActiveVersion } from '../version.js';
+import { CloseActions } from '../stubs/ticketCommon.js';
+import { AttributeType, QC, TicketPriorities } from '../../tandem/constants.js';
 import { getCachedGroups, getCurrentGroupURN } from '../app.js';
 import { getUniqueCategoryNames, getUniquePropertyNames, areSchemasLoaded, getPropertyInfo, getPropertyInfoByQualifiedId, DataTypes } from '../state/schemaCache.js';
 
@@ -64,6 +66,26 @@ function generateDatalistId() {
 }
 
 /**
+ * Which attributes an autocomplete dropdown lists. Fields with `writableOnly` (the SET STUBs) list only what
+ * can be written (see isWritableAttribute()). The z: ids and the property definitions belong to one model, so
+ * the list is the schema of one model:
+ * - V3: the default model, the only model that is written to.
+ * - V2: the model selected in the Model dropdown of the form.
+ * Other fields (SCAN, FIND, ...) list the properties of all models.
+ */
+function autocompleteListOptions(field, inputForm) {
+  if (!field.writableOnly) {
+    return {};
+  }
+  const modelSelect = inputForm.querySelector('[data-model-select]');
+  const modelURN = getActiveVersion().schemaVersion === 3
+    ? getDefaultModelURN(currentFacilityURN)
+    : modelSelect?.value;
+
+  return { writableOnly: true, modelURN: modelURN || undefined };
+}
+
+/**
  * Create an autocomplete select dropdown for category or property names
  * 
  * @param {Object} field - Field configuration with id, placeholder, defaultValue, autocomplete type
@@ -74,76 +96,128 @@ function createAutocompleteSelect(field, inputForm) {
   const select = document.createElement('select');
   select.id = field.id;
   select.className = 'w-full text-xs';
-  
-  let options = [];
-  if (field.autocomplete === 'category') {
-    options = getUniqueCategoryNames();
-  } else if (field.autocomplete === 'property') {
-    // Get properties, optionally filtered by category
-    const categoryInput = inputForm.querySelector('#propCategory') || inputForm.querySelector('#categoryName');
-    const categoryFilter = categoryInput ? categoryInput.value : null;
-    options = getUniquePropertyNames(categoryFilter);
-  }
-  
-  // Add all options (no placeholder needed - we auto-select first/last-used)
-  options.forEach(opt => {
-    const option = document.createElement('option');
-    option.value = opt;
-    option.textContent = opt;
-    select.appendChild(option);
-  });
-  
-  // Set default value: prefer last-used, otherwise first option
-  const defaultValue = typeof field.defaultValue === 'function' 
-    ? field.defaultValue() 
-    : (field.defaultValue || '');
-  if (defaultValue && options.includes(defaultValue)) {
-    select.value = defaultValue;
-  } else if (options.length > 0) {
-    select.value = options[0];
-  }
-  
-  // For property dropdown, update when category changes
-  if (field.autocomplete === 'property') {
-    const categoryInput = inputForm.querySelector('#propCategory') || inputForm.querySelector('#categoryName');
-    if (categoryInput) {
-      categoryInput.addEventListener('change', () => {
-        const newOptions = getUniquePropertyNames(categoryInput.value || null);
-        select.innerHTML = '';
-        
-        // Add all options (no placeholder - we auto-select)
-        newOptions.forEach(opt => {
-          const option = document.createElement('option');
-          option.value = opt;
-          option.textContent = opt;
-          select.appendChild(option);
-        });
-        
-        // Try to select: 1) last used value if it exists in new list, or 2) first option
-        const lastUsed = getLastInputValue('propName', '');
-        if (lastUsed && newOptions.includes(lastUsed)) {
-          select.value = lastUsed;
-        } else if (newOptions.length > 0) {
-          select.value = newOptions[0];
-        }
-        
-        // Trigger change event so type-aware input updates
-        select.dispatchEvent(new Event('change'));
-      });
+
+  const categoryInput = field.autocomplete === 'property'
+    ? inputForm.querySelector('#propCategory') || inputForm.querySelector('#categoryName')
+    : null;
+  const getOptions = () => {
+    const listOptions = autocompleteListOptions(field, inputForm);
+
+    if (field.autocomplete === 'category') {
+      return getUniqueCategoryNames(listOptions);
     }
-  }
-  
-  // If options exist but no valid default was set, select the first option
-  if (field.autocomplete === 'property' && options.length > 0 && !select.value) {
-    const lastUsed = getLastInputValue('propName', '');
-    if (lastUsed && options.includes(lastUsed)) {
-      select.value = lastUsed;
-    } else {
+    // Properties, filtered by category
+    return getUniquePropertyNames(categoryInput?.value || null, listOptions);
+  };
+
+  // Fill the list and select, in this order: the value that was selected, the last used value, the first option
+  const fill = (keepSelected) => {
+    const options = getOptions();
+    const selected = keepSelected ? select.value : '';
+    const lastUsed = typeof field.defaultValue === 'function'
+      ? field.defaultValue()
+      : (field.defaultValue || '');
+
+    select.innerHTML = '';
+    options.forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt;
+      option.textContent = opt;
+      select.appendChild(option);
+    });
+    const preferred = [selected, lastUsed, getLastInputValue('propName', '')]
+      .find(value => value && options.includes(value));
+
+    if (preferred) {
+      select.value = preferred;
+    } else if (options.length > 0) {
       select.value = options[0];
     }
+  };
+
+  fill(false);
+
+  // The property list depends on the category
+  if (categoryInput) {
+    categoryInput.addEventListener('change', () => {
+      fill(false);
+      // Trigger change event so type-aware input updates
+      select.dispatchEvent(new Event('change'));
+    });
   }
-  
+
+  // The list of a writable field depends on the model (V2: the one selected in the form)
+  const modelSelect = inputForm.querySelector('[data-model-select]');
+
+  if (field.writableOnly && field.autocomplete === 'category' && modelSelect && getActiveVersion().schemaVersion !== 3) {
+    modelSelect.addEventListener('change', () => {
+      fill(true);
+      select.dispatchEvent(new Event('change'));
+    });
+  }
   return select;
+}
+
+/**
+ * How the Tandem app stores a date, chosen by the `forgeSymbol` of the attribute (see toISO() in dt-client):
+ * - `date`: YYYY-MM-DD (ticket Open Date and Close Date)
+ * - `dateAndTime`: YYYY-MM-DDTHH:mm:ss, no time zone
+ * - `isoDate` and anything else: YYYY-MM-DDTHH:mm:ssZ, UTC
+ */
+const DateSymbols = {
+  Date: 'date',
+  DateAndTime: 'dateAndTime'
+};
+
+/**
+ * Date input that produces the format of the property: a date picker for `date`, a date and time picker for
+ * the others (the time of the UTC ones is UTC, like in the app).
+ */
+function createDateInput(propInfo, typeIndicator) {
+  const symbol = propInfo.forgeSymbol;
+  const inputElement = document.createElement('input');
+
+  inputElement.id = 'propVal';
+  inputElement.className = 'w-full text-xs';
+
+  if (symbol === DateSymbols.Date) {
+    inputElement.type = 'date';
+    typeIndicator.textContent = '📅 Date property - stored as YYYY-MM-DD';
+  } else {
+    inputElement.type = 'datetime-local';
+    inputElement.step = '1';
+    if (symbol !== DateSymbols.DateAndTime) {
+      inputElement.dataset.suffix = 'Z';
+      typeIndicator.textContent = '📅 Date and time property - the time is UTC, stored as YYYY-MM-DDTHH:mm:ssZ';
+    } else {
+      typeIndicator.textContent = '📅 Date and time property - stored as YYYY-MM-DDTHH:mm:ss';
+    }
+  }
+  typeIndicator.style.color = '#3b82f6';
+
+  // The app does not let a ticket be opened or closed in the future
+  if (propInfo.id === QC.OpenDate || propInfo.id === QC.CloseDate) {
+    inputElement.max = new Date().toISOString().slice(0, inputElement.type === 'date' ? 10 : 19);
+    typeIndicator.textContent += ' - not in the future';
+  }
+  return inputElement;
+}
+
+/**
+ * Value of a type-aware input as the property stores it. A date and time picker leaves out the seconds
+ * when they are 0, and a UTC property needs the Z.
+ */
+function readTypeAwareValue(input) {
+  if (!input) {
+    return '';
+  }
+  let value = input.value;
+
+  if (value && input.type === 'datetime-local') {
+    value = value.length === 16 ? `${value}:00` : value;
+    value += input.dataset.suffix ?? '';
+  }
+  return value;
 }
 
 /**
@@ -178,6 +252,25 @@ function renderTypeAwareInput(propInfo, inputWrapper, typeIndicator) {
     typeIndicator.textContent = '📋 Boolean property - select True or False';
     typeIndicator.style.color = '#10b981';
     
+  } else if (propInfo && Array.isArray(propInfo.allowedValues?.list) && propInfo.dataType === AttributeType.String) {
+    // The schema lists the values the property accepts (e.g. ticket Priority) - create dropdown
+    inputElement = document.createElement('select');
+    inputElement.id = 'propVal';
+    inputElement.className = 'w-full text-xs';
+
+    propInfo.allowedValues.list.forEach(allowedValue => {
+      const option = document.createElement('option');
+      option.value = allowedValue;
+      option.textContent = allowedValue;
+      inputElement.appendChild(option);
+    });
+
+    typeIndicator.textContent = '📋 Allowed values defined in the schema - select one';
+    typeIndicator.style.color = '#10b981';
+
+  } else if (propInfo && propInfo.dataType === AttributeType.DateTime) {
+    inputElement = createDateInput(propInfo, typeIndicator);
+
   } else if (propInfo && DataTypes.isNumeric(propInfo)) {
     // Numeric - create number input
     inputElement = document.createElement('input');
@@ -185,7 +278,7 @@ function renderTypeAwareInput(propInfo, inputWrapper, typeIndicator) {
     inputElement.id = 'propVal';
     inputElement.placeholder = 'Enter a number...';
     inputElement.className = 'w-full text-xs';
-    inputElement.step = propInfo.dataType === 2 ? '1' : 'any'; // dataType 2 = Integer
+    inputElement.step = propInfo.dataType === AttributeType.Integer ? '1' : 'any';
     
     typeIndicator.textContent = `🔢 ${DataTypes.getName(propInfo)} property - enter a number`;
     typeIndicator.style.color = '#3b82f6';
@@ -391,7 +484,7 @@ function createTypeAwareSearchInput(inputForm, categoryInputId, propertyInputId)
           valueLabel.style.display = 'block';
           valueInput.placeholder = 'e.g., 100 or 3.14';
           valueInput.type = 'number';
-          valueInput.step = propInfo.dataType === 2 ? '1' : 'any';
+          valueInput.step = propInfo.dataType === AttributeType.Integer ? '1' : 'any';
           regexHelp.style.display = 'none';
         } else {
           currentType = 'string';
@@ -486,9 +579,10 @@ function createTypeAwareSearchInput(inputForm, categoryInputId, propertyInputId)
  * @param {HTMLElement} inputForm - The parent form element
  * @param {string} categoryInputId - ID of the category input element
  * @param {string} propertyInputId - ID of the property input element
+ * @param {function(): Object} [getListOptions] - which attributes to look the property up in, see getPropertyInfo()
  * @returns {Object} Object with { container, getValue, validate }
  */
-function createTypeAwareValueInput(inputForm, categoryInputId, propertyInputId) {
+function createTypeAwareValueInput(inputForm, categoryInputId, propertyInputId, getListOptions = () => ({})) {
   const container = document.createElement('div');
   container.id = 'propValContainer';
   container.style.marginTop = '0.5rem';
@@ -536,7 +630,7 @@ function createTypeAwareValueInput(inputForm, categoryInputId, propertyInputId) 
       return;
     }
     
-    const propInfo = getPropertyInfo(category, propName);
+    const propInfo = getPropertyInfo(category, propName, getListOptions());
     currentInput = renderTypeAwareInput(propInfo, inputWrapper, typeIndicator);
   };
   
@@ -544,7 +638,7 @@ function createTypeAwareValueInput(inputForm, categoryInputId, propertyInputId) 
   // This ensures we catch events even if the select elements are rebuilt
   inputForm.addEventListener('change', (event) => {
     const targetId = event.target.id;
-    if (targetId === categoryInputId || targetId === propertyInputId) {
+    if (targetId === categoryInputId || targetId === propertyInputId || event.target.hasAttribute?.('data-model-select')) {
       updateInputForProperty();
     }
   });
@@ -556,10 +650,7 @@ function createTypeAwareValueInput(inputForm, categoryInputId, propertyInputId) 
   
   return {
     container,
-    getValue: () => {
-      const input = inputWrapper.querySelector('#propVal');
-      return input ? input.value : '';
-    },
+    getValue: () => readTypeAwareValue(inputWrapper.querySelector('#propVal')),
     validate: () => {
       const categoryInput = inputForm.querySelector(`#${categoryInputId}`);
       const propertyInput = inputForm.querySelector(`#${propertyInputId}`);
@@ -569,7 +660,7 @@ function createTypeAwareValueInput(inputForm, categoryInputId, propertyInputId) 
         return { valid: false, error: 'Please select a category and property first.' };
       }
       
-      const propInfo = getPropertyInfo(categoryInput.value, propertyInput.value);
+      const propInfo = getPropertyInfo(categoryInput.value, propertyInput.value, getListOptions());
       const value = input?.value;
       
       if (!value && value !== '0' && value !== 'false') {
@@ -582,7 +673,7 @@ function createTypeAwareValueInput(inputForm, categoryInputId, propertyInputId) 
         if (isNaN(numValue)) {
           return { valid: false, error: `Please enter a valid number for this ${DataTypes.getName(propInfo)} property.` };
         }
-        if (propInfo.dataType === 2 && !Number.isInteger(numValue)) {
+        if (propInfo.dataType === AttributeType.Integer && !Number.isInteger(numValue)) {
           return { valid: false, error: 'Please enter a whole number (integer) for this property.' };
         }
       }
@@ -600,7 +691,7 @@ function createTypeAwareValueInput(inputForm, categoryInputId, propertyInputId) 
  * @param {string} qualPropInputId - ID of the qualified property text input element
  * @returns {Object} Object with { container, getValue, validate }
  */
-function createTypeAwareValueInputByQualifiedProp(inputForm, qualPropInputId) {
+function createTypeAwareValueInputByQualifiedProp(inputForm, qualPropInputId, getListOptions = () => ({})) {
   const container = document.createElement('div');
   container.id = 'propValContainer';
   container.style.marginTop = '0.5rem';
@@ -646,7 +737,7 @@ function createTypeAwareValueInputByQualifiedProp(inputForm, qualPropInputId) {
       return;
     }
     
-    const propInfo = getPropertyInfoByQualifiedId(qualPropId);
+    const propInfo = getPropertyInfoByQualifiedId(qualPropId, getListOptions());
     currentInput = renderTypeAwareInput(propInfo, inputWrapper, typeIndicator);
   };
   
@@ -672,10 +763,7 @@ function createTypeAwareValueInputByQualifiedProp(inputForm, qualPropInputId) {
   
   return {
     container,
-    getValue: () => {
-      const input = inputWrapper.querySelector('#propVal');
-      return input ? input.value : '';
-    },
+    getValue: () => readTypeAwareValue(inputWrapper.querySelector('#propVal')),
     validate: () => {
       const qualPropInput = inputForm.querySelector(`#${qualPropInputId}`);
       const input = inputWrapper.querySelector('#propVal');
@@ -684,7 +772,7 @@ function createTypeAwareValueInputByQualifiedProp(inputForm, qualPropInputId) {
         return { valid: false, error: 'Please enter a qualified property ID first.' };
       }
       
-      const propInfo = getPropertyInfoByQualifiedId(qualPropInput.value.trim());
+      const propInfo = getPropertyInfoByQualifiedId(qualPropInput.value.trim(), getListOptions());
       const value = input?.value;
       
       if (!value && value !== '0' && value !== 'false') {
@@ -697,7 +785,7 @@ function createTypeAwareValueInputByQualifiedProp(inputForm, qualPropInputId) {
         if (isNaN(numValue)) {
           return { valid: false, error: `Please enter a valid number for this ${DataTypes.getName(propInfo)} property.` };
         }
-        if (propInfo.dataType === 2 && !Number.isInteger(numValue)) {
+        if (propInfo.dataType === AttributeType.Integer && !Number.isInteger(numValue)) {
           return { valid: false, error: 'Please enter a whole number (integer) for this property.' };
         }
       }
@@ -1208,6 +1296,7 @@ export async function renderStubs(container, facilityURN, region) {
       inputConfig: {
         type: 'modelSelect',
         label: 'Model',
+        defaultModelOnly: [3],
         additionalFields: [
           {
             label: 'Classification String',
@@ -1217,7 +1306,9 @@ export async function renderStubs(container, facilityURN, region) {
             defaultValue: ''
           },
           {
-            label: 'Element Keys (comma-separated)',
+            label: getActiveVersion().schemaVersion === 3
+              ? 'Element Keys of the Default Model, or Xrefs of BIM Elements (comma-separated)'
+              : 'Element Keys (comma-separated)',
             id: 'elemKeys',
             type: 'text',
             placeholder: 'Keys of elements to update',
@@ -1235,6 +1326,7 @@ export async function renderStubs(container, facilityURN, region) {
       inputConfig: {
         type: 'modelSelect',
         label: 'Model',
+        defaultModelOnly: [3],
         additionalFields: [
           {
             label: 'Category Name',
@@ -1242,7 +1334,8 @@ export async function renderStubs(container, facilityURN, region) {
             type: 'text',
             placeholder: 'e.g., Identity Data',
             defaultValue: () => getLastInputValue('categoryName', 'Identity Data'),
-            autocomplete: 'category'
+            autocomplete: 'category',
+            writableOnly: true
           },
           {
             label: 'Property Name',
@@ -1250,16 +1343,20 @@ export async function renderStubs(container, facilityURN, region) {
             type: 'text',
             placeholder: 'e.g., Mark',
             defaultValue: () => getLastInputValue('propName', 'Mark'),
-            autocomplete: 'property'
+            autocomplete: 'property',
+            writableOnly: true
           },
           {
             id: 'propVal',
             type: 'typeAwareValue',
+            writableOnly: true,
             categoryInputId: 'propCategory',
             propertyInputId: 'propName'
           },
           {
-            label: 'Element Keys (comma-separated)',
+            label: getActiveVersion().schemaVersion === 3
+              ? 'Element Keys of the Default Model, or Xrefs of BIM Elements (comma-separated)'
+              : 'Element Keys (comma-separated)',
             id: 'elemKeys',
             type: 'text',
             placeholder: 'Keys of elements to update',
@@ -1267,7 +1364,7 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (modelUrn, additionalValues) => 
-          versionStubs().setPropertySelSet(modelUrn, currentFacilityRegion, additionalValues.propCategory || '', additionalValues.propName || '', additionalValues.propVal || '', additionalValues.elemKeys || '')
+          versionStubs().setPropertySelSet(modelUrn, currentFacilityRegion, additionalValues.propCategory || '', additionalValues.propName || '', additionalValues.propVal || '', additionalValues.elemKeys || '', currentFacilityURN)
       }
     },
     {
@@ -1277,6 +1374,7 @@ export async function renderStubs(container, facilityURN, region) {
       inputConfig: {
         type: 'modelSelect',
         label: 'Model',
+        defaultModelOnly: [3],
         additionalFields: [
           {
             label: 'Qualified Property ID',
@@ -1288,10 +1386,13 @@ export async function renderStubs(container, facilityURN, region) {
           {
             id: 'propVal',
             type: 'typeAwareValueByQualifiedProp',
+            writableOnly: true,
             qualPropInputId: 'qualPropStr'
           },
           {
-            label: 'Element Keys (comma-separated)',
+            label: getActiveVersion().schemaVersion === 3
+              ? 'Element Keys of the Default Model, or Xrefs of BIM Elements (comma-separated)'
+              : 'Element Keys (comma-separated)',
             id: 'elemKeys',
             type: 'text',
             placeholder: 'Keys of elements to update',
@@ -1299,7 +1400,7 @@ export async function renderStubs(container, facilityURN, region) {
           }
         ],
         onExecute: (modelUrn, additionalValues) => 
-          versionStubs().setPropertySelSetQP(modelUrn, currentFacilityRegion, additionalValues.qualPropStr || '', additionalValues.propVal || '', additionalValues.elemKeys || '')
+          versionStubs().setPropertySelSetQP(modelUrn, currentFacilityRegion, additionalValues.qualPropStr || '', additionalValues.propVal || '', additionalValues.elemKeys || '', currentFacilityURN)
       }
     },
     {
@@ -1309,9 +1410,12 @@ export async function renderStubs(container, facilityURN, region) {
       inputConfig: {
         type: 'modelSelect',
         label: 'Model',
+        defaultModelOnly: [3],
         additionalFields: [
           {
-            label: 'Element Keys (comma-separated)',
+            label: getActiveVersion().schemaVersion === 3
+              ? 'Element Keys of the Default Model, or Xrefs of BIM Elements (comma-separated)'
+              : 'Element Keys (comma-separated)',
             id: 'elemKeys',
             type: 'text',
             placeholder: 'Keys of elements to update'
@@ -1627,12 +1731,16 @@ export async function renderStubs(container, facilityURN, region) {
             placeholder: 'e.g., Temperature Sensor 1'
           },
           {
-            label: 'Host Model URN (optional)',
+            label: getActiveVersion().schemaVersion === 3
+              ? 'Host Model URN (optional, default model if empty)'
+              : 'Host Model URN (optional)',
             id: 'hostModelURN',
             placeholder: 'Leave empty for no host'
           },
           {
-            label: 'Host Element Key (optional)',
+            label: getActiveVersion().schemaVersion === 3
+              ? 'Host Element Key or Xref (optional)'
+              : 'Host Element Key (optional)',
             id: 'hostKey',
             placeholder: 'Leave empty for no host'
           },
@@ -1683,12 +1791,16 @@ export async function renderStubs(container, facilityURN, region) {
             placeholder: 'Key of stream to modify'
           },
           {
-            label: 'Host Model URN',
+            label: getActiveVersion().schemaVersion === 3
+              ? 'Host Model URN (optional, default model if empty)'
+              : 'Host Model URN',
             id: 'hostModelURN',
             placeholder: 'Model containing the host element'
           },
           {
-            label: 'Host Element Key',
+            label: getActiveVersion().schemaVersion === 3
+              ? 'Host Element Key or Xref'
+              : 'Host Element Key',
             id: 'hostKey',
             placeholder: 'Element key of the host'
           }
@@ -1817,6 +1929,102 @@ export async function renderStubs(container, facilityURN, region) {
   ]);
   
   container.appendChild(streamDropdown);
+
+  // Create Ticket Stubs Dropdown
+  const isV3 = getActiveVersion().schemaVersion === 3;
+  const priorityOptions = Object.values(TicketPriorities).map(priority => ({ value: priority, label: priority }));
+  const ticketDropdown = createDropdownMenu('Ticket Stubs', [
+    {
+      label: 'GET Tickets (from Default Model)',
+      requires: 'getTickets',
+      hasInput: false,
+      action: () => versionStubs().getTickets(currentFacilityURN, currentFacilityRegion)
+    },
+    {
+      label: 'Create Ticket',
+      requires: 'createTicket',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Ticket Name',
+            id: 'ticketName',
+            placeholder: 'e.g., Replace filter'
+          },
+          {
+            label: 'Priority',
+            id: 'ticketPriority',
+            type: 'select',
+            options: priorityOptions,
+            defaultValue: TicketPriorities.Medium
+          },
+          {
+            label: isV3 ? 'Host Model URN (optional, default model if empty)' : 'Host Model URN (optional)',
+            id: 'hostModelURN',
+            placeholder: 'Leave empty for no host'
+          },
+          {
+            label: isV3 ? 'Host Element Key or Xref (optional)' : 'Host Element Key (optional)',
+            id: 'hostKey',
+            placeholder: 'Leave empty for no host'
+          }
+        ],
+        onExecute: (values) =>
+          versionStubs().createTicket(
+            currentFacilityURN,
+            currentFacilityRegion,
+            values.ticketName || '',
+            values.ticketPriority || '',
+            values.hostModelURN || '',
+            values.hostKey || ''
+          )
+      }
+    },
+    {
+      label: 'Update Ticket (priority, close, reopen)',
+      requires: 'updateTicket',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Ticket Keys (comma-separated)',
+            id: 'ticketKeys',
+            placeholder: isV3 ? 'Keys returned by GET Tickets' : 'Long keys returned by GET Tickets'
+          },
+          {
+            label: 'Priority',
+            id: 'ticketPriority',
+            type: 'select',
+            options: [{ value: '', label: '(no change)' }, ...priorityOptions],
+            defaultValue: ''
+          },
+          {
+            label: 'Close Date',
+            id: 'closeAction',
+            type: 'select',
+            options: [
+              { value: '', label: '(no change)' },
+              { value: CloseActions.Close, label: 'Close the ticket (Close Date = today)' },
+              { value: CloseActions.Reopen, label: 'Reopen the ticket (delete the Close Date)' }
+            ],
+            defaultValue: ''
+          }
+        ],
+        onExecute: (values) =>
+          versionStubs().updateTicket(
+            currentFacilityURN,
+            currentFacilityRegion,
+            values.ticketKeys || '',
+            values.ticketPriority || '',
+            values.closeAction || ''
+          )
+      }
+    }
+  ]);
+
+  container.appendChild(ticketDropdown);
   
   // Create Document Stubs Dropdown
   const documentDropdown = createDropdownMenu('Document Stubs', [
@@ -1944,6 +2152,22 @@ export async function renderStubs(container, facilityURN, region) {
         ],
         onExecute: (values) => 
           versionStubs().lookupElements(currentFacilityURN, currentFacilityRegion, values.elementKeys || '')
+      }
+    },
+    {
+      label: 'Convert Xref or URL to Key',
+      hasInput: true,
+      inputConfig: {
+        type: 'multiText',
+        fields: [
+          {
+            label: 'Xref or Tandem URL (select the element in Tandem first)',
+            id: 'xref',
+            placeholder: 'Xref, or the browser URL with ?selection=...'
+          }
+        ],
+        onExecute: (values) =>
+          miscStubs.getKeyFromXref(currentFacilityURN, currentFacilityRegion, values.xref || '')
       }
     },
   ]);
@@ -2323,13 +2547,25 @@ function createDropdownMenu(title, allItems) {
           // Create a dropdown for model selection
           mainInput = document.createElement('select');
           mainInput.className = 'w-full text-xs';
+          mainInput.setAttribute('data-model-select', 'true');
           
           // Populate with models — default model always last, others in API order
           const defaultModelURN = getDefaultModelURN(currentFacilityURN);
-          const sortedModels = [
-            ...currentModels.filter(m => m.modelId !== defaultModelURN),
-            ...currentModels.filter(m => m.modelId === defaultModelURN)
-          ];
+          // Writes of V3 only happen in the default model, so it is the only choice
+          const defaultModelOnly = item.inputConfig.defaultModelOnly?.includes(getActiveVersion().schemaVersion);
+          const defaultModelEntry = currentModels.find(m => m.modelId === defaultModelURN)
+            ?? { modelId: defaultModelURN, label: '' };
+          const sortedModels = defaultModelOnly
+            ? [defaultModelEntry]
+            : [
+              ...currentModels.filter(m => m.modelId !== defaultModelURN),
+              ...currentModels.filter(m => m.modelId === defaultModelURN)
+            ];
+
+          if (defaultModelOnly) {
+            mainInput.disabled = true;
+            mainLabel.textContent = 'Model (writes only happen in the default model)';
+          }
           sortedModels.forEach((model, index) => {
             const option = document.createElement('option');
             option.value = model.modelId;
@@ -2486,7 +2722,8 @@ function createDropdownMenu(title, allItems) {
               const typeAwareInput = createTypeAwareValueInput(
                 inputForm, 
                 field.categoryInputId || 'propCategory', 
-                field.propertyInputId || 'propName'
+                field.propertyInputId || 'propName',
+                () => autocompleteListOptions(field, inputForm)
               );
               inputForm.appendChild(typeAwareInput.container);
               // Store the typeAwareInput object for validation and value retrieval
@@ -2496,7 +2733,8 @@ function createDropdownMenu(title, allItems) {
               // Type-aware value input that adapts based on qualified property ID
               const typeAwareInput = createTypeAwareValueInputByQualifiedProp(
                 inputForm, 
-                field.qualPropInputId || 'qualPropStr'
+                field.qualPropInputId || 'qualPropStr',
+                () => autocompleteListOptions(field, inputForm)
               );
               inputForm.appendChild(typeAwareInput.container);
               // Store the typeAwareInput object for validation and value retrieval

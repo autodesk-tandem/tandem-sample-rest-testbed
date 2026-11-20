@@ -10,9 +10,10 @@
 
 import { tandemWebURL, getModels } from '../../api.js';
 import { ColumnFamilies, QC } from '../../../tandem/constants.js';
-import { isValidElementKey, makeXrefKey } from '../../../tandem/keys.js';
+import { makeXrefKey } from '../../../tandem/keys.js';
 import { parseCommaList } from '../../utils.js';
 import { describeKey, nameOf, scanModel } from './helpers.js';
+import { isV3Key } from './writeHelpers.js';
 
 /**
  * Ask one model for the given keys. Returns the elements the model knows, or null on error.
@@ -52,8 +53,6 @@ export async function lookupElements(facilityURN, region, keys) {
   }
   console.group("STUB: lookupElements()");
 
-  // A V3 key is 24 bytes (32 characters of unpadded base64): the first 4 bytes are the flags
-  const isV3Key = id => isValidElementKey(id) && id.length === 32;
   const ids = allIds.filter(isV3Key);
 
   for (const id of allIds.filter(id => !isV3Key(id))) {

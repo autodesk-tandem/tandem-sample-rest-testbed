@@ -87,6 +87,8 @@ export const ColumnNames = {
     Classification:     'v',
     OClassification:    '!v',
     Config:             'cfg',
+    Height:             'he',  // height of the sketched room
+    Tolerance:          'tol', // deprecated, the tolerance lives in Config
     Deleted:            'e',
     ODeleted:           '!e',
     ElementFlags:       'a',
@@ -123,6 +125,8 @@ export const QC = {
     Classification:     `${ColumnFamilies.Standard}:${ColumnNames.Classification}`,
     OClassification:    `${ColumnFamilies.Standard}:${ColumnNames.OClassification}`,
     Config:             `${ColumnFamilies.Standard}:${ColumnNames.Config}`,
+    Height:             `${ColumnFamilies.Standard}:${ColumnNames.Height}`,
+    Tolerance:          `${ColumnFamilies.Standard}:${ColumnNames.Tolerance}`,
     Deleted:            `${ColumnFamilies.Status}:${ColumnNames.Deleted}`,
     ODeleted:           `${ColumnFamilies.Status}:${ColumnNames.ODeleted}`,
     TandemCategory:     `${ColumnFamilies.Standard}:${ColumnNames.TandemCategory}`,
@@ -161,6 +165,15 @@ export const TC = {
     Rooms: 'L.Rm',
     Sensors: 'Q.Se',
     Ticket: 'I.Ti'
+};
+
+// Values the Priority of a ticket accepts (the allowedValues of QC.Priority)
+export const TicketPriorities = {
+    Trivial: 'Trivial',
+    Low: 'Low',
+    Medium: 'Medium',
+    High: 'High',
+    Critical: 'Critical'
 };
 
 export const ModelState = {
@@ -206,6 +219,21 @@ export const AttributeType = {
     Url: 25,
     StringList: 40 /* Tag */
 };
+
+/**
+ * Bits of the `flags` of an attribute in the model schema (GET modeldata/{model}/schema).
+ */
+export const AttributeFlags = {
+    Hidden: 1 << 0,   /* not shown in default property views */
+    Stream: 1 << 2,   /* the value of the attribute on an element is a stream of readings */
+    ReadOnly: 1 << 3, /* set by the server on built-in columns that cannot be written directly (n:n, n:v, ...) */
+    DtParam: 1 << 4   /* native, user-defined Tandem parameter (family z) */
+};
+
+/**
+ * Override columns have the name of the column they override with this prefix, e.g. `n:n` -> `n:!n`.
+ */
+export const OverrideColumnPrefix = '!';
 
 export const SystemClassNames = [
     "Supply Air",                   //0

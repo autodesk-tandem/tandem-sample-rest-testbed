@@ -13,6 +13,7 @@ const env = getEnv();
 // Base URLs for Tandem API endpoints
 export const tandemBaseURL = env.tandemDbBaseURL;
 export const tandemAppBaseURL = env.tandemAppBaseURL;
+export const tandemV3BaseURL = env.tandemV3BaseURL;
 export const tandemWebURL = env.tandemWebURL;
 
 /**

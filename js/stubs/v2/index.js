@@ -11,6 +11,7 @@
 
 import * as propertyStubs from './propertyStubs.js';
 import * as streamStubs from './streamStubs.js';
+import * as ticketStubs from './ticketStubs.js';
 import * as miscStubs from './miscStubs.js';
 import * as sdkStubs from './sdkStubs.js';
 
@@ -33,6 +34,10 @@ export default {
     assignHostToStream: streamStubs.assignHostToStream,
     removeHostFromStream: streamStubs.removeHostFromStream,
     deleteStreams: streamStubs.deleteStreams,
+
+    getTickets: ticketStubs.getTickets,
+    createTicket: ticketStubs.createTicket,
+    updateTicket: ticketStubs.updateTicket,
 
     lookupElements: miscStubs.lookupElements,
 

@@ -9,6 +9,7 @@ const prodEnvironment = {
   userProfileUrl: "https://api.userprofile.autodesk.com/userinfo",
   tandemDbBaseURL: "https://developer.api.autodesk.com/tandem/v1",
   tandemAppBaseURL: "https://tandem.autodesk.com/app",
+  tandemV3BaseURL: "https://tandem.autodesk.com/api/v3", // explicit v3 endpoints are not behind the APS gateway: call the Tandem host
   tandemWebURL: "https://tandem.autodesk.com",
   regions: ['US', 'EMEA', 'AUS'],
 };
@@ -22,6 +23,7 @@ const stgEnvironment = {
   userProfileUrl: null, // The production profile service does not accept staging tokens
   tandemDbBaseURL: "https://developer-stg.api.autodesk.com/tandem/v1", // APS gateway, like prod: the direct tandem-stg host rejects the Region header in CORS preflight
   tandemAppBaseURL: "https://tandem-stg.autodesk.com/app",
+  tandemV3BaseURL: "https://tandem-stg.autodesk.com/api/v3", // explicit v3 endpoints are not behind the APS gateway: call the Tandem host
   tandemWebURL: "https://tandem-stg.autodesk.com",
   regions: ['US', 'EMEA'], // Staging has no AUS region and answers 400 for it
 };

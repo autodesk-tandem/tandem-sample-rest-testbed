@@ -2,6 +2,8 @@
  * Shared helpers for STUB functions
  */
 
+import { AttributeType } from '../tandem/constants.js';
+
 /**
  * Split comma-separated user input into a list of trimmed, non-empty entries.
  * "a, b,,c, " becomes ["a", "b", "c"]. Empty, whitespace-only, null or undefined
@@ -101,4 +103,58 @@ export function buildValueMatcher(searchOptions) {
   }
   
   return matcher;
+}
+
+/**
+ * Pull the facility URN and the selection (an xref) out of a link copied from Tandem, e.g.
+ * https://tandem.autodesk.com/pages/facilities/urn:adsk.dtt:XXX?mode=3d&selection=<xref>
+ * @param {string} link - Link copied from Tandem
+ * @returns {{ facilityURN: string|null, selection: string|null }}
+ */
+export function parseTandemLink(link) {
+  const facilityMatch = link.match(/\/facilities\/(urn:adsk\.dtt:[A-Za-z0-9_-]+)/);
+  const selectionMatch = link.match(/[?&]selection=([^&#]*)/);
+  let selection = null;
+
+  if (selectionMatch) {
+    try {
+      selection = decodeURIComponent(selectionMatch[1]);
+    } catch {
+      selection = selectionMatch[1];
+    }
+  }
+  return { facilityURN: facilityMatch ? facilityMatch[1] : null, selection };
+}
+
+/**
+ * Convert the text typed by the user to the type of the property, as the schema describes it
+ * (`attr.dataType`, see `AttributeType`). Without schema entry the text is used as it is.
+ *
+ * @param {object|null} attr - attribute of the model schema
+ * @param {string} text - value typed by the user
+ * @returns {string|number|boolean|string[]}
+ * @throws {Error} if the property is numeric and the text is not a number
+ */
+export function typedValueFor(attr, text) {
+  switch (attr?.dataType) {
+    case AttributeType.Boolean:
+      return String(text).toLowerCase() === 'true';
+    case AttributeType.Integer:
+    case AttributeType.Double:
+    case AttributeType.Float: {
+      const value = Number(text);
+
+      if (text === '' || Number.isNaN(value)) {
+        throw new Error(`"${text}" is not a number.`);
+      }
+      if (attr.dataType === AttributeType.Integer && !Number.isInteger(value)) {
+        throw new Error(`"${text}" is not a whole number (the property is an Integer).`);
+      }
+      return value;
+    }
+    case AttributeType.StringList: // tags
+      return String(text).split(',').map(tag => tag.trim()).filter(Boolean);
+    default:
+      return text;
+  }
 }

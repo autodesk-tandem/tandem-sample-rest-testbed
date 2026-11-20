@@ -15,8 +15,10 @@
 
 import * as propertyStubs from './propertyStubs.js';
 import * as streamStubs from './streamStubs.js';
+import * as ticketStubs from './ticketStubs.js';
 import * as sdkStubs from './sdkStubs.js';
 import * as miscStubs from './miscStubs.js';
+import * as propertyWriteStubs from './propertyWriteStubs.js';
 
 export default {
   schemaVersion: 3,
@@ -28,7 +30,20 @@ export default {
     scanForUserProps: propertyStubs.scanForUserProps,
     findElementsWherePropValueEquals: propertyStubs.findElementsWherePropValueEquals,
 
+    assignClassification: propertyWriteStubs.assignClassification,
+    setPropertySelSet: propertyWriteStubs.setPropertySelSet,
+    setPropertySelSetQP: propertyWriteStubs.setPropertySelSetQP,
+    deletePropertyValue: propertyWriteStubs.deletePropertyValue,
+
     getStreamsFromDefaultModel: streamStubs.getStreamsFromDefaultModel,
+    createStream: streamStubs.createStream,
+    assignHostToStream: streamStubs.assignHostToStream,
+    removeHostFromStream: streamStubs.removeHostFromStream,
+    deleteStreams: streamStubs.deleteStreams,
+
+    getTickets: ticketStubs.getTickets,
+    createTicket: ticketStubs.createTicket,
+    updateTicket: ticketStubs.updateTicket,
 
     lookupElements: miscStubs.lookupElements,
 
