@@ -18,7 +18,7 @@
 
 import { tandemBaseURL, tandemV3BaseURL, makeRequestOptionsPOST, getDefaultModelURN, getModels } from '../../api.js';
 import { ColumnFamilies, ColumnNames, ElementFlags, MutateActions, OverrideColumnPrefix, QC } from '../../../tandem/constants.js';
-import { decodeXref, getElementFlags } from '../../../tandem/keys.js';
+import { decodeXref, getElementFlags, makeXrefKey } from '../../../tandem/keys.js';
 import { typedValueFor } from '../../utils.js';
 import { findWritableAttribute, loadSchemaForModel } from '../../state/schemaCache.js';
 import { describeKey, firstValue, nameOf, scanModel } from './helpers.js';
@@ -208,8 +208,9 @@ export async function writeTicketColumnOnNonTicket(facilityURN, region, elementK
     } else if (changed.includes(qualifiedColumn)) {
       console.log(`The server ACCEPTED and STORED ${qualifiedColumn} on a ${typeOfElement}. It does not check that the element is a ticket.`);
       console.log("Where it went: the cell is on the row of this element in the default model (see the table). "
-        + "The value is stored but nothing reads it: the Tandem app lists a ticket by its element flag, "
-        + `0x${ElementFlags.Ticket.toString(16).padStart(8, '0')}, which is part of the key and cannot change.`);
+        + "The Tandem app shows the value in the properties panel of the element, under Tickets, but its Tickets panel "
+        + `does not list the element: it lists a ticket by its element flag, 0x${ElementFlags.Ticket.toString(16).padStart(8, '0')}, `
+        + "which is part of the key and cannot change.");
       console.log(`Element: ${after.row ? nameOf(after.row, '(no name)') : '(no name)'}. Run GET Tickets: it is not listed.`);
     } else {
       console.log("The server answered OK but the scan shows no change: the value was the same as before, or the server ignored it.");
@@ -219,11 +220,11 @@ export async function writeTicketColumnOnNonTicket(facilityURN, region, elementK
     if (restore && response.ok && before && after && after.found) {
       console.group("5. Restore");
       const previous = before?.row ? firstValue(before.row[qualifiedColumn]) : undefined;
-      const undo = previous === undefined
+      const undo = isNoValue(previous)
         ? [MutateActions.Delete, ColumnFamilies.Standard, column, '']
         : [MutateActions.Insert, ColumnFamilies.Standard, column, previous];
 
-      console.log(previous === undefined
+      console.log(isNoValue(previous)
         ? "There was no value before: deleting the cell (MutateActions.Delete)."
         : `Writing the previous value back: ${JSON.stringify(previous)}.`);
       const undoResponse = await sendUnguardedMutate(getDefaultModelURN(facilityURN), [elementKey], [undo],
@@ -370,6 +371,13 @@ function describeAssetStatus(key, snapshot, elsewhere = null) {
 }
 
 /**
+ * Whether a scanned cell holds no value. A cell deleted with MutateActions.Delete still comes back from SCAN, as "".
+ */
+function isNoValue(value) {
+  return value === undefined || value === null || value === '';
+}
+
+/**
  * Put back the cells of a row that a test changed: the previous value, or delete the cell if there was none.
  */
 async function restoreCells(modelURN, key, changes, description, options) {
@@ -377,7 +385,7 @@ async function restoreCells(modelURN, key, changes, description, options) {
     const [family, ...columnParts] = column.split(':');
     const previous = firstValue(before);
 
-    return previous === undefined
+    return isNoValue(previous)
       ? [MutateActions.Delete, family, columnParts.join(':'), '']
       : [MutateActions.Insert, family, columnParts.join(':'), previous];
   });
@@ -424,6 +432,9 @@ export async function writeUserPropertyWithoutAssetCheck(typedModelURN, region, 
     const value = typedValueFor(attr, valueText);
     let targetSchema = await loadSchemaForModel(targetModelURN, region);
     const sameIdInTarget = targetSchema.lookup.get(attr.id);
+    // dt-server finds an attribute by its column name alone, whatever its family: "Fw" can be r:Fw in a BIM model
+    const columnName = attr.id.slice(attr.id.indexOf(':') + 1);
+    const sameColumnInTarget = targetSchema.attributes.filter(a => a.id !== attr.id && a.id.slice(a.id.indexOf(':') + 1) === columnName);
 
     console.log(`Target model: ${targetModelURN} (${isDefaultTarget ? 'the default model' : 'a BIM model, NOT the default model'})`);
     console.log(`Endpoint: ${endpoint === MutateEndpoints.V1 ? 'POST /v1/.../mutate (gateway, compatibility path)' : 'POST /v3/.../mutate (Tandem host)'}`);
@@ -435,6 +446,11 @@ export async function writeUserPropertyWithoutAssetCheck(typedModelURN, region, 
         ? `${attr.id} also exists in the schema of the target model, as "${sameIdInTarget.category} | ${sameIdInTarget.name}"`
           + (sameIdInTarget.name === attr.name && sameIdInTarget.category === attr.category ? ' (the same property).' : ' (a DIFFERENT property).')
         : `${attr.id} does NOT exist in the schema of the target model.`);
+      if (sameColumnInTarget.length > 0) {
+        console.log(`But the column name "${columnName}" is used in the target model by `
+          + sameColumnInTarget.map(a => `${a.id} "${a.category} | ${a.name}"`).join(', ')
+          + `. dt-server looks a ${ColumnFamilies.DtProperties}: column up by its name alone when it retargets a write to an asset (/v1), so it would read it as that property.`);
+      }
     }
     console.warn("No guardrails: the element is not checked (asset or not) and the model is not checked. If the server accepts the request, the change is real and stays in the model history.");
 
@@ -768,6 +784,139 @@ export async function writeReadOnlyColumn(targetModelURN, region, facilityURN, b
 
     console.groupEnd();
     return { elementKey, targetModelURN, sentColumn, response, elementChanges, assetChanges };
+  } catch (error) {
+    console.error('Error:', error.message);
+    console.groupEnd();
+    return null;
+  }
+}
+
+/**
+ * The host of a stream, from its Parent xref (QC.XParent), for the report.
+ */
+function describeStreamHost(snapshot) {
+  const xref = firstValue(snapshot?.row?.[QC.XParent]);
+
+  if (isNoValue(xref)) {
+    return '(no host)';
+  }
+  const host = decodeXref(xref);
+
+  return host ? `${host.elementKey} in ${host.modelURN}, ${describeKey(host.elementKey)}` : `${xref} (not a valid xref)`;
+}
+
+/**
+ * EDGE CASE: host a stream directly on a BIM element, without going through its asset
+ *
+ * The guarded STUBs (Create Stream, Assign Host) follow a BIM element to its asset first, and make the asset when
+ * there is none, because in V3 a stream is hosted by an element of the default model. Here the Parent xref of the
+ * stream (QC.XParent) is written as the xref of the element you give, in the model you pick, as typed: a BIM element
+ * of a BIM model stays a BIM element.
+ *
+ * The stream is a row of the default model, so the request goes there. Only the Parent xref is written; the room
+ * and level the guarded STUBs also set for a room host are left alone.
+ *
+ * @param {string} hostModelURN - model of the host element, typically a BIM model
+ * @param {string} streamKey - key of a stream of the default model, sent as typed
+ * @param {string} hostKey - key of the host element in hostModelURN, sent as typed (not followed to its asset)
+ * @param {string} endpoint - MutateEndpoints value
+ * @param {boolean} restore - put the previous host back afterwards
+ */
+export async function writeStreamHostWithoutAssetCheck(hostModelURN, region, facilityURN, streamKey, hostKey, endpoint, restore) {
+  console.group("STUB (edge case): writeStreamHostWithoutAssetCheck()");
+
+  try {
+    const defaultModelURN = getDefaultModelURN(facilityURN);
+    const options = { endpoint, region };
+    const isStream = getElementFlags(streamKey) === ElementFlags.StreamV3;
+    const hostXref = makeXrefKey(hostModelURN, hostKey);
+
+    console.log("Stream (default model):", streamKey, `- ${describeKey(streamKey)}`);
+    console.log(`Host model: ${hostModelURN} (${hostModelURN === defaultModelURN ? 'the default model' : 'a BIM model, NOT the default model'})`);
+    console.log("Host key:", hostKey, `- ${describeKey(hostKey)}`);
+    console.log(`Endpoint: ${endpoint === MutateEndpoints.V1 ? 'POST /v1/.../mutate (gateway, compatibility path)' : 'POST /v3/.../mutate (Tandem host)'}`);
+    console.log(`Writing ${QC.XParent} = ${hostXref} (the xref of the host key in the host model)`);
+    if (!isStream) {
+      console.warn("This key is NOT a stream (ElementFlags.StreamV3), so the test is about another element type.");
+    }
+    console.warn("No guardrails: the host is not followed to its asset and the model is not checked. If the server accepts the request, the change is real and stays in the model history.");
+
+    console.group("1. Before");
+    const before = await snapshotElement(defaultModelURN, region, streamKey);
+    const hostSnapshot = await snapshotElement(hostModelURN, region, hostKey);
+    const elsewhere = hostSnapshot && !hostSnapshot.found
+      ? await findElementInOtherModels(facilityURN, region, hostKey, hostModelURN)
+      : null;
+
+    if (before && !before.found) {
+      console.warn("The stream is not a row of the default model.");
+    }
+    console.log("Current host of the stream:", describeStreamHost(before));
+    console.log(`Is the host an asset? ${describeAssetStatus(hostKey, hostSnapshot, elsewhere)}.`);
+    console.groupEnd();
+
+    console.group("2. The request");
+    const response = await sendUnguardedMutate(defaultModelURN,
+      [streamKey],
+      [[MutateActions.Insert, ColumnFamilies.Xrefs, ColumnNames.Parent, hostXref]],
+      "REST TestBed (edge case): stream host without asset check", options);
+
+    reportResponse(response);
+    console.groupEnd();
+
+    console.group("3. After");
+    const after = response.sent ? await snapshotElement(defaultModelURN, region, streamKey) : before;
+    const changes = response.sent ? diffSnapshots(before, after) : [];
+    const defaultSchema = await loadSchemaForModel(defaultModelURN, region);
+
+    reportRowChanges("The stream", defaultSchema, changes);
+    console.log("Host of the stream after the request:", describeStreamHost(after));
+    console.groupEnd();
+
+    console.group("4. What this means");
+    const hostChanged = changes.some(change => change.column === QC.XParent);
+    const hostedAsset = findHostedAsset(hostSnapshot);
+
+    if (!response.sent) {
+      console.log("Nothing was sent, so there is nothing to conclude. Fix the request first.");
+    } else if (!response.ok) {
+      console.log(`The server refuses this write (HTTP ${response.status}). The message above is the only explanation it gives.`);
+    } else if (!before || !after) {
+      console.log("The server answered OK but the stream could not be scanned, so we cannot tell whether the host changed.");
+    } else if (hostChanged && hostModelURN !== defaultModelURN) {
+      console.log(`The server ACCEPTED and STORED a host in a BIM model: the stream's ${QC.XParent} now points to ${hostKey} in ${hostModelURN}. `
+        + "It does not check that the host is an element of the default model.");
+      console.log(hostedAsset
+        ? `That BIM element hosts the asset ${hostedAsset.elementKey}: the guarded STUBs would have used the asset as the host.`
+        : "That BIM element has no asset: the guarded STUBs would have made one and used it as the host.");
+      console.log("Check in the Tandem app: the host and the location of the stream, the BIM element, and its asset if any.");
+    } else if (hostChanged) {
+      console.log(`The server accepted and stored the host ${hostKey}, an element of the default model: the expected case.`);
+    } else {
+      console.log("The server answered OK but the stream's host did not change: it was the same as before, or the server ignored it.");
+    }
+    console.groupEnd();
+
+    if (response.ok && changes.length > 0) {
+      if (restore) {
+        console.group("5. Restore");
+        const undoResponse = await restoreCells(defaultModelURN, streamKey, changes,
+          "REST TestBed (edge case): restore after stream host test", options);
+
+        reportResponse(undoResponse);
+        const restored = await snapshotElement(defaultModelURN, region, streamKey);
+
+        reportRowChanges("After restore, compared with before the test", defaultSchema, diffSnapshots(before, restored));
+        console.log("Host of the stream after restore:", describeStreamHost(restored));
+        console.log("The history keeps all the changes: the cells are restored, the log is not rewritten.");
+        console.groupEnd();
+      } else {
+        console.log(`Not restored. To undo, write the previous ${QC.XParent} back, or send ${MutateActions.Delete} for it if there was none.`);
+      }
+    }
+
+    console.groupEnd();
+    return { streamKey, hostModelURN, hostKey, hostXref, response, before, after, changes };
   } catch (error) {
     console.error('Error:', error.message);
     console.groupEnd();

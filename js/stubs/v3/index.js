@@ -49,6 +49,7 @@ export default {
     writeTicketColumnOnNonTicket: edgeCaseStubs.writeTicketColumnOnNonTicket,
     writeUserPropertyWithoutAssetCheck: edgeCaseStubs.writeUserPropertyWithoutAssetCheck,
     writeReadOnlyColumn: edgeCaseStubs.writeReadOnlyColumn,
+    writeStreamHostWithoutAssetCheck: edgeCaseStubs.writeStreamHostWithoutAssetCheck,
 
     lookupElements: miscStubs.lookupElements,
     getKeyFromXref: miscStubs.getKeyFromXref,

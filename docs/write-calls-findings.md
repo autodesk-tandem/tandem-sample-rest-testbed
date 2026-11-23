@@ -62,7 +62,7 @@ Implemented in `isWritableAttribute()` (`schemaCache.js`) and used by the dropdo
 
 A ticket is an element of the default model with `ElementFlags.Ticket` (0x01000007), `TC.Ticket` as category and a Parent xref (`x:p`) to its host. In V3 the host is an asset, room or level of the default model, and the ticket copies the host's `x:!loc` / `x:loc`. V2: the host is a BIM element (model + long key); we do not copy rooms and level, the app does.
 
-- **Setting Priority/Open Date on any other element stores the value and nothing shows it** ("No Tickets" in the app). *Tested*
+- **Setting Priority/Open Date on any other element stores the value.** The Tandem app shows it in the element's properties panel, under a Tickets group, but its Tickets panel does not list the element ("Tickets aren't connected in this facility yet" when the facility has no real ticket). So the element looks like a ticket in one place and not in the other. *Tested*, see [edge-case-results.md](edge-case-results.md) section 1.
 - Guards: V3 `mutateV3` refuses `n:pr/od/cd` on a key that is not a Ticket; `updateTicket` checks the flag (V3 from the key, V2 by scanning); SET Property does not offer the columns. V2 SET by qualified id cannot check the type.
 - Use Create Ticket / Update Ticket. Close sets Close Date to today, reopen deletes it. *Mock*.
 

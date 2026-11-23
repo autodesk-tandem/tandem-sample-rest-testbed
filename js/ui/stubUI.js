@@ -1784,34 +1784,32 @@ export async function renderStubs(container, facilityURN, region) {
       requires: 'assignHostToStream',
       hasInput: true,
       inputConfig: {
-        type: 'multiText',
-        fields: [
+        type: 'modelSelect',
+        label: 'Host Model (the model containing the host element)',
+        additionalFields: [
           {
             label: 'Stream Key',
             id: 'streamKey',
-            placeholder: 'Key of stream to modify'
+            type: 'text',
+            placeholder: 'Key of stream to modify',
+            defaultValue: ''
           },
           {
             label: getActiveVersion().schemaVersion === 3
-              ? 'Host Model URN (optional, default model if empty)'
-              : 'Host Model URN',
-            id: 'hostModelURN',
-            placeholder: 'Model containing the host element'
-          },
-          {
-            label: getActiveVersion().schemaVersion === 3
-              ? 'Host Element Key or Xref'
+              ? 'Host Element Key or Xref (an xref carries its own model)'
               : 'Host Element Key',
             id: 'hostKey',
-            placeholder: 'Element key of the host'
+            type: 'text',
+            placeholder: 'Element key of the host',
+            defaultValue: ''
           }
         ],
-        onExecute: (values) => 
+        onExecute: (modelUrn, values) =>
           versionStubs().assignHostToStream(
             currentFacilityURN,
             currentFacilityRegion,
             values.streamKey || '',
-            values.hostModelURN || '',
+            modelUrn || '',
             values.hostKey || ''
           )
       }
@@ -2223,6 +2221,57 @@ export async function renderStubs(container, facilityURN, region) {
             values.endpoint,
             Boolean(values.restore),
             Boolean(values.followToAsset)
+          )
+      }
+    },
+    {
+      label: 'Stream host on a BIM element, without asset check',
+      requires: 'writeStreamHostWithoutAssetCheck',
+      hasInput: true,
+      inputConfig: {
+        type: 'modelSelect',
+        label: 'Model of the host element (BIM models are listed first)',
+        additionalFields: [
+          {
+            label: 'Stream Key (default model, sent as typed)',
+            id: 'streamKey',
+            type: 'text',
+            placeholder: 'Key of a stream of the default model',
+            defaultValue: ''
+          },
+          {
+            label: 'Host Element Key (sent as typed, not followed to its asset)',
+            id: 'hostKey',
+            type: 'text',
+            placeholder: 'Key of a BIM element in the selected model',
+            defaultValue: ''
+          },
+          {
+            label: 'Endpoint',
+            id: 'endpoint',
+            type: 'select',
+            options: [
+              { value: MutateEndpoints.V3, label: 'POST /v3/.../mutate (Tandem host, the V3 endpoint)' },
+              { value: MutateEndpoints.V1, label: 'POST /v1/.../mutate (gateway, compatibility path)' }
+            ],
+            defaultValue: MutateEndpoints.V3
+          },
+          {
+            label: 'Restore the previous host afterwards',
+            id: 'restore',
+            type: 'checkbox',
+            defaultValue: false
+          }
+        ],
+        onExecute: (modelUrn, values) =>
+          versionStubs().writeStreamHostWithoutAssetCheck(
+            modelUrn,
+            currentFacilityRegion,
+            currentFacilityURN,
+            values.streamKey ?? '',
+            values.hostKey ?? '',
+            values.endpoint,
+            Boolean(values.restore)
           )
       }
     }
